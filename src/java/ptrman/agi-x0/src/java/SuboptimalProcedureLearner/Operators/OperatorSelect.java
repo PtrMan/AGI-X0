@@ -87,6 +87,6 @@ public class OperatorSelect extends Operator {
 
     @Override
     public String getShortName() {
-        return "OperatorSelect";
+        return this.getClass().getName();
     }
 }

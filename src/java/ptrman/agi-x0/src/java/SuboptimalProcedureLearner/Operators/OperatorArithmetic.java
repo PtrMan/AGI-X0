@@ -138,7 +138,7 @@ public class OperatorArithmetic extends Operator {
     }
 
     public String getShortName() {
-        return "OperatorArithmetic";
+        return this.getClass().getName();
     }
 
     static private float getVariadicAsFloat(Variadic value) {

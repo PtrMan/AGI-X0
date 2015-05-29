@@ -4,7 +4,7 @@ import Datastructures.Variadic;
 
 import java.util.List;
 
-abstract public class Operator {
+abstract public class Operator extends AbstractOperatorBase {
     // transfers information about the
     public static class IntrospectWiringInfo {
         public enum EnumType {
@@ -82,8 +82,4 @@ abstract public class Operator {
      *
      */
     abstract public void operationCleanup(OperatorInstance instance);
-
-    abstract public boolean isScaffold();
-
-    abstract public String getShortName();
 }

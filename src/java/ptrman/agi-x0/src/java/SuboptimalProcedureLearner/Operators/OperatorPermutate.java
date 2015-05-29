@@ -95,6 +95,6 @@ public class OperatorPermutate extends Operator {
     }
 
     public String getShortName() {
-        return "OperatorPermutate";
+        return this.getClass().getName();
     }
 }

@@ -43,6 +43,6 @@ public class OperatorConstant  extends Operator {
     }
 
     public String getShortName() {
-        return "OperatorConstant";
+        return this.getClass().getName();
     }
 }

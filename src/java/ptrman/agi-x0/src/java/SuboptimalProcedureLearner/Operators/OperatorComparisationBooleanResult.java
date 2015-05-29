@@ -102,7 +102,7 @@ public class OperatorComparisationBooleanResult extends Operator {
 
     @Override
     public String getShortName() {
-        return "OperatorComparisationBooleanResult";
+        return this.getClass().getName();
     }
 
     private static boolean compareValues(final Variadic a, final Variadic b, final Variadic.EnumType commonType, final EnumOperation operation) {
