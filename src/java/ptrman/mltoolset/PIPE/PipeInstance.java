@@ -1,18 +1,18 @@
-package mltoolset.PIPE;
+package ptrman.mltoolset.PIPE;
+
+import ptrman.mltoolset.PIPE.program.Program;
+import ptrman.mltoolset.misc.Assert;
 
 import java.util.ArrayList;
 import java.util.Random;
-import mltoolset.PIPE.program.Program;
 
 /**
  * PIPE algorithm
  * after the paper
  * "Probabilistic Incremental Program Evolution"
  */
-public class PipeInstance
-{
-    public void work(Parameters parameters, ProblemspecificDescriptor problemspecificDescriptor)
-    {
+public class PipeInstance {
+    public void work(Parameters parameters, ProblemspecificDescriptor problemspecificDescriptor) {
         this.parameters = parameters;
         this.problemspecificDescriptor = problemspecificDescriptor;
         
@@ -27,7 +27,7 @@ public class PipeInstance
     }
     
     
-    private void createProgramNodeFromPptNode(mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, mltoolset.PIPE.program.Node programNode)
+    private void createProgramNodeFromPptNode(ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, ptrman.mltoolset.PIPE.program.Node programNode)
     {
         int selectedInstruction;
 
@@ -56,7 +56,7 @@ public class PipeInstance
 
             for( i = 0; i < problemspecificDescriptor.getNumberOfArgumentsOfInstruction(problemspecificDescriptor.getInstructionByIndex(selectedInstruction)); i++ )
             {
-                mltoolset.PIPE.program.Node createdProgramNode;
+                ptrman.mltoolset.PIPE.program.Node createdProgramNode;
 
                 // create node if it is not present
                 if (pptNode.childrens.size() < i + 1)
@@ -69,9 +69,9 @@ public class PipeInstance
                     pptNode.childrens.set(i, createPptNode());
                 }
                 
-                createdProgramNode = new mltoolset.PIPE.program.Node();
+                createdProgramNode = new ptrman.mltoolset.PIPE.program.Node();
                 
-                mltoolset.misc.Assert.Assert(programNode.getChildrens().size() >= i, "");
+                Assert.Assert(programNode.getChildrens().size() >= i, "");
                 if( programNode.getChildrens().size() == i )
                 {
                     programNode.getChildrens().add(null);
@@ -85,13 +85,13 @@ public class PipeInstance
         }
     }
 
-    private int selectInstructionIndexFromPptNode(mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode)
+    private int selectInstructionIndexFromPptNode(ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode)
     {
         float randomValue;
         float accumulated;
         int i;
         
-        mltoolset.misc.Assert.Assert(pptNode.propabilityVector.length > 0, "");
+        Assert.Assert(pptNode.propabilityVector.length > 0, "");
         
         randomValue = random.nextFloat();
         accumulated = 0.0f;
@@ -99,8 +99,8 @@ public class PipeInstance
         for (i = 0; i < pptNode.propabilityVector.length; i++)
         {
             accumulated += pptNode.propabilityVector[i];
-            
-            mltoolset.misc.Assert.Assert(accumulated > 0.0f, "");
+
+            Assert.Assert(accumulated > 0.0f, "");
             
             if (accumulated > randomValue)
             {
@@ -111,12 +111,12 @@ public class PipeInstance
         return -1; // in case of grc
     }
 
-    private mltoolset.PIPE.PropabilisticPrototypeTree.Node createPptNode()
+    private ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node createPptNode()
     {
         return problemspecificDescriptor.createPptNode();
     }
 
-    private static float calcProgramPropability(mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, mltoolset.PIPE.program.Node programNode)
+    private static float calcProgramPropability(ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, ptrman.mltoolset.PIPE.program.Node programNode)
     {
         float propability;
         int i;
@@ -131,7 +131,7 @@ public class PipeInstance
         return propability;
     }
 
-    private void increaseProgramPropability(mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, mltoolset.PIPE.program.Node programNode)
+    private void increaseProgramPropability(ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, ptrman.mltoolset.PIPE.program.Node programNode)
     {
         int i;
         float propabilityDelta;
@@ -145,7 +145,7 @@ public class PipeInstance
         }
     }
 
-    private void increaseNodePropabilitiesUntilTargetPropabilityIsReached(mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, mltoolset.PIPE.program.Node programNode, float targetPropability)
+    private void increaseNodePropabilitiesUntilTargetPropabilityIsReached(ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, ptrman.mltoolset.PIPE.program.Node programNode, float targetPropability)
     {
         float currentPropability;
         
@@ -158,7 +158,7 @@ public class PipeInstance
         }
     }
 
-    private void normalizePropabilities(mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, mltoolset.PIPE.program.Node programNode)
+    private void normalizePropabilities(ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, ptrman.mltoolset.PIPE.program.Node programNode)
     {
         float propabilitySum;
         float oldPropability;
@@ -174,7 +174,7 @@ public class PipeInstance
             if (i != programNode.getInstruction().getIndex())
             {
                 pptNode.propabilityVector[i] *= (1.0f - gamma);
-                mltoolset.misc.Assert.Assert(pptNode.propabilityVector[i] <= 1.0f && pptNode.propabilityVector[i] >= 0.0f, "");
+                ptrman.mltoolset.misc.Assert.Assert(pptNode.propabilityVector[i] <= 1.0f && pptNode.propabilityVector[i] >= 0.0f, "");
             }
         }
 
@@ -184,7 +184,7 @@ public class PipeInstance
         }
     }
 
-    private static float calcGamma(mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, mltoolset.PIPE.program.Node programNode, float oldPropability)
+    private static float calcGamma(ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node pptNode, ptrman.mltoolset.PIPE.program.Node programNode, float oldPropability)
     {
         if (oldPropability == 1.0f)
         {
@@ -196,7 +196,7 @@ public class PipeInstance
         }
     }
 
-    private void mutationOfPrototypeTree(mltoolset.PIPE.program.Program bestProgram)
+    private void mutationOfPrototypeTree(ptrman.mltoolset.PIPE.program.Program bestProgram)
     {
         float mutationPropability;
         float bestRating;
@@ -209,12 +209,12 @@ public class PipeInstance
         mutateProgram(bestProgram, mutationPropability);
     }
 
-    private void mutateProgram(mltoolset.PIPE.program.Program bestProgram, float mutationPropability)
+    private void mutateProgram(ptrman.mltoolset.PIPE.program.Program bestProgram, float mutationPropability)
     {
         mutateNode(bestProgram.entry, mutationPropability);
     }
     
-    private void mutateNode(mltoolset.PIPE.program.Node bestProgram, float mutationPropability)
+    private void mutateNode(ptrman.mltoolset.PIPE.program.Node bestProgram, float mutationPropability)
     {
         boolean changed;
         int i;
@@ -241,7 +241,7 @@ public class PipeInstance
             rootnode.normalizePropabilities();
         }
         
-        for( mltoolset.PIPE.program.Node iterationNode : bestProgram.getChildrens() )
+        for( ptrman.mltoolset.PIPE.program.Node iterationNode : bestProgram.getChildrens() )
         {
             if( iterationNode != null )
             {
@@ -254,20 +254,20 @@ public class PipeInstance
     private void generationBasedLearningIteration()
     {
         int i;
-        ArrayList<mltoolset.PIPE.program.Program> population;
+        ArrayList<ptrman.mltoolset.PIPE.program.Program> population;
         Program bestProgram;
         
         population = new ArrayList<>();
         
         // (1) creation of program population
-        
-        mltoolset.misc.Assert.Assert(parameters.populationSize > 0, "populationsize must be >= 1");
+
+        ptrman.mltoolset.misc.Assert.Assert(parameters.populationSize > 0, "populationsize must be >= 1");
         for( i = 0; i < parameters.populationSize; i++ )
         {
-            mltoolset.PIPE.program.Program createdProgram;
+            ptrman.mltoolset.PIPE.program.Program createdProgram;
             
             createdProgram = new Program();
-            createdProgram.entry = new mltoolset.PIPE.program.Node();
+            createdProgram.entry = new ptrman.mltoolset.PIPE.program.Node();
             createProgramNodeFromPptNode(rootnode, createdProgram.entry);
             population.add(createdProgram);
         }
@@ -340,9 +340,9 @@ public class PipeInstance
     }
     
     // is at the beginning null
-    private mltoolset.PIPE.program.Program elitist;
+    private ptrman.mltoolset.PIPE.program.Program elitist;
 
-    private mltoolset.PIPE.PropabilisticPrototypeTree.Node rootnode;
+    private ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node rootnode;
 
     private ProblemspecificDescriptor problemspecificDescriptor;
     private Parameters parameters;

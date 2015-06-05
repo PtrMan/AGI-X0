@@ -1,4 +1,4 @@
-package mltoolset.Usage.NetworkEvolvator;
+package ptrman.mltoolset.Usage.NetworkEvolvator;
 
 import org.uncommons.maths.random.MersenneTwisterRNG;
 import org.uncommons.watchmaker.framework.*;

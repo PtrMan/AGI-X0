@@ -1,4 +1,4 @@
-package mltoolset.CellularAutomata;
+package ptrman.mltoolset.CellularAutomata;
 
 /**
  *

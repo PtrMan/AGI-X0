@@ -1,12 +1,11 @@
-package mltoolset.PIPE.program;
+package ptrman.mltoolset.PIPE.program;
 
 /**
  *
  * 
  */
-public class Program
-{
+public class Program {
     public float fitness;
     
-    public mltoolset.PIPE.program.Node entry;
+    public Node entry;
 }

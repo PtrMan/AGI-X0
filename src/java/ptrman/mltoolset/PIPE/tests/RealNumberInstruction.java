@@ -1,32 +1,25 @@
-package mltoolset.PIPE.tests;
+package ptrman.mltoolset.PIPE.tests;
 
-import java.util.Random;
-import mltoolset.PIPE.program.Instruction;
+import ptrman.mltoolset.PIPE.program.Instruction;
 
-
-public class RealNumberInstruction implements mltoolset.PIPE.program.Instruction
-{
+public class RealNumberInstruction implements ptrman.mltoolset.PIPE.program.Instruction {
     
-    public RealNumberInstruction(int index)
-    {
+    public RealNumberInstruction(int index) {
         this.index = index;
     }
     
     @Override
-    public int getNumberOfParameters()
-    {
+    public int getNumberOfParameters() {
         return 0;
     }
 
     @Override
-    public int getIndex()
-    {
+    public int getIndex() {
         return index;
     }
 
     @Override
-    public Instruction getInstance()
-    {
+    public Instruction getInstance() {
         return new RealNumberInstruction(index);
     }
     

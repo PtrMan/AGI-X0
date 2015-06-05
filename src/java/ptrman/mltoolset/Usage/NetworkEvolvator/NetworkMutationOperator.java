@@ -1,13 +1,14 @@
-package mltoolset.Usage.NetworkEvolvator;
+package ptrman.mltoolset.Usage.NetworkEvolvator;
 
-import mltoolset.Neuroid.Neuroid;
+
 import org.uncommons.watchmaker.framework.EvolutionaryOperator;
+import ptrman.mltoolset.Neuroid.Neuroid;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static mltoolset.math.DistinctUtility.getTwoDisjunctNumbers;
+import static ptrman.mltoolset.math.DistinctUtility.getTwoDisjunctNumbers;
 
 public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGeneticExpression> {
     private enum EnumOperation {

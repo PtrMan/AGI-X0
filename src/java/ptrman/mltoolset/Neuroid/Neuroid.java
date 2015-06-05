@@ -1,8 +1,10 @@
 // translated from C#
 
-package mltoolset.Neuroid;
+package ptrman.mltoolset.Neuroid;
 
-import mltoolset.Datastructures.NotDirectedGraph;
+
+import ptrman.mltoolset.Datastructures.NotDirectedGraph;
+import ptrman.mltoolset.misc.Assert;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -145,7 +147,7 @@ public class Neuroid<Weighttype, ModeType> {
             neuroidsGraph.graph.elements.get(neuronI).content.mode = modes;
             //neuroidsGraph.elements[neuronI].content.weights = weights;
             thresholdValid = weighttypeHelper.greater((Weighttype) neuroidsGraph.graph.elements.get(neuronI).content.threshold, weighttypeHelper.getValueForZero());
-            mltoolset.misc.Assert.Assert(thresholdValid, "threshold must be greater than 0.0!");
+            Assert.Assert(thresholdValid, "threshold must be greater than 0.0!");
         }
     }
 
@@ -268,7 +270,7 @@ public class Neuroid<Weighttype, ModeType> {
     }
 
     private void updateFiringForInputNeuroids() {
-        mltoolset.misc.Assert.Assert(allocatedInputNeuroids == input.length, "");
+        Assert.Assert(allocatedInputNeuroids == input.length, "");
         
         for( int inputNeuroidI = 0;inputNeuroidI < input.length; inputNeuroidI++ ) {
             neuroidsGraph.graph.elements.get(inputNeuroidI).content.nextFiring = input[inputNeuroidI];

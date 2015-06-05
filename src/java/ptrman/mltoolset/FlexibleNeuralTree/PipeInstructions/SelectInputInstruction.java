@@ -1,12 +1,12 @@
-package mltoolset.FlexibleNeuralTree.PipeInstructions;
+package ptrman.mltoolset.FlexibleNeuralTree.PipeInstructions;
 
-import mltoolset.PIPE.program.Instruction;
+import ptrman.mltoolset.PIPE.program.Instruction;
 
 /**
  *
  * returns a (at construction time determined) value and returns it
  */
-public class SelectInputInstruction implements mltoolset.PIPE.program.Instruction
+public class SelectInputInstruction implements Instruction
 {
     
     public SelectInputInstruction(int index, int variableIndex)

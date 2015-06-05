@@ -1,40 +1,36 @@
-package mltoolset.PIPE.tests;
+package ptrman.mltoolset.PIPE.tests;
+
+import ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node;
+import ptrman.mltoolset.PIPE.program.Instruction;
+import ptrman.mltoolset.PIPE.program.Program;
+import ptrman.mltoolset.misc.Assert;
 
 import java.util.ArrayList;
 import java.util.Random;
-import mltoolset.PIPE.PropabilisticPrototypeTree.Node;
-import mltoolset.PIPE.program.Instruction;
-import mltoolset.PIPE.program.Program;
-import mltoolset.misc.Assert;
 
-public class ProblemspecificDescriptorForTest implements mltoolset.PIPE.ProblemspecificDescriptor
-{
-    public ProblemspecificDescriptorForTest()
-    {
+public class ProblemspecificDescriptorForTest implements ptrman.mltoolset.PIPE.ProblemspecificDescriptor {
+    public ProblemspecificDescriptorForTest() {
         instructionPrototypes.add(new BinaryInstruction(BinaryInstruction.EnumOperation.ADD, 0));
         instructionPrototypes.add(new BinaryInstruction(BinaryInstruction.EnumOperation.SUB, 1));
         instructionPrototypes.add(new BinaryInstruction(BinaryInstruction.EnumOperation.MUL, 2));
         instructionPrototypes.add(new BinaryInstruction(BinaryInstruction.EnumOperation.DIV, 3));
-        instructionPrototypes.add(new TrigonometricInstruction(TrigonometricInstruction.EnumType.SIN, 4));
+        instructionPrototypes.add(new ptrman.mltoolset.PIPE.tests.TrigonometricInstruction(ptrman.mltoolset.PIPE.tests.TrigonometricInstruction.EnumType.SIN, 4));
         instructionPrototypes.add(new TerminalNumberConstantInstruction(0.0f, 5, new Random()));
         instructionPrototypes.add(new RealNumberInstruction(6));
     }
     
     @Override
-    public int getNumberOfArgumentsOfInstruction(Instruction selectedInstruction) 
-    {
+    public int getNumberOfArgumentsOfInstruction(Instruction selectedInstruction) {
         return selectedInstruction.getNumberOfParameters();
     }
 
     @Override
-    public Instruction createTerminalNode(float randomConstant)
-    {
+    public Instruction createTerminalNode(float randomConstant) {
         return new TerminalNumberConstantInstruction(randomConstant, 5, new Random());
     }
 
     @Override
-    public Instruction getInstructionByIndex(int selectedInstruction)
-    {
+    public Instruction getInstructionByIndex(int selectedInstruction) {
         Assert.Assert(selectedInstruction >= 0, "");
         Assert.Assert(selectedInstruction < instructionPrototypes.size(), "");
         
@@ -42,10 +38,8 @@ public class ProblemspecificDescriptorForTest implements mltoolset.PIPE.Problems
     }
 
     @Override
-    public float createTerminalNodeFromProblemdependSet()
-    {
-        switch( random.nextInt(2) )
-        {
+    public float createTerminalNodeFromProblemdependSet() {
+        switch( random.nextInt(2) ) {
             case 0:
             return 0.2f;
                 
@@ -61,8 +55,7 @@ public class ProblemspecificDescriptorForTest implements mltoolset.PIPE.Problems
     }
 
     @Override
-    public float getFitnessOfProgram(Program program)
-    {
+    public float getFitnessOfProgram(Program program) {
         float mse;
         float x;
         
@@ -84,14 +77,12 @@ public class ProblemspecificDescriptorForTest implements mltoolset.PIPE.Problems
         return evaluateNodeAt(program.entry, x);
     }
     
-    private static float evaluateNodeAt(mltoolset.PIPE.program.Node node, float x)
-    {
+    private static float evaluateNodeAt(ptrman.mltoolset.PIPE.program.Node node, float x) {
         int instructionIndex;
         
         instructionIndex = node.getInstruction().getIndex();
         
-        switch( instructionIndex )
-        {
+        switch( instructionIndex ) {
             case 0:
             return evaluateNodeAt(node.getChildrens().get(0), x) + evaluateNodeAt(node.getChildrens().get(1), x);
             
@@ -120,19 +111,16 @@ public class ProblemspecificDescriptorForTest implements mltoolset.PIPE.Problems
     
     
     @Override
-    public String getDescriptionOfProgramAsString(Program program)
-    {
+    public String getDescriptionOfProgramAsString(Program program) {
         return getDescriptionOfNodeAsString(program.entry);
     }
     
-    private String getDescriptionOfNodeAsString(mltoolset.PIPE.program.Node node)
-    {
+    private String getDescriptionOfNodeAsString(ptrman.mltoolset.PIPE.program.Node node) {
         int instructionIndex;
         
         instructionIndex = node.getInstruction().getIndex();
         
-        switch( instructionIndex )
-        {
+        switch( instructionIndex ) {
             case 0:
             return "(" + getDescriptionOfNodeAsString(node.getChildrens().get(0)) + " + " + getDescriptionOfNodeAsString(node.getChildrens().get(1)) + ")";
             

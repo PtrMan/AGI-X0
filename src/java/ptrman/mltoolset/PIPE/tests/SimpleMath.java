@@ -1,17 +1,15 @@
-package mltoolset.PIPE.tests;
+package ptrman.mltoolset.PIPE.tests;
 
-import mltoolset.PIPE.Parameters;
-import mltoolset.PIPE.PipeInstance;
+import ptrman.mltoolset.PIPE.Parameters;
+import ptrman.mltoolset.PIPE.PipeInstance;
 
-public class SimpleMath
-{
+public class SimpleMath {
     public static void main(String[] args) 
     {
         test();
     }
     
-    public static void test()
-    {
+    public static void test() {
         Parameters parameters;
         ProblemspecificDescriptorForTest problemspecificDescriptor;
         

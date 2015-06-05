@@ -1,15 +1,14 @@
-package mltoolset.Usage.NetworkEvolvator;
+package ptrman.mltoolset.Usage.NetworkEvolvator;
 
-import mltoolset.Neuroid.Neuroid;
 import org.uncommons.watchmaker.framework.CandidateFactory;
+import ptrman.mltoolset.Neuroid.Neuroid;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
-import static mltoolset.math.Math.getRandomIndices;
-
+import static ptrman.mltoolset.math.Math.getRandomIndices;
 
 public class NetworkCandidateFactory implements CandidateFactory<NetworkGeneticExpression> {
     private final int numberOfNeurons;

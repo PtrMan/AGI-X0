@@ -1,28 +1,27 @@
+package ptrman.mltoolset.PIPE;
 
-package mltoolset.PIPE;
-
-import mltoolset.PIPE.PropabilisticPrototypeTree.Node;
-import mltoolset.PIPE.program.Program;
+import ptrman.mltoolset.PIPE.program.Instruction;
+import ptrman.mltoolset.PIPE.program.Program;
 
 public interface ProblemspecificDescriptor
 {
-    int getNumberOfArgumentsOfInstruction(mltoolset.PIPE.program.Instruction selectedInstruction);
+    int getNumberOfArgumentsOfInstruction(Instruction selectedInstruction);
     
-    public mltoolset.PIPE.program.Instruction createTerminalNode(float randomConstant);
+    ptrman.mltoolset.PIPE.program.Instruction createTerminalNode(float randomConstant);
 
-    public mltoolset.PIPE.program.Instruction getInstructionByIndex(int selectedInstruction);
+    ptrman.mltoolset.PIPE.program.Instruction getInstructionByIndex(int selectedInstruction);
 
-    public float createTerminalNodeFromProblemdependSet();
+    float createTerminalNodeFromProblemdependSet();
     
     // lower fitness is better
-    public float getFitnessOfProgram(mltoolset.PIPE.program.Program program);
+    float getFitnessOfProgram(ptrman.mltoolset.PIPE.program.Program program);
     
 
-    public float getNumberOfInstructions();
+    float getNumberOfInstructions();
 
 
-    public Node createPptNode();
+    ptrman.mltoolset.PIPE.PropabilisticPrototypeTree.Node createPptNode();
 
-    public String getDescriptionOfProgramAsString(Program elitist);
+    String getDescriptionOfProgramAsString(Program elitist);
     
 }

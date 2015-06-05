@@ -1,36 +1,31 @@
+package ptrman.mltoolset.PIPE.tests;
 
-package mltoolset.PIPE.tests;
+import ptrman.mltoolset.PIPE.program.Instruction;
 
 import java.util.Random;
-import mltoolset.PIPE.program.Instruction;
 
 /**
  *
  * 
  */
-public class TerminalNumberConstantInstruction implements mltoolset.PIPE.program.Instruction
-{
-    public TerminalNumberConstantInstruction(float value, int index, Random random)
-    {
+public class TerminalNumberConstantInstruction implements ptrman.mltoolset.PIPE.program.Instruction {
+    public TerminalNumberConstantInstruction(float value, int index, Random random) {
         this.value = random.nextFloat();
         this.index = index;
         this.random = random;
     }
     
     @Override
-    public int getNumberOfParameters()
-    {
+    public int getNumberOfParameters() {
         return 0;
     }
     
     @Override
-    public int getIndex()
-    {
+    public int getIndex() {
         return index;
     }
     
-    public float getValue()
-    {
+    public float getValue() {
         return value;
     }
     
@@ -39,8 +34,7 @@ public class TerminalNumberConstantInstruction implements mltoolset.PIPE.program
     private Random random;
 
     @Override
-    public Instruction getInstance()
-    {
+    public Instruction getInstance() {
         return new TerminalNumberConstantInstruction(random.nextFloat(), index, random);
     }
 }

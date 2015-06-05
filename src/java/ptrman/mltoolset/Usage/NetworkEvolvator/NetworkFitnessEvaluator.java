@@ -1,7 +1,7 @@
-package mltoolset.Usage.NetworkEvolvator;
+package ptrman.mltoolset.Usage.NetworkEvolvator;
 
-import mltoolset.Neuroid.Neuroid;
 import org.uncommons.watchmaker.framework.FitnessEvaluator;
+import ptrman.mltoolset.Neuroid.Neuroid;
 
 import java.util.List;
 import java.util.Random;

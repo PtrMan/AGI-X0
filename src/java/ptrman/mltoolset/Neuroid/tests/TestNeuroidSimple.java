@@ -1,6 +1,6 @@
-package mltoolset.Neuroid.tests;
+package ptrman.mltoolset.Neuroid.tests;
 
-import mltoolset.Neuroid.Neuroid;
+import ptrman.mltoolset.Neuroid.Neuroid;
 
 import java.util.List;
 import java.util.Random;

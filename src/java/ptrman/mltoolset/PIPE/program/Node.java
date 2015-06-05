@@ -1,16 +1,15 @@
-package mltoolset.PIPE.program;
+package ptrman.mltoolset.PIPE.program;
+
+import ptrman.mltoolset.misc.Assert;
 
 import java.util.ArrayList;
-import mltoolset.misc.Assert;
 
 /**
  *
  * 
  */
-public class Node
-{
-    public void setInstruction(Instruction instruction)
-    {
+public class Node {
+    public void setInstruction(Instruction instruction) {
         Assert.Assert(instruction != null, "");
         
         this.instruction = instruction;
@@ -27,13 +26,12 @@ public class Node
     }
     
     
-    public int getNumberOfNodesRecursive()
-    {
+    public int getNumberOfNodesRecursive() {
         int numberOfNodes;
         
         numberOfNodes = 1;
         
-        for( mltoolset.PIPE.program.Node iterationNode : getChildrens() )
+        for( Node iterationNode : getChildrens() )
         {
             numberOfNodes += iterationNode.getNumberOfNodesRecursive();
         }

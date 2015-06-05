@@ -1,41 +1,36 @@
-package mltoolset.PIPE.tests;
+package ptrman.mltoolset.PIPE.tests;
 
-import mltoolset.PIPE.program.Instruction;
+
+import ptrman.mltoolset.PIPE.program.Instruction;
 
 /**
  *
  *
  */
-public class TrigonometricInstruction implements mltoolset.PIPE.program.Instruction
-{
+public class TrigonometricInstruction implements ptrman.mltoolset.PIPE.program.Instruction {
 
     @Override
-    public Instruction getInstance()
-    {
+    public Instruction getInstance() {
         return new TrigonometricInstruction(type, index);
     }
     
-    public enum EnumType
-    {
+    public enum EnumType {
         SIN
     }
     
-    public TrigonometricInstruction(EnumType type, int index)
-    {
+    public TrigonometricInstruction(EnumType type, int index) {
         this.type = type;
         this.index = index;
     }
     
     
     @Override
-    public int getNumberOfParameters()
-    {
+    public int getNumberOfParameters() {
         return 1;
     }
 
     @Override
-    public int getIndex()
-    {
+    public int getIndex() {
         return index;
     }
 

@@ -1,15 +1,11 @@
-package mltoolset.PIPE.program;
-
-import java.util.Random;
+package ptrman.mltoolset.PIPE.program;
 
 /**
  *
  */
 public interface Instruction
 {
-    public int getNumberOfParameters();
-    
-    public int getIndex();
-    
-    public Instruction getInstance();
+    int getNumberOfParameters();
+    int getIndex();
+    Instruction getInstance();
 }
