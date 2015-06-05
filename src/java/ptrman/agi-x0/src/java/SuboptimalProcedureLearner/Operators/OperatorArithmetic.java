@@ -15,13 +15,17 @@ public class OperatorArithmetic extends Operator {
         EXECUTE
     }
 
-    private enum EnumType {
+    public enum EnumType {
         ADD,
         SUB,
         MUL,
         DIV,
         MAX,
         MIN,
+    }
+
+    public OperatorArithmetic() {
+        super();
     }
 
     public IntrospectWiringInfo introspectWiring(OperatorInstance instance, int[] inputIndices) {
@@ -36,7 +40,7 @@ public class OperatorArithmetic extends Operator {
         if (parameterInstances.size() != 2) {
             throw new RuntimeException(getShortName() + ": The must be only two parameterInstances!");
         }
-         
+
         instance.calleeOperatorInstances = new OperatorInstance[2];
         instance.calleeOperatorInstances[0] = parameterInstances.get(0);
         instance.calleeOperatorInstances[1] = parameterInstances.get(1);
@@ -131,10 +135,6 @@ public class OperatorArithmetic extends Operator {
     }
 
     public void operationCleanup(OperatorInstance instance) {
-    }
-
-    public boolean isScaffold() {
-        return false;
     }
 
     public String getShortName() {

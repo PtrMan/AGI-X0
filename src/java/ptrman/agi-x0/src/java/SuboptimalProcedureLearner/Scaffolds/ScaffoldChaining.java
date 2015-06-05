@@ -35,6 +35,10 @@ import java.util.List;
  *  ...
  */
 public class ScaffoldChaining extends Scaffold {
+    public ScaffoldChaining() {
+        super();
+    }
+
     @Override
     public String getShortName() {
         return this.getClass().getName();
@@ -61,6 +65,12 @@ public class ScaffoldChaining extends Scaffold {
         }
 
         return new ExecutionRequest(internalOperatorIndex, Arrays.asList(leftSide, rightSide));
+    }
+
+    @Override
+    public void feedResult(Variadic result) {
+        // TODO
+        throw new RuntimeException("TODO");
     }
 
     private int internalOperatorIndex;

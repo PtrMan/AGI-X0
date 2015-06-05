@@ -12,31 +12,27 @@ public class Executive {
         public static class StackElement {
             public enum EnumExecutionState {
                 /*
-                                public enum EnumExecutionState
-                                {
-                                    ITERATINGOVERINPUTS,
-                                    
-                                    
-                                    
-                                    
-                                    ITERATINGOVERINPUTS,
-                                    BEFOREEXECUTION,
-                                    EXECUTED
-                                };
+                 public enum EnumExecutionState
+                 {
+                    ITERATINGOVERINPUTS,
+
+                    ITERATINGOVERINPUTS,
+                    BEFOREEXECUTION,
+                    EXECUTED
+                 };
                                 
-                                
-                                public EnumExecutionState excutionState = EnumExecutionState.ITERATINGOVERINPUTS;
-                                public List<int> remainingSlotIndices;
-                                public int currentIterationParameterIndex = 0;
-                                public int cachedParameterNumber;
-                                public List<int> cachedPath; // path used by instance of OperatorPlan
-                                public List<Variadic> collectedParameters;
-                                */
+                 public EnumExecutionState operatorExcutionState = EnumExecutionState.ITERATINGOVERINPUTS;
+                 public List<int> remainingSlotIndices;
+                 public int currentIterationParameterIndex = 0;
+                 public int cachedParameterNumber;
+                 public List<int> cachedPath; // path used by instance of OperatorPlan
+                 public List<Variadic> collectedParameters;
+                 */
                 INITIALIZE,
                 // sets parameter-instances and calls the initialisation method
                 EXECUTESINGLESTEP
             }
-            public EnumExecutionState excutionState = EnumExecutionState.INITIALIZE;
+            public EnumExecutionState operatorExcutionState = EnumExecutionState.INITIALIZE;
             public OperatorInstance operatorInstance;
             public List<Integer> cachedPath = new ArrayList<>();
         }
@@ -83,38 +79,64 @@ public class Executive {
          *
          */
         public void step()  {
-            OperatorInstance currentOperatorInstance;
-            Operator correspondingOperator;
-            StackElement currentStackElement;
             List<OperatorInstance> parameterOperatorInstances = new ArrayList<>();
             Operator.ExecutionResult operatorExecutionResult;
-            currentStackElement = operatorStack.get(operatorStack.size() - 1);
-            currentOperatorInstance = currentStackElement.operatorInstance;
-            correspondingOperator = currentOperatorInstance.getCorrespondingOperator();
-            switch(currentStackElement.excutionState) {
-                case INITIALIZE: 
-                    parameterOperatorInstances = operatorPlan.getParameterInstancesByPath(currentStackElement.cachedPath);
-                    correspondingOperator.setParameterOperatorInstances(currentOperatorInstance, parameterOperatorInstances);
-                    correspondingOperator.initializeOperatorInstance(currentOperatorInstance);
-                    currentStackElement.excutionState = StackElement.EnumExecutionState.EXECUTESINGLESTEP;
-                    break;
-                case EXECUTESINGLESTEP: 
-                    increaseExecutionStepCounter();
-                    operatorExecutionResult = correspondingOperator.executeSingleStep(currentOperatorInstance);
-                    checkExecutionResultForErrorAndThrow(correspondingOperator, operatorExecutionResult);
-                    if (operatorExecutionResult.resultState == Operator.ExecutionResult.EnumResultState.EXECUTEOPERATORINSTANCE) {
-                        pushNewOperator(operatorExecutionResult.instanceToExecute);
-                    }
-                    else if (operatorExecutionResult.resultState == Operator.ExecutionResult.EnumResultState.RESULT) {
-                        propagateResultDown(operatorExecutionResult.resultValue);
-                        operatorStack.remove(operatorStack.size() - 1);
-                    }
-                    else {
-                        throw new RuntimeException("Internal Error");
-                    }  
-                    break;
-            
+            StackElement currentStackElement = operatorStack.get(operatorStack.size() - 1);
+            OperatorInstance currentOperatorInstance = currentStackElement.operatorInstance;
+            AbstractOperatorBase correspondingAbstractOperatorBase = currentOperatorInstance.getCorrespondingOperator();
+
+            if( correspondingAbstractOperatorBase.isOperator() ) {
+                Operator correspondingOperator = (Operator)correspondingAbstractOperatorBase;
+
+                switch(currentStackElement.operatorExcutionState) {
+                    case INITIALIZE:
+                        parameterOperatorInstances = operatorPlan.getParameterInstancesByPath(currentStackElement.cachedPath);
+                        correspondingOperator.setParameterOperatorInstances(currentOperatorInstance, parameterOperatorInstances);
+                        correspondingOperator.initializeOperatorInstance(currentOperatorInstance);
+                        currentStackElement.operatorExcutionState = StackElement.EnumExecutionState.EXECUTESINGLESTEP;
+                        break;
+                    case EXECUTESINGLESTEP:
+                        increaseExecutionStepCounter();
+                        operatorExecutionResult = correspondingOperator.executeSingleStep(currentOperatorInstance);
+                        checkExecutionResultForErrorAndThrow(correspondingOperator, operatorExecutionResult);
+                        if (operatorExecutionResult.resultState == Operator.ExecutionResult.EnumResultState.EXECUTEOPERATORINSTANCE) {
+                            pushNewOperator(operatorExecutionResult.instanceToExecute);
+                        }
+                        else if (operatorExecutionResult.resultState == Operator.ExecutionResult.EnumResultState.RESULT) {
+                            propagateResultDown(operatorExecutionResult.resultValue);
+                            operatorStack.remove(operatorStack.size() - 1);
+                        }
+                        else {
+                            throw new RuntimeException("Internal Error");
+                        }
+                        break;
+
+                }
             }
+            else {
+                Scaffold correspondingScaffold = (Scaffold)correspondingAbstractOperatorBase;
+
+                // NOTE 30.5.2015 dunno what to write here and how to handle a scaffold
+
+                switch(currentStackElement.operatorExcutionState) {
+                    case INITIALIZE:
+
+                        // TODO
+                        currentStackElement.operatorExcutionState = StackElement.EnumExecutionState.EXECUTESINGLESTEP;
+                        break;
+                    case EXECUTESINGLESTEP:
+                        // TODO
+                        int debug = 0;
+
+                        break;
+                }
+
+                // TODO
+
+                // we execute the step of a scaffold
+            }
+
+
         }
 
         // pop
@@ -131,7 +153,18 @@ public class Executive {
             // else
             StackElement stackElementBelow = operatorStack.get(operatorStack.size() - 2);
             OperatorInstance operatorInstanceBelow = stackElementBelow.operatorInstance;
-            operatorInstanceBelow.getCorrespondingOperator().feedOperatorInstanceResult(operatorInstanceBelow,value);
+
+            if( operatorInstanceBelow.getCorrespondingOperator().isOperator() ) {
+                Operator corespondingOperator = (Operator)operatorInstanceBelow.getCorrespondingOperator();
+                corespondingOperator.feedOperatorInstanceResult(operatorInstanceBelow, value);
+            }
+            else if( operatorInstanceBelow.getCorrespondingOperator().isScaffold() ) {
+                Scaffold corespondingScaffold = (Scaffold)operatorInstanceBelow.getCorrespondingOperator();
+                corespondingScaffold.feedResult(value);
+            }
+            else {
+                throw new RuntimeException("Internal Error");
+            }
         }
 
         private void pushNewOperator(OperatorInstance instanceToExecute) {

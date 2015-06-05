@@ -9,6 +9,10 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import java.util.List;
 
 public class OperatorConstant  extends Operator {
+    public OperatorConstant() {
+        super();
+    }
+
     public IntrospectWiringInfo introspectWiring(OperatorInstance instance, int[] inputIndices) {
         throw new NotImplementedException();
     }
@@ -36,10 +40,6 @@ public class OperatorConstant  extends Operator {
     }
 
     public void operationCleanup(OperatorInstance instance) {
-    }
-
-    public boolean isScaffold() {
-        return false;
     }
 
     public String getShortName() {

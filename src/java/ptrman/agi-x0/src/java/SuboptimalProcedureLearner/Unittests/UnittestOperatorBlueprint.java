@@ -1,7 +1,8 @@
 package SuboptimalProcedureLearner.Unittests;
 
+import Datastructures.Variadic;
 import SuboptimalProcedureLearner.OperatorBlueprint;
-import SuboptimalProcedureLearner.Operators.OperatorAdd;
+import SuboptimalProcedureLearner.Operators.OperatorArithmetic;
 import SuboptimalProcedureLearner.Operators.OperatorConstant;
 import ptrman.misc.Assert;
 
@@ -18,7 +19,11 @@ public class UnittestOperatorBlueprint {
         OperatorBlueprint planOrginal;
         OperatorBlueprint.TreeElement rootElementOrginal;
         rootElementOrginal = new OperatorBlueprint.TreeElement(OperatorBlueprint.TreeElement.EnumType.BRANCH);
-        rootElementOrginal.operatorToInstanciate = new OperatorAdd();
+        rootElementOrginal.operatorToInstanciate = new OperatorArithmetic();
+        rootElementOrginal.constantsForOperatorInstance = new Variadic[1];
+        rootElementOrginal.constantsForOperatorInstance[0] = new Variadic(Variadic.EnumType.INT);
+        rootElementOrginal.constantsForOperatorInstance[0].valueInt = OperatorArithmetic.EnumType.ADD.ordinal();
+
         rootElementOrginal.childrens = new ArrayList<>();
         rootElementOrginal.childrens.add(new OperatorBlueprint.TreeElement(OperatorBlueprint.TreeElement.EnumType.DUMMY));
         rootElementOrginal.childrens.add(new OperatorBlueprint.TreeElement(OperatorBlueprint.TreeElement.EnumType.DUMMY));

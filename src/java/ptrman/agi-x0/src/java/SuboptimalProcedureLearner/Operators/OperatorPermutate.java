@@ -21,6 +21,10 @@ public class OperatorPermutate extends Operator {
         EXECUTE,
     }
 
+    public OperatorPermutate() {
+        super();
+    }
+
     public IntrospectWiringInfo introspectWiring(OperatorInstance instance, int[] inputIndices) {
         IntrospectWiringInfo wiringInfo = new IntrospectWiringInfo();
         wiringInfo.type = IntrospectWiringInfo.EnumType.VALIDWIRING;
@@ -88,10 +92,6 @@ public class OperatorPermutate extends Operator {
     }
 
     public void operationCleanup(OperatorInstance instance) {
-    }
-
-    public boolean isScaffold() {
-        return false;
     }
 
     public String getShortName() {

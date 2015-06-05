@@ -31,6 +31,10 @@ public class OperatorComparisationBooleanResult extends Operator {
         UNEQUAL
     }
 
+    public OperatorComparisationBooleanResult() {
+        super();
+    }
+
     @Override
     public IntrospectWiringInfo introspectWiring(OperatorInstance instance, int[] inputIndices) {
         throw new NotImplementedException();
@@ -93,11 +97,6 @@ public class OperatorComparisationBooleanResult extends Operator {
 
     @Override
     public void operationCleanup(OperatorInstance instance) {
-    }
-
-    @Override
-    public boolean isScaffold() {
-        return false;
     }
 
     @Override

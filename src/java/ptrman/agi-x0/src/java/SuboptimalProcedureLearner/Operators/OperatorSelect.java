@@ -19,6 +19,10 @@ public class OperatorSelect extends Operator {
         RETURN
     }
 
+    public OperatorSelect() {
+        super();
+    }
+
     @Override
     public IntrospectWiringInfo introspectWiring(OperatorInstance instance, int[] inputIndices) {
         throw new NotImplementedException();
@@ -78,11 +82,6 @@ public class OperatorSelect extends Operator {
 
     @Override
     public void operationCleanup(OperatorInstance instance) {
-    }
-
-    @Override
-    public boolean isScaffold() {
-        return false;
     }
 
     @Override

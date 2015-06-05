@@ -44,6 +44,10 @@ abstract public class Operator extends AbstractOperatorBase {
         public Variadic resultValue;
     }
 
+    public Operator() {
+        super(EnumType.OPERATOR);
+    }
+
     abstract public IntrospectWiringInfo introspectWiring(OperatorInstance instance, int[] inputIndices);
 
     abstract public OperatorInstance createOperatorInstance();

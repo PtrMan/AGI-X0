@@ -20,9 +20,12 @@ abstract public class Scaffold extends AbstractOperatorBase {
         public final List<Variadic> callParameters;
     }
 
-    final public boolean isScaffold() {
-        return true;
+    public Scaffold() {
+        super(EnumType.SCAFFOLD);
     }
 
     public abstract ExecutionRequest executeScaffold();
+
+    // gets called from the executive if a AbstractOperatorBase was executed
+    abstract public void feedResult(Variadic result);
 }
