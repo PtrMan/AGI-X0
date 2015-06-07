@@ -13,7 +13,21 @@ public class CellularAutomata {
     }
 
     public static class Cell {
-        public Cell(final Rule[] rules) {
+        public static Cell createFromRules(final  Rule[] rules) {
+            return new Cell(rules);
+        }
+
+        public static Cell createFromRulenumber(final int rulenumber) {
+            Rule[] rules = new Rule[8];
+
+            for( int index = 0; index < 8; index++ ) {
+                rules[index] = new Rule((rulenumber & (1 << index)) != 0);
+            }
+
+            return createFromRules(rules);
+        }
+
+        private Cell(final Rule[] rules) {
             this.rules = rules;
         }
 
@@ -52,8 +66,14 @@ public class CellularAutomata {
         }
     }
 
+    public void outputToInput() {
+        for( int i = 0; i < inputVector.length; i++ ) {
+            inputVector[i] = resultVector[i];
+        }
+    }
+
     public boolean[] inputVector;
     public Cell[] cells;
     public boolean[] resultVector;
-    private boolean wrapAround;
+    public boolean wrapAround;
 }
