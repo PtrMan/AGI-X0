@@ -55,16 +55,18 @@ public class NetworkCandidateFactory implements CandidateFactory<NetworkGeneticE
             }
 
             int sourceNeuronIndexIndex = random.nextInt(neuronIndices.size());
-            int sourceNueronIndex = neuronIndices.get(sourceNeuronIndexIndex);
+            int sourceNeuronIndex = neuronIndices.get(sourceNeuronIndexIndex);
 
             int targetNeuronIndexIndex = random.nextInt(neuronIndices.size());
             int targetNeuronIndex = neuronIndices.get(targetNeuronIndexIndex);
 
-            if( sourceNueronIndex == targetNeuronIndex ) {
+            if( sourceNeuronIndex == targetNeuronIndex ) {
                 continue;
             }
 
-            result.connectionsWithWeights.add(new Neuroid.NeuroidGraph.WeightTuple<Float>(sourceNueronIndex, targetNeuronIndex, 0.5f));
+            // for now just hidden connections because it can evolve the connections to the input later
+
+            result.connectionsWithWeights.add(new Neuroid.Helper.EdgeWeightTuple<Float>(new Neuroid.Helper.EdgeWeightTuple.NeuronAdress(sourceNeuronIndex, Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN), new Neuroid.Helper.EdgeWeightTuple.NeuronAdress( targetNeuronIndex, Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN), 0.5f));
             counterOfConnections++;
         }
 

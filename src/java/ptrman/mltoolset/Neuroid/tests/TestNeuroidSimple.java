@@ -21,24 +21,26 @@ public class TestNeuroidSimple {
         }
 
         @Override
-        public void calculateUpdateFunction(int neuronIndex, Neuroid.NeuroidGraphElement neuroid, List<Integer> updatedMode, List<Float> updatedWeights, Neuroid.IWeighttypeHelper<Float> weighttypeHelper) {
-            neuroid.nextFiring = neuroid.isStimulated(weighttypeHelper);
+        public void calculateUpdateFunction(Neuroid.NeuroidGraph.NeuronNode<Float, Integer> neuroid, Neuroid.IWeighttypeHelper<Float> weighttypeHelper) {
+            neuroid.graphElement.nextFiring = neuroid.graphElement.isStimulated(weighttypeHelper);
 
-            if (neuroid.nextFiring) {
-                neuroid.remainingLatency = latencyAfterActivation;
+            if (neuroid.graphElement.nextFiring) {
+                neuroid.graphElement.remainingLatency = latencyAfterActivation;
             }
             else {
                 boolean isFiring = (float)random.nextFloat() < randomFiringPropability;
 
-                neuroid.nextFiring = isFiring;
+                neuroid.graphElement.nextFiring = isFiring;
             }
         }
 
         @Override
-        public void initialize(Neuroid.NeuroidGraphElement neuroid, List<Integer> parentIndices, List<Integer> updatedMode, List<Float> updatedWeights) {
+        public void initialize(Neuroid.NeuroidGraph.NeuronNode<Float, Integer> neuroid, List<Integer> updatedMode, List<Float> updatedWeights) {
+
         }
 
         private Random random = new Random();
+
     }
 
     public static void main(String[] args) {
@@ -49,16 +51,15 @@ public class TestNeuroidSimple {
         Neuroid<Float, Integer> neuroid = new Neuroid<>(new Neuroid.FloatWeighttypeHelper());
         neuroid.update = new Update(latencyAfterActivation, randomFiringPropability);
 
-        neuroid.allocateNeurons(6, 3);
+        neuroid.allocateNeurons(3, 3);
         neuroid.input = new boolean[3];
 
+        neuroid.getGraph().neuronNodes[0].graphElement.threshold = 0.5f;
+        neuroid.getGraph().neuronNodes[1].graphElement.threshold = 0.5f;
+        neuroid.getGraph().neuronNodes[2].graphElement.threshold = 0.5f;
 
-        neuroid.getGraph().elements.get(3).content.threshold = new Float(0.5f);
-        neuroid.getGraph().elements.get(4).content.threshold = new Float(0.5f);
-        neuroid.getGraph().elements.get(5).content.threshold = new Float(0.5f);
-
-        neuroid.addTwoWayConnection(2, 3, 0.9f);
-        neuroid.addTwoWayConnection(4, 5, 0.9f);
+        neuroid.addConnection(new Neuroid.NeuroidGraph.Edge<>(neuroid.getGraph().inputNeuronNodes[2], neuroid.getGraph().neuronNodes[0], 0.9f));
+        neuroid.addConnection(new Neuroid.NeuroidGraph.Edge<>(neuroid.getGraph().neuronNodes[0], neuroid.getGraph().neuronNodes[1], 0.9f));
 
         neuroid.initialize();
 
@@ -77,9 +78,6 @@ public class TestNeuroidSimple {
         }
 
         int debug = 0;
-
-
-        // TODO< test >
     }
 
 }

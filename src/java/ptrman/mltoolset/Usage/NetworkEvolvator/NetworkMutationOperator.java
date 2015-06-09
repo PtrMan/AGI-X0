@@ -28,11 +28,6 @@ public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGene
             resultList.add(createdGeneticExpression);
         }
 
-        //int mutationChosenIndex = random.nextInt(resultList.size());
-        //NetworkGeneticExpression chosenMutationGeneticExpression = resultList.get(mutationChosenIndex);
-
-        //mutate(random, chosenMutationGeneticExpression);
-
         for( NetworkGeneticExpression iterationGeneticExpression : resultList ) {
             mutate(random, iterationGeneticExpression);
         }
@@ -51,12 +46,24 @@ public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGene
             for( int tryCounter = 0; tryCounter < NUMBER_OF_TRIES; tryCounter++ ) {
                 boolean connectionExists = false;
 
-                List<Integer> neuronIndices = getTwoDisjunctNumbers(random, chosenMutationGeneticExpression.neuronCandidatesActive.length);
-                final int fromIndex = neuronIndices.get(0);
-                final int toIndex = neuronIndices.get(1);
+                final Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType sourceType = random.nextInt(2) == 0 ? Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.INPUT : Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN;
 
-                for( final Neuroid.NeuroidGraph.WeightTuple<Float> iterationConnection : chosenMutationGeneticExpression.connectionsWithWeights ) {
-                    if( iterationConnection.from == fromIndex && iterationConnection.to == toIndex ) {
+                final int sourceIndex, destinationIndex;
+
+                if( sourceType == Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN ) {
+                    List<Integer> neuronIndices = getTwoDisjunctNumbers(random, chosenMutationGeneticExpression.neuronCandidatesActive.length);
+
+                    sourceIndex = neuronIndices.get(0);
+                    destinationIndex = neuronIndices.get(1);
+                }
+                else {
+                    // TODO< get number of input neurons
+                    sourceIndex = random.nextInt(1);
+                    destinationIndex = random.nextInt(chosenMutationGeneticExpression.neuronCandidatesActive.length);
+                }
+
+                for( final Neuroid.Helper.EdgeWeightTuple<Float> iterationConnection : chosenMutationGeneticExpression.connectionsWithWeights ) {
+                    if( iterationConnection.sourceIndex.equals(new Neuroid.Helper.EdgeWeightTuple.NeuronAdress(sourceIndex, sourceType)) && iterationConnection.destinationIndex.equals(new Neuroid.Helper.EdgeWeightTuple.NeuronAdress(destinationIndex, Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN)) ) {
                         connectionExists = true;
                         break;
                     }
@@ -66,7 +73,7 @@ public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGene
                     continue;
                 }
 
-                chosenMutationGeneticExpression.connectionsWithWeights.add(new Neuroid.NeuroidGraph.WeightTuple<>(fromIndex, toIndex, 0.5f));
+                chosenMutationGeneticExpression.connectionsWithWeights.add(new Neuroid.Helper.EdgeWeightTuple<>(new Neuroid.Helper.EdgeWeightTuple.NeuronAdress(sourceIndex, sourceType), new Neuroid.Helper.EdgeWeightTuple.NeuronAdress(destinationIndex, Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN), 0.5f));
 
                 addedConnection = true;
 

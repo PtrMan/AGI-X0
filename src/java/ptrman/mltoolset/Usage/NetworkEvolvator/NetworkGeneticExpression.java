@@ -9,7 +9,7 @@ import java.util.List;
 public class NetworkGeneticExpression {
     public boolean[] neuronCandidatesActive; // contains flags of enabled neurons
 
-    public List<Neuroid.NeuroidGraph.WeightTuple<Float>> connectionsWithWeights = new ArrayList<Neuroid.NeuroidGraph.WeightTuple<Float>>();
+    public List<Neuroid.Helper.EdgeWeightTuple<Float>> connectionsWithWeights = new ArrayList<>();
 
     public NetworkGeneticExpression(int numberOfNeurons) {
         neuronCandidatesActive = new boolean[numberOfNeurons];
@@ -21,7 +21,7 @@ public class NetworkGeneticExpression {
         cloned = new NetworkGeneticExpression(neuronCandidatesActive.length);
         cloned.neuronCandidatesActive = neuronCandidatesActive;
 
-        for( final Neuroid.NeuroidGraph.WeightTuple<Float> iterationConnection : connectionsWithWeights ) {
+        for( final Neuroid.Helper.EdgeWeightTuple<Float> iterationConnection : connectionsWithWeights ) {
             cloned.connectionsWithWeights.add(iterationConnection);
         }
 

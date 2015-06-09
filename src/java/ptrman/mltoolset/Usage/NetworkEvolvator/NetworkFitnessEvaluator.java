@@ -19,24 +19,26 @@ public class NetworkFitnessEvaluator implements FitnessEvaluator<NetworkGeneticE
         }
 
         @Override
-        public void calculateUpdateFunction(int neuronIndex, Neuroid.NeuroidGraphElement neuroid, List<Integer> updatedMode, List<Float> updatedWeights, Neuroid.IWeighttypeHelper<Float> weighttypeHelper) {
-            neuroid.nextFiring = neuroid.isStimulated(weighttypeHelper);
+        public void calculateUpdateFunction(Neuroid.NeuroidGraph.NeuronNode<Float, Integer> neuroid, Neuroid.IWeighttypeHelper<Float> weighttypeHelper) {
+            neuroid.graphElement.nextFiring = neuroid.graphElement.isStimulated(weighttypeHelper);
 
-            if (neuroid.nextFiring) {
-                neuroid.remainingLatency = latencyAfterActivation;
+            if (neuroid.graphElement.nextFiring) {
+                neuroid.graphElement.remainingLatency = latencyAfterActivation;
             }
             else {
                 boolean isFiring = (float)random.nextFloat() < randomFiringPropability;
 
-                neuroid.nextFiring = isFiring;
+                neuroid.graphElement.nextFiring = isFiring;
             }
         }
 
         @Override
-        public void initialize(Neuroid.NeuroidGraphElement neuroid, List<Integer> parentIndices, List<Integer> updatedMode, List<Float> updatedWeights) {
+        public void initialize(Neuroid.NeuroidGraph.NeuronNode<Float, Integer> neuroid, List<Integer> updatedMode, List<Float> updatedWeights) {
+
         }
 
         private Random random = new Random();
+
     }
 
     public double getFitness(NetworkGeneticExpression networkGeneticExpression, List<? extends NetworkGeneticExpression> list) {
@@ -59,10 +61,10 @@ public class NetworkFitnessEvaluator implements FitnessEvaluator<NetworkGeneticE
         neuroid.input = new boolean[numberOfInputNeurons];
 
         for( int neuronI = 0; neuronI < networkGeneticExpression.neuronCandidatesActive.length; neuronI++ ) {
-            neuroid.getGraph().elements.get(neuronI).content.threshold = new Float(0.4f);
+            neuroid.getGraph().neuronNodes[neuronI].graphElement.threshold = new Float(0.4f);
         }
 
-        neuroid.addConnections(networkGeneticExpression.connectionsWithWeights);
+        neuroid.addEdgeWeightTuples(networkGeneticExpression.connectionsWithWeights);
 
         neuroid.initialize();
 

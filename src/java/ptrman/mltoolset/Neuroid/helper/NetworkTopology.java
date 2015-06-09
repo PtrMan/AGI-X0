@@ -6,14 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NetworkTopology {
-    public static List<Neuroid.NeuroidGraph.WeightTuple<Float>> getConnectionsForChainBetweenNeurons(final List<Integer> neuronIndices, final float weight) {
-        List<Neuroid.NeuroidGraph.WeightTuple<Float>> resultList = new ArrayList<>();
+    public static List<Neuroid.Helper.EdgeWeightTuple<Float>> getConnectionsForChainBetweenNeurons(final List<Neuroid.Helper.EdgeWeightTuple.NeuronAdress> neuronAdresses, final float weight) {
+        List<Neuroid.Helper.EdgeWeightTuple<Float>> resultList = new ArrayList<>();
 
-        for( int neuronIndicesIndex = 0; neuronIndicesIndex < neuronIndices.size()-1; neuronIndicesIndex++ ) {
-            final int fromIndex = neuronIndices.get(neuronIndicesIndex);
-            final int toIndex = neuronIndices.get(neuronIndicesIndex+1);
+        for( int neuronIndicesIndex = 0; neuronIndicesIndex < neuronAdresses.size()-1; neuronIndicesIndex++ ) {
+            final Neuroid.Helper.EdgeWeightTuple.NeuronAdress sourceAdress = neuronAdresses.get(neuronIndicesIndex);
+            final Neuroid.Helper.EdgeWeightTuple.NeuronAdress destinationAdress = neuronAdresses.get(neuronIndicesIndex+1);
 
-            resultList.add(new Neuroid.NeuroidGraph.WeightTuple<>(fromIndex, toIndex, weight));
+            resultList.add(new Neuroid.Helper.EdgeWeightTuple<>(sourceAdress, destinationAdress, weight));
         }
 
         return resultList;

@@ -1,6 +1,6 @@
 package ptrman.mltoolset.math;
 
-import ptrman.misc.Assert;
+import ptrman.mltoolset.misc.Assert;
 
 import java.util.*;
 
@@ -97,7 +97,7 @@ public class Math {
     }
 
     public static<Type> List<Type> getRandomElements(final List<Type> source, final int numberOfSamples, Random random) {
-        Set<Type> result = new TreeSet<>();
+        Set<Type> result = new TreeSet<Type>();
 
         Assert.Assert(source.size() >= numberOfSamples, "Source has too less elements!");
 
