@@ -115,8 +115,8 @@ public class Neuroid<Weighttype, ModeType> {
     public static class Helper {
         public static class EdgeWeightTuple<Weighttype> {
             public static class NeuronAdress {
-                private final int index;
-                private final EnumType type;
+                public final int index;
+                public final EnumType type;
 
                 public enum EnumType {
                     INPUT,
