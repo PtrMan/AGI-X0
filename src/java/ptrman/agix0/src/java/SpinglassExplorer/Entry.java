@@ -3,6 +3,7 @@ package ptrman.agix0.src.java.SpinglassExplorer;
 
 import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
 import ptrman.agix0.src.java.Evolvator.Evironment.Playground;
+import ptrman.agix0.src.java.Serialisation;
 import ptrman.agix0.src.java.SpinglassExplorer.Gui.NeuronGraphLayout;
 import ptrman.agix0.src.java.SpinglassExplorer.Gui.SingleNetworkCanvas;
 import ptrman.agix0.src.java.SpinglassExplorer.Gui.WindowContent;
@@ -18,13 +19,37 @@ public class Entry {
         Entry entry = new Entry();
     }
 
+    private class LoadNetworkHandler implements WindowContent.ILoadNetworkHandler {
+        private final Entry entry;
+
+        public LoadNetworkHandler(Entry entry) {
+            this.entry = entry;
+        }
+
+        @Override
+        public void load(String filepath) {
+            entry.loadNeuralNetwork(filepath);
+        }
+    }
+
+    // called from GUI code when the user wants to load a neural network (and let it simulate)
+    private void loadNeuralNetwork(String filepath) {
+        int todo = 0;
+
+        neuralNetworkDescriptor = Serialisation.loadNetworkFromFilepath(filepath);
+        recalculateLayoutOfNeurons();
+
+        neuralNetworkDisplayState.allocateAfterDescriptor(neuralNetworkDescriptor);
+        networkCanvas.networkState = neuralNetworkDisplayState;
+    }
+
     public Entry() {
         playground = new Playground();
 
         // just for testing
         //writeTestNetwork();
 
-        WindowContent content = new WindowContent(playground);
+        WindowContent content = new WindowContent(playground, new LoadNetworkHandler(this));
         networkCanvas = content.networkCanvas;
 
         JFrame windowFrame = new JFrame("Spinglass explorer");
@@ -36,16 +61,6 @@ public class Entry {
 
         windowFrame.setSize(500, 500);
         windowFrame.setVisible(true);
-
-        // testing loading and graph layout mechanism
-        //neuralNetworkDescriptor = Serialisation.loadNetworkFromFilepath("/tmp/network.json");
-        //recalculateLayoutOfNeurons();
-
-
-
-        // misc
-        neuralNetworkDisplayState.allocateAfterDescriptor(neuralNetworkDescriptor);
-        networkCanvas.networkState = neuralNetworkDisplayState;
     }
 
     private void recalculateLayoutOfNeurons() {

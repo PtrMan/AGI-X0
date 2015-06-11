@@ -22,6 +22,10 @@ public class Environment2dCanvas extends Canvas {
     public void paint(Graphics graphics) {
         final double DIRECTION_RADIUS = 30.0;
 
+        if( playground == null ) {
+            return;
+        }
+
         // just draw a line for each entity for now
 
         for( Entity iterationEntity : playground.entities ) {

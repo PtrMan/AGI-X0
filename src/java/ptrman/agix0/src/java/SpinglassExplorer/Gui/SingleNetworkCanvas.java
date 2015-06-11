@@ -15,6 +15,10 @@ public class SingleNetworkCanvas extends Canvas {
     public void paint(Graphics graphics) {
         final float NEURON_RADIUS = 4.0f;
 
+        if( networkState == null ) {
+            return;
+        }
+
         for( int neuronI = 0; neuronI < networkState.integratedActiviationOfInputNeurons.length; neuronI++ ) {
             final float integratedActivation = networkState.integratedActiviationOfInputNeurons[neuronI];
 

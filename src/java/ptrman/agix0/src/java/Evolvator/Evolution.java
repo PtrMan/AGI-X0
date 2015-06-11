@@ -4,6 +4,7 @@ import org.uncommons.maths.random.MersenneTwisterRNG;
 import org.uncommons.watchmaker.framework.*;
 import org.uncommons.watchmaker.framework.selection.RouletteWheelSelection;
 import org.uncommons.watchmaker.framework.termination.GenerationCount;
+import ptrman.agix0.src.java.Serialisation;
 
 /**
  *
@@ -33,6 +34,7 @@ public class Evolution {
 
                 NetworkGeneticExpression bestCandidate = data.getBestCandidate();
 
+                Serialisation.saveNetworkToFilepath(bestCandidate.networkDescriptor, "/tmp/neuroidGen" + Integer.toString(data.getGenerationNumber()) + "Candidate" + "0");
 
             }
         });

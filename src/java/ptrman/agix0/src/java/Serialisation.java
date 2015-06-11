@@ -1,4 +1,4 @@
-package ptrman.agix0.src.java.Neuroids.Serialisation;
+package ptrman.agix0.src.java;
 
 import com.google.gson.Gson;
 import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
