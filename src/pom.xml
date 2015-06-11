@@ -22,9 +22,15 @@
         </dependency>
 
         <dependency>
-            <groupId>org.jogamp.jogl</groupId>
-            <artifactId>jogl-all-main</artifactId>
-            <version>2.3.1</version>
+            <groupId>com.syncleus.dann</groupId>
+            <artifactId>dann-core</artifactId>
+            <version>2.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.tinyjee.jgraphx</groupId>
+            <artifactId>jgraphx</artifactId>
+            <version>2.3.0.5</version>
         </dependency>
 
         <dependency>
@@ -33,10 +39,18 @@
             <version>2.3.1</version>
         </dependency>
 
+
+
         <dependency>
-            <groupId>com.syncleus.dann</groupId>
-            <artifactId>dann-core</artifactId>
-            <version>2.1</version>
+            <groupId>org.jogamp.jogl</groupId>
+            <artifactId>jogl-all-main</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>grph</groupId>
+            <artifactId>grph</artifactId>
+            <version>1.5</version>
         </dependency>
     </dependencies>
 </project>
