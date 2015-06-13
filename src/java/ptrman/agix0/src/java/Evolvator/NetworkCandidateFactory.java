@@ -36,6 +36,8 @@ public class NetworkCandidateFactory implements CandidateFactory<NetworkGeneticE
         NetworkGeneticExpression result = new NetworkGeneticExpression(numberOfNeurons);
         
         result.networkDescriptor.numberOfInputNeurons = 1;
+        result.networkDescriptor.latencyAfterActivation = 2;
+        result.networkDescriptor.randomFiringPropability = 0.0f;
 
         // initialize the firing threshold of the neurons
         for( NeuronDescriptor iterationNeuronDescriptor : result.networkDescriptor.hiddenNeurons ) {

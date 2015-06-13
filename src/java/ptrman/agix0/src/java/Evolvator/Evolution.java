@@ -4,6 +4,7 @@ import org.uncommons.maths.random.MersenneTwisterRNG;
 import org.uncommons.watchmaker.framework.*;
 import org.uncommons.watchmaker.framework.selection.RouletteWheelSelection;
 import org.uncommons.watchmaker.framework.termination.GenerationCount;
+import ptrman.agix0.src.java.Common.SimulationContext;
 import ptrman.agix0.src.java.Serialisation;
 
 /**
@@ -11,18 +12,25 @@ import ptrman.agix0.src.java.Serialisation;
  */
 public class Evolution {
     public static void main(String[] arguments) {
+        final String pathToScript = "/home/r0b3/neuralExp/startup.js";
+
+        SimulationContext simulationContext = new SimulationContext();
+
+        simulationContext.loadAndExecuteSetupProcedures(pathToScript, false);
+
         NetworkCandidateFactory candidateFactory = new NetworkCandidateFactory(100);
-        NetworkFitnessEvaluator fitnessEvaluator = new NetworkFitnessEvaluator();
+        NetworkFitnessEvaluator fitnessEvaluator = new NetworkFitnessEvaluator(simulationContext);
         NetworkMutationOperator networkMutationOperator = new NetworkMutationOperator();
         SelectionStrategy<Object> selectionStrategy = new RouletteWheelSelection();
 
-        EvolutionEngine<NetworkGeneticExpression> engine = new GenerationalEvolutionEngine<>(
+        AbstractEvolutionEngine<NetworkGeneticExpression> engine = new GenerationalEvolutionEngine<>(
                 candidateFactory,
                 networkMutationOperator,
                 fitnessEvaluator,
                 selectionStrategy,
                 new MersenneTwisterRNG());
 
+        engine.setSingleThreaded(true);
 
         engine.addEvolutionObserver(new EvolutionObserver<NetworkGeneticExpression>()
         {

@@ -27,6 +27,8 @@ public class NetworkGeneticExpression {
         cloned = new NetworkGeneticExpression(networkDescriptor.hiddenNeurons.length);
 
         cloned.networkDescriptor.numberOfInputNeurons = networkDescriptor.numberOfInputNeurons;
+        cloned.networkDescriptor.randomFiringPropability = networkDescriptor.randomFiringPropability;
+        cloned.networkDescriptor.latencyAfterActivation = networkDescriptor.latencyAfterActivation;
 
         for( int neuronI = 0; neuronI < networkDescriptor.hiddenNeurons.length; neuronI++ ) {
             cloned.networkDescriptor.hiddenNeurons[neuronI] = networkDescriptor.hiddenNeurons[neuronI].getClone();

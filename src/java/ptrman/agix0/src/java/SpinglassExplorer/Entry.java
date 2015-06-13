@@ -1,8 +1,8 @@
 package ptrman.agix0.src.java.SpinglassExplorer;
 
 
+import ptrman.agix0.src.java.Common.SimulationContext;
 import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
-import ptrman.agix0.src.java.Evolvator.Evironment.Playground;
 import ptrman.agix0.src.java.Serialisation;
 import ptrman.agix0.src.java.SpinglassExplorer.Gui.NeuronGraphLayout;
 import ptrman.agix0.src.java.SpinglassExplorer.Gui.SingleNetworkCanvas;
@@ -19,37 +19,42 @@ public class Entry {
         Entry entry = new Entry();
     }
 
-    private class LoadNetworkHandler implements WindowContent.ILoadNetworkHandler {
+    private class LoadSetupScriptHandler implements WindowContent.ILoadSetupScriptHandler {
         private final Entry entry;
 
-        public LoadNetworkHandler(Entry entry) {
+        public LoadSetupScriptHandler(Entry entry) {
             this.entry = entry;
         }
 
         @Override
         public void load(String filepath) {
-            entry.loadNeuralNetwork(filepath);
+            entry.loadSetupScript(filepath);
         }
     }
 
+
     // called from GUI code when the user wants to load a neural network (and let it simulate)
-    private void loadNeuralNetwork(String filepath) {
-        int todo = 0;
+    private void loadSetupScript(String filepath) {
+        simulationContext.loadAndExecuteSetupProcedures(filepath, true);
+
 
         neuralNetworkDescriptor = Serialisation.loadNetworkFromFilepath(filepath);
         recalculateLayoutOfNeurons();
 
         neuralNetworkDisplayState.allocateAfterDescriptor(neuralNetworkDescriptor);
         networkCanvas.networkState = neuralNetworkDisplayState;
+
+        // TODO< call the setupEnvironment from the context and update the gui relevant state, then simulate each step >
     }
 
     public Entry() {
-        playground = new Playground();
+
+
 
         // just for testing
         //writeTestNetwork();
 
-        WindowContent content = new WindowContent(playground, new LoadNetworkHandler(this));
+        WindowContent content = new WindowContent(simulationContext.environment, new LoadSetupScriptHandler(this));
         networkCanvas = content.networkCanvas;
 
         JFrame windowFrame = new JFrame("Spinglass explorer");
@@ -89,5 +94,5 @@ public class Entry {
     private SingleNetworkCanvas networkCanvas;
     private NeuralNetworkDisplayState neuralNetworkDisplayState = new NeuralNetworkDisplayState();
 
-    private Playground playground;
+    private SimulationContext simulationContext = new SimulationContext();
 }

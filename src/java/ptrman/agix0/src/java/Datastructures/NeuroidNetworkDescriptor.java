@@ -21,4 +21,7 @@ public class NeuroidNetworkDescriptor {
     }
 
     public int numberOfInputNeurons;
+
+    public int latencyAfterActivation;
+    public float randomFiringPropability;
 }

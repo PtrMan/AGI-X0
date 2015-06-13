@@ -1,7 +1,7 @@
 package ptrman.agix0.src.java.SpinglassExplorer.Gui;
 
 import ptrman.Gui.FileChooser;
-import ptrman.agix0.src.java.Evolvator.Evironment.Playground;
+import ptrman.agix0.src.java.Common.Evironment.Environment;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,15 +13,15 @@ import java.io.File;
  *
  */
 public class WindowContent extends JPanel {
-    private final ILoadNetworkHandler loadNetworkHandler;
+    private final ILoadSetupScriptHandler loadNetworkHandler;
 
-    private class LoadNetworkButtonPressed implements ActionListener {
+    private class LoadSetupScriptButtonPressed implements ActionListener {
         private final WindowContent windowContent;
-        private final ILoadNetworkHandler loadNetworkHandler;
+        private final ILoadSetupScriptHandler loadSetupScriptHandler;
 
-        public LoadNetworkButtonPressed(WindowContent windowContent, ILoadNetworkHandler loadNetworkHandler) {
+        public LoadSetupScriptButtonPressed(WindowContent windowContent, ILoadSetupScriptHandler loadNetworkHandler) {
             this.windowContent = windowContent;
-            this.loadNetworkHandler = loadNetworkHandler;
+            this.loadSetupScriptHandler = loadNetworkHandler;
         }
 
         @Override
@@ -29,18 +29,18 @@ public class WindowContent extends JPanel {
             FileChooser fileChooser = new FileChooser();
             File fileToLoad = fileChooser.load(windowContent);
 
-            loadNetworkHandler.load(fileToLoad.getAbsolutePath());
+            loadSetupScriptHandler.load(fileToLoad.getAbsolutePath());
         }
     }
 
-    public interface ILoadNetworkHandler {
+    public interface ILoadSetupScriptHandler {
         void load(String filepath);
     }
 
-    public WindowContent(Playground playground, ILoadNetworkHandler loadNetworkHandler) {
+    public WindowContent(Environment environment, ILoadSetupScriptHandler loadNetworkHandler) {
         super();
 
-        this.environment2dCanvas = new Environment2dCanvas(playground);
+        this.environment2dCanvas = new Environment2dCanvas(environment);
         this.loadNetworkHandler = loadNetworkHandler;
 
         buildGui();
@@ -52,8 +52,8 @@ public class WindowContent extends JPanel {
         setLayout(new GridLayout(3, 1));
 
         // TODO< replace with load setup javascript file which just loads and configures the environment and the network? >
-        JButton loadButton = new JButton("load network");
-        loadButton.addActionListener(new LoadNetworkButtonPressed(this, loadNetworkHandler));
+        JButton loadButton = new JButton("load setup script");
+        loadButton.addActionListener(new LoadSetupScriptButtonPressed(this, loadNetworkHandler));
         add(loadButton);
 
         environment2dCanvas.setSize(200, 200);
