@@ -21,7 +21,7 @@ public class SimulationContext {
     public Environment environment = new Environment();
 
     private EntryScriptingAccessor entryScriptingAccessor = new EntryScriptingAccessor(this);
-    private EnvironmentScriptingAccessor environmentScriptingAccessor = new EnvironmentScriptingAccessor(environment);
+    public EnvironmentScriptingAccessor environmentScriptingAccessor = new EnvironmentScriptingAccessor(environment);
 
     // for now just one Component
     // later is is a dag / graph(?) which describes the dataflow between the components
@@ -30,9 +30,13 @@ public class SimulationContext {
     public SimulationContext() {
         javascript.addBinding("entryScriptingAccessor", entryScriptingAccessor);
         javascript.addBinding("environmentSetupScriptingAccessor", environmentScriptingAccessor);
+
+        environment.environmentScriptingAccessor = environmentScriptingAccessor;
     }
 
     public void setupEnvironment() {
+        environment.reset();
+
         javascript.invokeFunction(environmentSetupJavascriptFunctionname, Arrays.asList(new Object[]{environment}));
     }
 

@@ -54,7 +54,7 @@ public class NetworkFitnessEvaluator implements FitnessEvaluator<NetworkGeneticE
 
         simulationContext.getComponent().setupNeuroidNetwork(networkGeneticExpression.networkDescriptor);
 
-        IUsageCase usageCase = new CritterSimpleUsageCase();
+        IUsageCase usageCase = new CritterSimpleUsageCase(simulationContext.environmentScriptingAccessor);
 
         final int numberOfNeuralSimulationSteps = usageCase.getNumberOfNeuralSimulationSteps();
 
@@ -71,7 +71,7 @@ public class NetworkFitnessEvaluator implements FitnessEvaluator<NetworkGeneticE
         for( int timestep = 0; timestep < numberOfNeuralSimulationSteps; timestep++ ) {
             // stimulate
 
-            simulationContext.getComponent().setStimulus(usageCase.beforeNeuroidSimationStepGetNeuroidInputForNextStep(timestep));
+            simulationContext.getComponent().setStimulus(usageCase.beforeNeuroidSimationStepGetNeuroidInputForNextStep(simulationContext.environment, timestep));
             simulationContext.modelTimestep();
 
             // read out result and rate

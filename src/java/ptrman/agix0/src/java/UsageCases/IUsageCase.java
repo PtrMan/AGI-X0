@@ -8,7 +8,7 @@ import ptrman.agix0.src.java.Common.Evironment.Environment;
 public interface IUsageCase {
     int getNumberOfNeuralSimulationSteps();
 
-    boolean[] beforeNeuroidSimationStepGetNeuroidInputForNextStep(final int stepCounter);
+    boolean[] beforeNeuroidSimationStepGetNeuroidInputForNextStep(Environment environment, final int stepCounter);
 
     // ...
     // neuroid simulation step

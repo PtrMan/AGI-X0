@@ -1,9 +1,11 @@
 package ptrman.agix0.src.java.Common.Scripting;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
+import org.jbox2d.callbacks.RayCastCallback;
 import org.jbox2d.collision.shapes.PolygonShape;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.*;
+import ptrman.agix0.src.java.Common.Evironment.Entity;
 import ptrman.agix0.src.java.Common.Evironment.Environment;
 import ptrman.agix0.src.java.Common.Evironment.Physics2dBody;
 
@@ -11,6 +13,18 @@ import ptrman.agix0.src.java.Common.Evironment.Physics2dBody;
  *
  */
 public class EnvironmentScriptingAccessor {
+    // TODO< find nearest intersection to given point in the constructor >
+    private class MyRaycastCallback implements RayCastCallback {
+        public ArrayRealVector nearestPoint;
+
+
+        @Override
+        public float reportFixture(Fixture fixture, Vec2 point, Vec2 normal, float fraction) {
+            nearestPoint = new ArrayRealVector(new double[]{point.x, point.y});
+
+            return 0;
+        }
+    }
 
     private final Environment environment;
 
@@ -21,6 +35,18 @@ public class EnvironmentScriptingAccessor {
     public EnvironmentScriptingAccessor(Environment entry) {
         this.environment = entry;
     }
+
+
+
+    public Entity createNewEntityAndAdd(ArrayRealVector direction) {
+        Entity createdEntity = new Entity();
+        // createdEntity.direction = direction
+        environment.entities.add(createdEntity);
+
+        return createdEntity;
+    }
+
+
 
     // must be called before using the 2d physics
     public void physics2dCreateWorld() {
@@ -65,6 +91,20 @@ public class EnvironmentScriptingAccessor {
 
     public void physics2dSetLinearDamping(Physics2dBody body, float damping) {
         body.body.setLinearDamping(damping);
+    }
+
+    public void physics2dApplyForce(Physics2dBody body, ArrayRealVector force) {
+        body.body.applyForce(new Vec2((float) force.getDataRef()[0], (float) force.getDataRef()[1]), body.body.getLocalCenter());
+    }
+
+    public ArrayRealVector physics2dNearestRaycast(ArrayRealVector a, ArrayRealVector direction, float distance) {
+        MyRaycastCallback rayCastCallback = new MyRaycastCallback();
+
+        final ArrayRealVector b = a.add(direction.mapMultiply(distance));
+
+        environment.physicsWorld2d.raycast(rayCastCallback, new Vec2((float)a.getDataRef()[0], (float)a.getDataRef()[1]), new Vec2((float)b.getDataRef()[0], (float)b.getDataRef()[1]));
+
+        return rayCastCallback.nearestPoint;
     }
 
 }

@@ -35,7 +35,7 @@ public class NetworkCandidateFactory implements CandidateFactory<NetworkGeneticE
     public NetworkGeneticExpression generateRandomCandidate(Random random) {
         NetworkGeneticExpression result = new NetworkGeneticExpression(numberOfNeurons);
         
-        result.networkDescriptor.numberOfInputNeurons = 1;
+        result.networkDescriptor.numberOfInputNeurons = 2;
         result.networkDescriptor.latencyAfterActivation = 2;
         result.networkDescriptor.randomFiringPropability = 0.0f;
 
