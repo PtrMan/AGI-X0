@@ -238,6 +238,7 @@ public class Neuroid<Weighttype, ModeType> {
 
         for( int neuronI = 0;neuronI < neuroidsGraph.neuronNodes.length; neuronI++ ) {
             neuroidsGraph.neuronNodes[neuronI] = new NeuroidGraph.NeuronNode();
+            neuroidsGraph.neuronNodes[neuronI].index = neuronI;
             neuroidsGraph.graph.add(neuroidsGraph.neuronNodes[neuronI]);
         }
     }
