@@ -12,6 +12,8 @@ import java.util.Random;
  *
  */
 public class Component {
+
+
     private static class Update implements Neuroid.IUpdate<Float, Integer> {
         private final int latencyAfterActivation;
         private final float randomFiringPropability;
@@ -46,7 +48,16 @@ public class Component {
 
     public Neuroid<Float, Integer> neuroidNetwork;
 
+    private NeuroidNetworkDescriptor networkDescriptor;
+
+    public NeuroidNetworkDescriptor getNeuralNetworkDescriptor() {
+        return networkDescriptor;
+    }
+
     public void setupNeuroidNetwork(NeuroidNetworkDescriptor networkDescriptor) {
+        // we store the NeuroidNetworkDescriptor for Spinglass
+        this.networkDescriptor = networkDescriptor;
+
         neuroidNetwork = new Neuroid<>(new Neuroid.FloatWeighttypeHelper());
         neuroidNetwork.update = new Update(networkDescriptor.latencyAfterActivation, networkDescriptor.randomFiringPropability);
 

@@ -4,6 +4,8 @@ import ptrman.agix0.src.java.Common.Evironment.Environment;
 import ptrman.agix0.src.java.Common.Scripting.EntryScriptingAccessor;
 import ptrman.agix0.src.java.Common.Scripting.EnvironmentScriptingAccessor;
 import ptrman.agix0.src.java.Common.Scripting.JavascriptEngine;
+import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
+import ptrman.agix0.src.java.Serialisation;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,11 +53,16 @@ public class SimulationContext {
         Path completePath = Paths.get(scriptFilepath);
         String pathToNeualNetworks = completePath.getParent().toString();
 
-        int debug = 0;
-        // TODO
-
         // TODO< search the last network generation and load it >
-        // TODO TODO TODO TODO TODO
+
+        String nameOfLatestNeuralNetwork = "neuroidGen260Candidate0";
+
+        String pathToNeuralNetworkToLoad = pathToNeualNetworks + "/" + nameOfLatestNeuralNetwork;
+
+        NeuroidNetworkDescriptor neuralNetworkDescriptor = Serialisation.loadNetworkFromFilepath(pathToNeuralNetworkToLoad);
+
+        setComponent(new Component());
+        getComponent().setupNeuroidNetwork(neuralNetworkDescriptor);
     }
 
     public void modelTimestep() {

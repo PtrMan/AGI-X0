@@ -1,6 +1,8 @@
 package ptrman.agix0.src.java.SpinglassExplorer.Gui;
 
 import org.apache.commons.math3.linear.ArrayRealVector;
+import org.jbox2d.common.Vec2;
+import ptrman.agix0.src.java.Common.Evironment.Entity;
 import ptrman.agix0.src.java.Common.Evironment.Environment;
 
 import java.awt.*;
@@ -27,16 +29,19 @@ public class Environment2dCanvas extends Canvas {
 
         // just draw a line for each entity for now
 
-        // TODO
-        /*
+
         for( Entity iterationEntity : environment.entities ) {
-            ArrayRealVector projectedCenter = cameraCenter.subtract(iterationEntity.position);
+            final Vec2 physicsPosition = iterationEntity.body.body.getPosition();
+            final ArrayRealVector position = new ArrayRealVector(new double[]{physicsPosition.x, physicsPosition.y});
 
-            ArrayRealVector projectDirectionEnd = projectedCenter.add(iterationEntity.direction.mapMultiply(DIRECTION_RADIUS));
+            ArrayRealVector projectedCenter = position.subtract(cameraCenter);
 
+            ArrayRealVector projectDirectionEnd = projectedCenter.add(iterationEntity.getDirection().mapMultiply(DIRECTION_RADIUS));
+
+            graphics.setColor(Color.RED);
             graphics.drawLine((int)projectedCenter.getDataRef()[0], (int)projectedCenter.getDataRef()[1], (int)projectDirectionEnd.getDataRef()[0], (int)projectDirectionEnd.getDataRef()[1]);
         }
-        */
+
 
         graphics.dispose();
     }

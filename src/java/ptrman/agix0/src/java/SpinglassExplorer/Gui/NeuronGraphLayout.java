@@ -66,6 +66,9 @@ public class NeuronGraphLayout {
                 }
 
                 graph.insertEdge(graphParent, null, "->", sourceVertex, destinationVertex);
+                // back edge just for better clustering
+                graph.insertEdge(graphParent, null, "->", destinationVertex, sourceVertex);
+
             }
         }
 

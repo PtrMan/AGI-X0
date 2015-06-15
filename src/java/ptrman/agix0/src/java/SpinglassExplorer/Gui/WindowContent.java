@@ -67,6 +67,11 @@ public class WindowContent extends JPanel {
 
     }
 
+    public void actualizeAllDisplays() {
+        environment2dCanvas.repaint();
+        networkCanvas.repaint();
+    }
+
     public Environment2dCanvas environment2dCanvas;
     public SingleNetworkCanvas networkCanvas;
 }

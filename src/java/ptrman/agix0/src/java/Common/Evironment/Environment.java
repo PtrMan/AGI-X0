@@ -39,7 +39,7 @@ public class Environment {
         // TODO< get speed and calculate delta force (quadratic with maximum), apply force >
 
         for( Entity iterationEntity : entities ) {
-            environmentScriptingAccessor.physics2dApplyForce(iterationEntity.body, new ArrayRealVector(iterationEntity.getDirection().mapMultiply(iterationEntity.speed)));
+            environmentScriptingAccessor.physics2dApplyForce(iterationEntity.body, new ArrayRealVector(iterationEntity.getDirection().mapMultiply(iterationEntity.speed*30.0)));
         }
     }
 
