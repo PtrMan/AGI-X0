@@ -14,7 +14,8 @@ import java.awt.*;
 public class Environment2dCanvas extends Canvas {
     private final Environment environment;
 
-    public ArrayRealVector cameraCenter = new ArrayRealVector(new double[]{0.0, 0.0});
+    // just for testing
+    public ArrayRealVector cameraCenter = new ArrayRealVector(new double[]{-50.0, -50.0});
 
     public Environment2dCanvas(Environment environment) {
         this.environment = environment;

@@ -15,12 +15,12 @@ public class Component {
 
 
     private static class Update implements Neuroid.IUpdate<Float, Integer> {
-        private final int latencyAfterActivation;
         private final float randomFiringPropability;
+        private final NeuroidNetworkDescriptor networkDescriptor;
 
-        public Update(final int latencyAfterActivation, final float randomFiringPropability) {
-            this.latencyAfterActivation = latencyAfterActivation;
+        public Update(NeuroidNetworkDescriptor networkDescriptor, final float randomFiringPropability) {
             this.randomFiringPropability = randomFiringPropability;
+            this.networkDescriptor = networkDescriptor;
         }
 
         @Override
@@ -28,7 +28,7 @@ public class Component {
             neuroid.graphElement.nextFiring = neuroid.graphElement.isStimulated(weighttypeHelper);
 
             if (neuroid.graphElement.nextFiring) {
-                neuroid.graphElement.remainingLatency = latencyAfterActivation;
+                neuroid.graphElement.remainingLatency = networkDescriptor.hiddenNeurons[neuroid.index].firingLatency;
             }
             else {
                 boolean isFiring = (float)random.nextFloat() < randomFiringPropability;
@@ -59,7 +59,7 @@ public class Component {
         this.networkDescriptor = networkDescriptor;
 
         neuroidNetwork = new Neuroid<>(new Neuroid.FloatWeighttypeHelper());
-        neuroidNetwork.update = new Update(networkDescriptor.latencyAfterActivation, networkDescriptor.randomFiringPropability);
+        neuroidNetwork.update = new Update(this.networkDescriptor, networkDescriptor.randomFiringPropability);
 
         neuroidNetwork.allocateNeurons(networkDescriptor.getNumberOfHiddenNeurons(), networkDescriptor.numberOfInputNeurons);
         neuroidNetwork.input = new boolean[networkDescriptor.numberOfInputNeurons];
@@ -83,6 +83,13 @@ public class Component {
     }
 
     public void timestep() {
+        cellularAutomataTimestep();
+
         neuroidNetwork.timestep();
+    }
+
+    // simulate all cellular automata of all CA neurons
+    private void cellularAutomataTimestep() {
+        // TODO
     }
 }

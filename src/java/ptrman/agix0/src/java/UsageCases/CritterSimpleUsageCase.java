@@ -18,7 +18,7 @@ public class CritterSimpleUsageCase implements IUsageCase {
 
     @Override
     public int getNumberOfNeuralSimulationSteps() {
-        return 60;
+        return 120;
     }
 
     @Override
@@ -37,11 +37,15 @@ public class CritterSimpleUsageCase implements IUsageCase {
         final Vec2 entityPositionVec2 = environment.entities.get(0).body.body.getPosition();
         final ArrayRealVector entityPosition = new ArrayRealVector(new double[]{entityPositionVec2.x, entityPositionVec2.y});
         final ArrayRealVector entityDirection = environment.entities.get(0).getDirection();
-        final ArrayRealVector rawStart = entityPosition.add(entityDirection.mapMultiply(1.1));
+        final ArrayRealVector rawStart = entityPosition.add(entityDirection.mapMultiply(2.1));
 
         final float RAYCAST_LENGTH = 5.0f;
 
-        raySense[0] = environmentScriptingAccessor.physics2dNearestRaycast(rawStart, entityDirection, RAYCAST_LENGTH) == null;
+        raySense[0] = environmentScriptingAccessor.physics2dNearestRaycast(rawStart, entityDirection, RAYCAST_LENGTH) != null;
+
+        if( raySense[0] ) {
+            int debugHere = 0;
+        }
 
         return new boolean[]{stimulation, raySense[0]};
     }

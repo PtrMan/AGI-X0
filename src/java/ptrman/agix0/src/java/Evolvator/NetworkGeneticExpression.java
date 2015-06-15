@@ -28,7 +28,10 @@ public class NetworkGeneticExpression {
 
         cloned.networkDescriptor.numberOfInputNeurons = networkDescriptor.numberOfInputNeurons;
         cloned.networkDescriptor.randomFiringPropability = networkDescriptor.randomFiringPropability;
-        cloned.networkDescriptor.latencyAfterActivation = networkDescriptor.latencyAfterActivation;
+        cloned.networkDescriptor.neuronLatencyMin = networkDescriptor.neuronLatencyMin;
+        cloned.networkDescriptor.neuronLatencyMax = networkDescriptor.neuronLatencyMax;
+        cloned.networkDescriptor.neuronThresholdMin = networkDescriptor.neuronThresholdMin;
+        cloned.networkDescriptor.neuronThresholdMax = networkDescriptor.neuronThresholdMax;
 
         for( int neuronI = 0; neuronI < networkDescriptor.hiddenNeurons.length; neuronI++ ) {
             cloned.networkDescriptor.hiddenNeurons[neuronI] = networkDescriptor.hiddenNeurons[neuronI].getClone();

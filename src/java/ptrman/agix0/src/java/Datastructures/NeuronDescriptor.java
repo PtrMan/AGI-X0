@@ -16,6 +16,8 @@ public class NeuronDescriptor {
 
     public float firingThreshold = 0.5f;
 
+    public int firingLatency;
+
     // internal CellularAutomata
     public int stateCaWriteinOffset = 0;
     public int stateCaReadoutOffset = 1;
@@ -28,6 +30,7 @@ public class NeuronDescriptor {
         clone.isEnabled = isEnabled;
         clone.internalType = internalType;
         clone.firingThreshold = firingThreshold;
+        clone.firingLatency = firingLatency;
         clone.stateCaWriteinOffset = stateCaWriteinOffset;
         clone.stateCaReadoutOffset = stateCaReadoutOffset;
         clone.stateCaStartState = stateCaStartState;

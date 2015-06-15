@@ -9,6 +9,7 @@ import ptrman.agix0.src.java.UsageCases.IUsageCase;
 import java.util.List;
 
 import static java.lang.Float.max;
+import static java.lang.Math.abs;
 
 
 public class NetworkFitnessEvaluator implements FitnessEvaluator<NetworkGeneticExpression> {
@@ -86,9 +87,11 @@ public class NetworkFitnessEvaluator implements FitnessEvaluator<NetworkGeneticE
             simulationContext.environment.timestep();
         }
 
+        // just for testing, reward for rotation
+        fitness += (abs(simulationContext.environment.entities.get(0).angle2d) * 10.0f);
 
         // reward for traveled distance
-        fitness += simulationContext.environment.entities.get(0).body.body.getPosition().lengthSquared();
+        fitness += simulationContext.environment.entities.get(0).body.body.getPosition().length();
 
         //System.out.println(networkGeneticExpression.connectionsWithWeights.size());
 

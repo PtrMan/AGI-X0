@@ -18,7 +18,7 @@ public class Evolution {
 
         simulationContext.loadAndExecuteSetupProcedures(pathToScript, false);
 
-        NetworkCandidateFactory candidateFactory = new NetworkCandidateFactory(100);
+        NetworkCandidateFactory candidateFactory = new NetworkCandidateFactory(50);
         NetworkFitnessEvaluator fitnessEvaluator = new NetworkFitnessEvaluator(simulationContext);
         NetworkMutationOperator networkMutationOperator = new NetworkMutationOperator();
         SelectionStrategy<Object> selectionStrategy = new RouletteWheelSelection();
@@ -48,6 +48,6 @@ public class Evolution {
         });
 
 
-        NetworkGeneticExpression result = engine.evolve(500, 3, new GenerationCount(50000));
+        NetworkGeneticExpression result = engine.evolve(300, 5, new GenerationCount(50000));
     }
 }

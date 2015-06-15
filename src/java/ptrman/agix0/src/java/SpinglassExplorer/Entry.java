@@ -81,6 +81,7 @@ public class Entry {
 
         neuralNetworkDisplayState.allocateAfterDescriptor(neuralNetworkDescriptor);
         networkCanvas.networkState = neuralNetworkDisplayState;
+        networkCanvas.neuroidNetworkDescriptor = neuralNetworkDescriptor;
 
         // TODO< call the setupEnvironment from the context and update the gui relevant state, then simulate each step >
         networkAndComponentsLoaded = true;

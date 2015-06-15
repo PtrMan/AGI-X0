@@ -55,7 +55,7 @@ public class SimulationContext {
 
         // TODO< search the last network generation and load it >
 
-        String nameOfLatestNeuralNetwork = "neuroidGen260Candidate0";
+        String nameOfLatestNeuralNetwork = "neuroidGen492Candidate0";
 
         String pathToNeuralNetworkToLoad = pathToNeualNetworks + "/" + nameOfLatestNeuralNetwork;
 

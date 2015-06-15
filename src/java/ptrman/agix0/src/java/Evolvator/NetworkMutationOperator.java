@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static ptrman.mltoolset.Neuroid.helper.NetworkTopology.getConnectionsForChainBetweenNeurons;
 import static ptrman.mltoolset.math.DistinctUtility.getTwoDisjunctNumbers;
 import static ptrman.mltoolset.math.Math.getRandomElements;
@@ -25,6 +27,8 @@ public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGene
         resultList.add(new Pair<>(EnumOperation.DISBALE_NEURON, 0.8));
         resultList.add(new Pair<>(EnumOperation.WEAKEN_STRENGHTEN_THRESHOLD, 1.5)); // slightly bias to strength weaking/strengtening
         resultList.add(new Pair<>(EnumOperation.CREATE_CHAIN, 0.2));
+        resultList.add(new Pair<>(EnumOperation.MODIFY_LATENCY, 0.1));
+
 
         return new EnumeratedDistribution(resultList);
     }
@@ -35,7 +39,8 @@ public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGene
         ENABLE_NEURON,
         DISBALE_NEURON,
         WEAKEN_STRENGHTEN_THRESHOLD,
-        CREATE_CHAIN // creates a chain of multiple neurons connected with connections
+        CREATE_CHAIN, // creates a chain of multiple neurons connected with connections
+        MODIFY_LATENCY
     }
 
     @Override
@@ -125,9 +130,11 @@ public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGene
             double delta = (random.nextDouble() * 2.0 - 1.0) * DELTASCALE;
             final int neuronIndex = random.nextInt(chosenMutationGeneticExpression.networkDescriptor.hiddenNeurons.length);
 
-            chosenMutationGeneticExpression.networkDescriptor.hiddenNeurons[neuronIndex].firingThreshold += (float)delta;
+            float newThreshold = chosenMutationGeneticExpression.networkDescriptor.hiddenNeurons[neuronIndex].firingThreshold + (float)delta;
+            newThreshold = max(min(newThreshold, chosenMutationGeneticExpression.networkDescriptor.neuronThresholdMax), chosenMutationGeneticExpression.networkDescriptor.neuronThresholdMin);
+            chosenMutationGeneticExpression.networkDescriptor.hiddenNeurons[neuronIndex].firingThreshold = newThreshold;
         }
-        else { // EnumOperation.CREATE_CHAIN
+        else if( operation == EnumOperation.CREATE_CHAIN ) {
             // chain just in "hidden" neurons
 
             final float CONNECTION_WEIGHT = 0.5f;
@@ -149,6 +156,17 @@ public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGene
 
             List<Neuroid.Helper.EdgeWeightTuple<Float>> connections = getConnectionsForChainBetweenNeurons(neuronAdresses, CONNECTION_WEIGHT);
             chosenMutationGeneticExpression.networkDescriptor.connections.addAll(connections);
+        }
+        else { // EnumOperation.MODIFY_LATENCY
+            final int neuronIndex = random.nextInt(chosenMutationGeneticExpression.networkDescriptor.hiddenNeurons.length);
+            int delta = 1;
+            if( random.nextInt(2) == 0 ) {
+                delta *= -1;
+            }
+
+            final int oldLatency = chosenMutationGeneticExpression.networkDescriptor.hiddenNeurons[neuronIndex].firingLatency;
+            final int newLatency = max(min(oldLatency + delta, chosenMutationGeneticExpression.networkDescriptor.neuronLatencyMax), chosenMutationGeneticExpression.networkDescriptor.neuronLatencyMin);
+            chosenMutationGeneticExpression.networkDescriptor.hiddenNeurons[neuronIndex].firingLatency = newLatency;
         }
     }
 

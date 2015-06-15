@@ -20,9 +20,11 @@ public class Environment {
     }
 
     public void timestep() {
-        //for( Entity iterationEntity : entities ) {
-        //    iterationEntity.position = iterationEntity.position.add(iterationEntity.direction.mapMultiply(iterationEntity.speed));
-        //}
+        for( Entity iterationEntity : entities ) {
+            if( iterationEntity.body != null ) {
+                iterationEntity.body.body.setTransform(iterationEntity.body.body.getPosition(), iterationEntity.angle2d);
+            }
+        }
 
         if( physicsWorld2d != null ) {
             physics2dApplyForcesToMatchSpeed();
