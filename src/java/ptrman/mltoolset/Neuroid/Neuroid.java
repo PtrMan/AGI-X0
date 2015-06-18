@@ -75,6 +75,7 @@ public class Neuroid<Weighttype, ModeType> {
             public Weighttype weight;
         }
 
+        public NeuronNode<Weighttype, ModeType>[] outputNeuronNodes;
         public NeuronNode<Weighttype, ModeType>[] inputNeuronNodes;
         public NeuronNode<Weighttype, ModeType>[] neuronNodes; // "hidden" Neuroid nodes
 
@@ -120,7 +121,8 @@ public class Neuroid<Weighttype, ModeType> {
 
                 public enum EnumType {
                     INPUT,
-                    HIDDEN
+                    HIDDEN,
+                    OUTPUT
                 }
 
                 public NeuronAdress(int index, EnumType type) {
@@ -129,13 +131,13 @@ public class Neuroid<Weighttype, ModeType> {
                 }
             }
 
-            public final NeuronAdress sourceIndex;
-            public final NeuronAdress destinationIndex;
+            public final NeuronAdress sourceAdress;
+            public final NeuronAdress destinationAdress;
             public final Weighttype weight;
 
             public EdgeWeightTuple(NeuronAdress sourceIndex, NeuronAdress destinationIndex, Weighttype weight) {
-                this.sourceIndex = sourceIndex;
-                this.destinationIndex = destinationIndex;
+                this.sourceAdress = sourceIndex;
+                this.destinationAdress = destinationIndex;
                 this.weight = weight;
             }
         }
@@ -191,27 +193,29 @@ public class Neuroid<Weighttype, ModeType> {
         for( final Helper.EdgeWeightTuple<Weighttype> iterationEdgeWeightTuple : edgeWeightTuples ) {
             final NeuroidGraph.NeuronNode<Weighttype, ModeType> sourceNode, destinationNode;
 
-            if( iterationEdgeWeightTuple.sourceIndex.type == Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN ) {
-                sourceNode = neuroidsGraph.neuronNodes[iterationEdgeWeightTuple.sourceIndex.index];
+            if( iterationEdgeWeightTuple.sourceAdress.type == Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN ) {
+                sourceNode = neuroidsGraph.neuronNodes[iterationEdgeWeightTuple.sourceAdress.index];
+            }
+            else if( iterationEdgeWeightTuple.sourceAdress.type == Helper.EdgeWeightTuple.NeuronAdress.EnumType.INPUT ) {
+                sourceNode = neuroidsGraph.inputNeuronNodes[iterationEdgeWeightTuple.sourceAdress.index];
             }
             else {
-                sourceNode = neuroidsGraph.inputNeuronNodes[iterationEdgeWeightTuple.sourceIndex.index];
+                throw new InternalError();
             }
 
-            Assert.Assert(iterationEdgeWeightTuple.destinationIndex.type == Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN, "");
+            if( iterationEdgeWeightTuple.destinationAdress.type == Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN ) {
+                destinationNode = neuroidsGraph.neuronNodes[iterationEdgeWeightTuple.destinationAdress.index];
+            }
+            else if( iterationEdgeWeightTuple.destinationAdress.type == Helper.EdgeWeightTuple.NeuronAdress.EnumType.OUTPUT ) {
+                destinationNode = neuroidsGraph.outputNeuronNodes[iterationEdgeWeightTuple.destinationAdress.index];
+            }
+            else {
+                throw new InternalError();
+            }
 
-            destinationNode = neuroidsGraph.neuronNodes[iterationEdgeWeightTuple.destinationIndex.index];
-
-            addConnection(new NeuroidGraph.Edge<Weighttype, ModeType>(sourceNode, destinationNode, iterationEdgeWeightTuple.weight));
+            addConnection(new NeuroidGraph.Edge<>(sourceNode, destinationNode, iterationEdgeWeightTuple.weight));
         }
     }
-
-    // overhaul?
-    /*
-    public void addTwoWayConnection(int a, int b, Weighttype weight) {
-        addConnections(Arrays.asList(new NeuroidGraph.WeightTuple<Weighttype>(a, b, weight)));
-        addConnections(Arrays.asList(new NeuroidGraph.WeightTuple<Weighttype>(b, a, weight)));
-    }*/
 
     public boolean[] getActiviationOfNeurons() {
         boolean[] activationResult = new boolean[neuroidsGraph.neuronNodes.length];
@@ -227,14 +231,21 @@ public class Neuroid<Weighttype, ModeType> {
      * the neuronCount includes the count of the input neurons
      *
      */
-    public void allocateNeurons(int neuronCount, int inputCount) {
+    public void allocateNeurons(int neuronCount, int inputCount, int outputCount) {
         neuroidsGraph.inputNeuronNodes = new NeuroidGraph.NeuronNode[inputCount];
+        neuroidsGraph.outputNeuronNodes = new NeuroidGraph.NeuronNode[outputCount];
         neuroidsGraph.neuronNodes = new NeuroidGraph.NeuronNode[neuronCount];
 
         for( int neuronI = 0;neuronI < neuroidsGraph.inputNeuronNodes.length; neuronI++ ) {
             neuroidsGraph.inputNeuronNodes[neuronI] = new NeuroidGraph.NeuronNode();
             neuroidsGraph.graph.add(neuroidsGraph.inputNeuronNodes[neuronI]);
         }
+
+        for( int neuronI = 0;neuronI < neuroidsGraph.outputNeuronNodes.length; neuronI++ ) {
+            neuroidsGraph.outputNeuronNodes[neuronI] = new NeuroidGraph.NeuronNode();
+            neuroidsGraph.graph.add(neuroidsGraph.outputNeuronNodes[neuronI]);
+        }
+
 
         for( int neuronI = 0;neuronI < neuroidsGraph.neuronNodes.length; neuronI++ ) {
             neuroidsGraph.neuronNodes[neuronI] = new NeuroidGraph.NeuronNode();
