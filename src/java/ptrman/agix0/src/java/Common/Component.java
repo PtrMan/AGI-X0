@@ -1,6 +1,6 @@
 package ptrman.agix0.src.java.Common;
 
-import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
+import ptrman.agix0.src.java.Neuroids.Datastructures.NeuroidNetworkDescriptor;
 import ptrman.mltoolset.Neuroid.Neuroid;
 
 import java.util.List;
@@ -61,7 +61,7 @@ public class Component {
         neuroidNetwork = new Neuroid<>(new Neuroid.FloatWeighttypeHelper());
         neuroidNetwork.update = new Update(this.networkDescriptor, networkDescriptor.randomFiringPropability);
 
-        neuroidNetwork.allocateNeurons(networkDescriptor.getNumberOfHiddenNeurons(), networkDescriptor.numberOfInputNeurons);
+        neuroidNetwork.allocateNeurons(networkDescriptor.getNumberOfHiddenNeurons(), networkDescriptor.numberOfInputNeurons, networkDescriptor.numberOfOutputNeurons);
         neuroidNetwork.input = new boolean[networkDescriptor.numberOfInputNeurons];
 
         for( int neuronI = 0; neuronI < networkDescriptor.getNumberOfHiddenNeurons(); neuronI++ ) {

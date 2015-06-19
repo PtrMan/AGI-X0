@@ -4,7 +4,7 @@ import ptrman.agix0.src.java.Common.Evironment.Environment;
 import ptrman.agix0.src.java.Common.Scripting.EntryScriptingAccessor;
 import ptrman.agix0.src.java.Common.Scripting.EnvironmentScriptingAccessor;
 import ptrman.agix0.src.java.Common.Scripting.JavascriptEngine;
-import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
+import ptrman.agix0.src.java.Neuroids.Datastructures.NeuroidNetworkDescriptor;
 import ptrman.agix0.src.java.Serialisation;
 
 import java.nio.file.Path;
