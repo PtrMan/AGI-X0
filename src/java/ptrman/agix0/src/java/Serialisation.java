@@ -1,7 +1,7 @@
 package ptrman.agix0.src.java;
 
 import com.google.gson.Gson;
-import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
+import ptrman.agix0.src.java.Neuroids.Datastructures.NeuroidNetworkDescriptor;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
