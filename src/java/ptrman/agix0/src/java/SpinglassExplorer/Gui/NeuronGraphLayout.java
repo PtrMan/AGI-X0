@@ -4,7 +4,7 @@ import com.mxgraph.layout.mxFastOrganicLayout;
 import com.mxgraph.layout.mxIGraphLayout;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.view.mxGraph;
-import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
+import ptrman.agix0.src.java.Neuroids.Datastructures.NeuroidNetworkDescriptor;
 import ptrman.mltoolset.Neuroid.Neuroid;
 
 // TODO< integrate/use this from/into seh's library for the display of topologies and modules >

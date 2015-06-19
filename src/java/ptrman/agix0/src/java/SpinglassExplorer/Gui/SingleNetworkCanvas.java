@@ -2,7 +2,7 @@ package ptrman.agix0.src.java.SpinglassExplorer.Gui;
 
 import com.mxgraph.model.mxGeometry;
 import org.apache.commons.math3.linear.ArrayRealVector;
-import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
+import ptrman.agix0.src.java.Neuroids.Datastructures.NeuroidNetworkDescriptor;
 import ptrman.agix0.src.java.SpinglassExplorer.NeuralNetworkDisplayState;
 import ptrman.mltoolset.Neuroid.Neuroid;
 

@@ -1,4 +1,4 @@
-package ptrman.agix0.src.java.Datastructures;
+package ptrman.agix0.src.java.Neuroids.Datastructures;
 
 /**
  *

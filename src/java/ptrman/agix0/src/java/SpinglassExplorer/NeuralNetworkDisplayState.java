@@ -1,6 +1,6 @@
 package ptrman.agix0.src.java.SpinglassExplorer;
 
-import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
+import ptrman.agix0.src.java.Neuroids.Datastructures.NeuroidNetworkDescriptor;
 
 /**
  *

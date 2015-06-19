@@ -2,7 +2,7 @@ package ptrman.agix0.src.java.SpinglassExplorer;
 
 
 import ptrman.agix0.src.java.Common.SimulationContext;
-import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
+import ptrman.agix0.src.java.Neuroids.Datastructures.NeuroidNetworkDescriptor;
 import ptrman.agix0.src.java.SpinglassExplorer.Gui.NeuronGraphLayout;
 import ptrman.agix0.src.java.SpinglassExplorer.Gui.SingleNetworkCanvas;
 import ptrman.agix0.src.java.SpinglassExplorer.Gui.WindowContent;
