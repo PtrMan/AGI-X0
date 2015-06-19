@@ -1,8 +1,7 @@
 package ptrman.agix0.src.java.Evolvator;
 
-import ptrman.agix0.src.java.Datastructures.NeuroidNetworkDescriptor;
-import ptrman.agix0.src.java.Datastructures.NeuronDescriptor;
-import ptrman.mltoolset.Neuroid.Neuroid;
+import ptrman.agix0.src.java.Neuroids.Datastructures.NeuroidNetworkDescriptor;
+import ptrman.agix0.src.java.Neuroids.Datastructures.NeuronDescriptor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,25 +21,8 @@ public class NetworkGeneticExpression {
     }
 
     public NetworkGeneticExpression getClone() {
-        NetworkGeneticExpression cloned;
-
-        cloned = new NetworkGeneticExpression(networkDescriptor.hiddenNeurons.length);
-
-        cloned.networkDescriptor.numberOfInputNeurons = networkDescriptor.numberOfInputNeurons;
-        cloned.networkDescriptor.randomFiringPropability = networkDescriptor.randomFiringPropability;
-        cloned.networkDescriptor.neuronLatencyMin = networkDescriptor.neuronLatencyMin;
-        cloned.networkDescriptor.neuronLatencyMax = networkDescriptor.neuronLatencyMax;
-        cloned.networkDescriptor.neuronThresholdMin = networkDescriptor.neuronThresholdMin;
-        cloned.networkDescriptor.neuronThresholdMax = networkDescriptor.neuronThresholdMax;
-
-        for( int neuronI = 0; neuronI < networkDescriptor.hiddenNeurons.length; neuronI++ ) {
-            cloned.networkDescriptor.hiddenNeurons[neuronI] = networkDescriptor.hiddenNeurons[neuronI].getClone();
-        }
-
-        for( final Neuroid.Helper.EdgeWeightTuple<Float> iterationConnection : networkDescriptor.connections ) {
-            cloned.networkDescriptor.connections.add(iterationConnection);
-        }
-
+        NetworkGeneticExpression cloned = new NetworkGeneticExpression(networkDescriptor.hiddenNeurons.length);
+        cloned.networkDescriptor = networkDescriptor.getClone();
         return cloned;
     }
 

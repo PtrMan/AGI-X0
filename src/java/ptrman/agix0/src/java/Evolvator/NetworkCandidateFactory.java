@@ -1,7 +1,7 @@
 package ptrman.agix0.src.java.Evolvator;
 
 import org.uncommons.watchmaker.framework.CandidateFactory;
-import ptrman.agix0.src.java.Datastructures.NeuronDescriptor;
+import ptrman.agix0.src.java.Neuroids.Datastructures.NeuronDescriptor;
 import ptrman.mltoolset.Neuroid.Neuroid;
 
 import java.util.ArrayList;
