@@ -226,6 +226,16 @@ public class Neuroid<Weighttype, ModeType> {
         return activationResult;
     }
 
+    /**
+     * useful for unittesting and or direct access
+     *
+     * \param neuronIndex
+     * \param activation
+     */
+    public void setActivionOfNeuron(int neuronIndex, boolean activation) {
+        neuroidsGraph.neuronNodes[neuronIndex].graphElement.firing = activation;
+    }
+
     /** \brief reallocates the neurons
      *
      * the neuronCount includes the count of the input neurons
