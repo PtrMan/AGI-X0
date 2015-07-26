@@ -57,7 +57,7 @@ public class NetworkFitnessEvaluator implements FitnessEvaluator<NetworkGeneticE
         Neuroid<Float, Integer> neuroid = new Neuroid<>(new Neuroid.FloatWeighttypeHelper());
         neuroid.update = new Update(latencyAfterActivation, randomFiringPropability);
 
-        neuroid.allocateNeurons(networkGeneticExpression.neuronCandidatesActive.length, numberOfInputNeurons);
+        neuroid.allocateNeurons(networkGeneticExpression.neuronCandidatesActive.length, numberOfInputNeurons, 0);
         neuroid.input = new boolean[numberOfInputNeurons];
 
         for( int neuronI = 0; neuronI < networkGeneticExpression.neuronCandidatesActive.length; neuronI++ ) {

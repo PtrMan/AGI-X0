@@ -63,7 +63,7 @@ public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGene
                 }
 
                 for( final Neuroid.Helper.EdgeWeightTuple<Float> iterationConnection : chosenMutationGeneticExpression.connectionsWithWeights ) {
-                    if( iterationConnection.sourceIndex.equals(new Neuroid.Helper.EdgeWeightTuple.NeuronAdress(sourceIndex, sourceType)) && iterationConnection.destinationIndex.equals(new Neuroid.Helper.EdgeWeightTuple.NeuronAdress(destinationIndex, Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN)) ) {
+                    if( iterationConnection.sourceAdress.equals(new Neuroid.Helper.EdgeWeightTuple.NeuronAdress(sourceIndex, sourceType)) && iterationConnection.destinationAdress.equals(new Neuroid.Helper.EdgeWeightTuple.NeuronAdress(destinationIndex, Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN)) ) {
                         connectionExists = true;
                         break;
                     }
