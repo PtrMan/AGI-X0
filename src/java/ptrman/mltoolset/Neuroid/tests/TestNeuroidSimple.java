@@ -16,8 +16,8 @@ public class TestNeuroidSimple {
         private final float randomFiringPropability;
 
         public Update(final int latencyAfterActivation, final float randomFiringPropability) {
-                this.latencyAfterActivation = latencyAfterActivation;
-                this.randomFiringPropability = randomFiringPropability;
+            this.latencyAfterActivation = latencyAfterActivation;
+            this.randomFiringPropability = randomFiringPropability;
         }
 
         @Override
@@ -51,7 +51,7 @@ public class TestNeuroidSimple {
         Neuroid<Float, Integer> neuroid = new Neuroid<>(new Neuroid.FloatWeighttypeHelper());
         neuroid.update = new Update(latencyAfterActivation, randomFiringPropability);
 
-        neuroid.allocateNeurons(3, 3);
+        neuroid.allocateNeurons(3, 3, 0);
         neuroid.input = new boolean[3];
 
         neuroid.getGraph().neuronNodes[0].graphElement.threshold = 0.5f;
