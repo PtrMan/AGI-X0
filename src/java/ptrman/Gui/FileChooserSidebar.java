@@ -91,7 +91,7 @@ class TextFileFilter implements FileFilter {
     public boolean accept(File file) {
         // implement the logic to select files here..
         String name = file.getName().toLowerCase();
-        //return name.endsWith(".java") || name.endsWith(".class");
+        //return name.endsWith(".agix0") || name.endsWith(".class");
         return name.length()<20;
     }
 }
