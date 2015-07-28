@@ -226,14 +226,8 @@ public class Neuroid<Weighttype, ModeType> {
         return activationResult;
     }
 
-    /**
-     * useful for unittesting and or direct access
-     *
-     * \param neuronIndex
-     * \param activation
-     */
-    public void setActivionOfNeuron(int neuronIndex, boolean activation) {
-        neuroidsGraph.neuronNodes[neuronIndex].graphElement.firing = activation;
+    public boolean getActivationOfOutputNeuron(int index) {
+        return neuroidsGraph.outputNeuronNodes[index].graphElement.firing;
     }
 
     /** \brief reallocates the neurons
