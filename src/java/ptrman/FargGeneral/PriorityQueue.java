@@ -6,21 +6,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class PriorityQueue<Type>
-{
-    public static class QueueElement<Type>
-    {
+public class PriorityQueue<Type> {
+    public static class QueueElement<Type> {
         public Type value;
         public float priority = 0.0f;
     }
     
-    public PriorityQueue(Random random)
-    {
+    public PriorityQueue(Random random) {
         this.random = random;
     }
     
-    public QueueElement getReference()
-    {
+    public QueueElement getReference() {
         int chosenIndex;
         
         chosenIndex = getNextQueueIndex();
@@ -32,8 +28,7 @@ public class PriorityQueue<Type>
     * 
     * only used for (re)filling
     */
-    public void add(Type value, float priority)
-    {
+    public void add(Type value, float priority) {
         QueueElement element;
         
         element = new QueueElement();
@@ -45,24 +40,20 @@ public class PriorityQueue<Type>
         queue.add(element);
     }
     
-    public void flush()
-    {
+    public void flush() {
         queue.clear();
         prioritySum = 0.0f;
     }
     
-    public int getSize()
-    {
+    public int getSize() {
         return queue.size();
     }
     
-    public Type dequeue()
-    {
+    public Type dequeue() {
         return dequeueQueueElement().value;
     }
     
-    public QueueElement<Type> dequeueQueueElement()
-    {
+    public QueueElement<Type> dequeueQueueElement() {
         int chosenIndex;
         QueueElement<Type> result;
         
@@ -73,8 +64,7 @@ public class PriorityQueue<Type>
         return result;
     }
     
-    private int getNextQueueIndex()
-    {
+    private int getNextQueueIndex() {
         int chosenIndex;
         int priorityDiscreteRange;
         int chosenDiscretePriority;
@@ -90,20 +80,17 @@ public class PriorityQueue<Type>
         remainingPriority = (float)chosenDiscretePriority * PRIORITYGRANULARITY;
 
         chosenIndex = 0;
-        for (; ; )
-        {
+        for (; ; ) {
             Assert.Assert(chosenIndex <= queue.size(), "");
             
-            if( chosenIndex == queue.size() )
-            {
+            if( chosenIndex == queue.size() ) {
                 Assert.Assert(queue.size() != 0, "");
                 chosenIndex = queue.size() - 1;
                 
                 break;
             }
             
-            if( remainingPriority < queue.get(chosenIndex).priority )
-            {
+            if( remainingPriority < queue.get(chosenIndex).priority ) {
                 break;
             }
             // else

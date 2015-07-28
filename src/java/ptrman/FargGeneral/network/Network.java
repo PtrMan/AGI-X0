@@ -1,6 +1,7 @@
 package ptrman.FargGeneral.network;
 
-import java.util.ArrayList;
+import com.gs.collections.impl.list.mutable.FastList;
+
 import java.util.List;
 
 /**
@@ -20,7 +21,7 @@ public class Network
         public Link createLink(Link.EnumType type, Node target);
     }
     
-    public List<Node> nodes = new ArrayList<>();
+    public List<Node> nodes = new FastList<>();
     public IDepthToDecay depthToDecay;
     
     public void spreadActivation()
