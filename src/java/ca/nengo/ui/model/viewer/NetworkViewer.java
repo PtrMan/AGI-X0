@@ -46,7 +46,7 @@ import ca.nengo.ui.model.UINeoNode;
 import ca.nengo.ui.model.node.UINetwork;
 import ca.nengo.ui.model.widget.*;
 import ca.nengo.util.Probe;
-import nars.Global;
+import automenta.vivisect.Global;
 import org.piccolo2d.event.PBasicInputEventHandler;
 import org.piccolo2d.event.PInputEvent;
 import org.piccolo2d.util.PBounds;

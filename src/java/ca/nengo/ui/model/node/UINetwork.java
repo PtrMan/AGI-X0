@@ -40,7 +40,6 @@ import ca.nengo.ui.model.viewer.NetworkViewer;
 import ca.nengo.ui.model.viewer.NodeViewer;
 import ca.nengo.util.VisiblyChanges;
 import ca.nengo.util.VisiblyChanges.Event;
-import nars.gui.output.graph.nengo.DefaultUINetwork;
 
 import javax.swing.*;
 import java.awt.*;
@@ -129,23 +128,27 @@ public class UINetwork extends UINodeViewable {
 
     @Override
     public NodeViewer newViewer() {
-        NodeViewer v = new DefaultUINetwork.UINARGraphViewer(this);
-        v.getGridLayer().setBgColor(Color.BLACK);
-        return v;
+        // uncommented because of dependencies to nars mess
+        ///NodeViewer v = new DefaultUINetwork.UINARGraphViewer(this);
+        ///v.getGridLayer().setBgColor(Color.BLACK);
+        ///return v;
+        return null;
     }
 
     /** if gridBG == null, removes grid */
     public NodeViewer newViewer(Color gridBg, Color gridColor, float gridTransparency) {
-        NetworkViewer nv = new DefaultUINetwork.UINARGraphViewer(this);
+        // uncommented because of dependencies to nars mess
+        ///NetworkViewer nv = new DefaultUINetwork.UINARGraphViewer(this);
 
-        if (gridBg == null)
-            nv.getGridLayer().removeFromParent();
-        else {
-            nv.getGridLayer().setBgColor(gridBg);
-            nv.getGridLayer().setGridColor(gridColor);
-            nv.getGridLayer().setTransparency(gridTransparency);
-        }
-        return nv;
+        ///if (gridBg == null)
+        ///    nv.getGridLayer().removeFromParent();
+        ///else {
+        ///   nv.getGridLayer().setBgColor(gridBg);
+        ///    nv.getGridLayer().setGridColor(gridColor);
+        ///    nv.getGridLayer().setTransparency(gridTransparency);
+        ///}
+        ///return nv;
+        return null;
     }
 
     @Override

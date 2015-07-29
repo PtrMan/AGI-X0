@@ -59,7 +59,7 @@ import ca.nengo.ui.model.widget.*;
 import ca.nengo.util.Probe;
 import ca.nengo.util.VisiblyChanges;
 import ca.nengo.util.VisiblyChanges.Event;
-import nars.Global;
+import automenta.vivisect.Global;
 
 import javax.swing.*;
 import java.awt.geom.Point2D;

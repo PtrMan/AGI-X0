@@ -12,7 +12,7 @@ import edu.uci.ics.jung.graph.impl.SparseGraph;
 import edu.uci.ics.jung.graph.impl.UndirectedSparseEdge;
 import edu.uci.ics.jung.utils.UserData;
 import edu.uci.ics.jung.visualization.Layout;
-import nars.Global;
+import automenta.vivisect.Global;
 import org.piccolo2d.PNode;
 import org.piccolo2d.util.PBounds;
 

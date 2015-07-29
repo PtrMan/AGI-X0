@@ -13,7 +13,7 @@ import ca.nengo.ui.lib.world.PaintContext;
 import ca.nengo.ui.lib.world.piccolo.primitive.PXPath;
 import ca.nengo.ui.model.widget.UITarget;
 import ca.nengo.util.ScriptGenException;
-import nars.Global;
+import automenta.vivisect.Global;
 import nars.io.Texts;
 import org.apache.commons.math3.util.FastMath;
 import org.piccolo2d.extras.nodes.PNodeCache;

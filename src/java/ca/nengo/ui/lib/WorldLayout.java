@@ -2,7 +2,7 @@ package ca.nengo.ui.lib;
 
 import ca.nengo.ui.lib.world.World;
 import ca.nengo.ui.lib.world.WorldObject;
-import nars.Global;
+import automenta.vivisect.Global;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;

@@ -1,7 +1,7 @@
 package ca.nengo.ui.lib.util;
 
 import ca.nengo.ui.lib.AppFrame;
-import nars.Global;
+import automenta.vivisect.Global;
 
 /**
  * Holds user interface instance variables.
