@@ -123,6 +123,9 @@ public class FuncOpenClCodeGenerator {
 
                 FuncValueBindingEdge currentEdge = (FuncValueBindingEdge)edgeTraversal.next();
 
+                //Vertex x = (Vertex) currentEdge.outV().toList();
+
+                // confusion up here >>>>
                 bindingEdgeTargetMap.put(currentEdge.getSite(), (FuncVertex) currentEdge.getElement().getVertex(Direction.OUT));
             }
 
