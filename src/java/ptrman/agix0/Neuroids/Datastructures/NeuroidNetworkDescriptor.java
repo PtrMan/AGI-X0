@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Describes the (static) aspects of an Neuroid network.
  *
- * For the dynamic alspect the network need to be translated to "real" neurons and "real" connections.
+ * For the dynamic aspect the network need to be translated to "real" neurons and "real" connections.
  * The dynamics of the neurons and connections can then be simulated with the CPU/GPU.
  */
 public class NeuroidNetworkDescriptor {
