@@ -78,7 +78,11 @@ public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGene
             boolean[][] connectionMatrix = new boolean[numberOfNeuronClusters][numberOfNeuronClusters];
             int[][] indexMatrix = new int[numberOfNeuronClusters][numberOfNeuronClusters];
 
-            Arrays.fill(indexMatrix, -1);
+            for( int i = 0; i < indexMatrix.length; i++ ) {
+                for( int j = 0; j < indexMatrix[i].length; j++ ) {
+                    indexMatrix[i][j] = -1;
+                }
+            }
 
             // fill array
             int index = 0;
@@ -107,12 +111,20 @@ public class NetworkMutationOperator implements EvolutionaryOperator<NetworkGene
                     chosenMutationGeneticExpression.generativeNeuroidNetworkDescriptor.interNeuronClusterConnections.add(GenerativeNeuroidNetworkDescriptor.InterNeuronClusterConnection.createWithoutConnectionNeuronDescriptors(sourceClusterIndex, sourceClusterNeuronIndex, destinationClusterIndex, destinationClusterNeuronIndex));
                 }
                 else {
-                    // remove connection
-                    chosenMutationGeneticExpression.generativeNeuroidNetworkDescriptor.interNeuronClusterConnections.remove(indexMatrix[sourceClusterIndex][destinationClusterIndex]);
+                    // remove connection if its there
+
+                    // we do this in here to not screw the propability distribution
+                    if( indexMatrix[sourceClusterIndex][destinationClusterIndex] != -1 ) {
+                        chosenMutationGeneticExpression.generativeNeuroidNetworkDescriptor.interNeuronClusterConnections.remove(indexMatrix[sourceClusterIndex][destinationClusterIndex]);
+                    }
                 }
             }
         }
         else if( operation == EnumOperation.MUTATE_INTERNEURONCLUSTER_CONNECTION ) {
+            if( chosenMutationGeneticExpression.generativeNeuroidNetworkDescriptor.interNeuronClusterConnections.size() == 0 ) {
+                return;
+            }
+
             final int interclusterConnectionIndex = random.nextInt(chosenMutationGeneticExpression.generativeNeuroidNetworkDescriptor.interNeuronClusterConnections.size());
 
             GenerativeNeuroidNetworkDescriptor.InterNeuronClusterConnection chosenInterNeuronClusterConnection = chosenMutationGeneticExpression.generativeNeuroidNetworkDescriptor.interNeuronClusterConnections.get(interclusterConnectionIndex);

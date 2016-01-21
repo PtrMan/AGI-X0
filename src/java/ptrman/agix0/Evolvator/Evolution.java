@@ -5,16 +5,22 @@ import org.uncommons.watchmaker.framework.*;
 import org.uncommons.watchmaker.framework.selection.RouletteWheelSelection;
 import org.uncommons.watchmaker.framework.termination.GenerationCount;
 import ptrman.agix0.Common.SimulationContext;
+import ptrman.agix0.Neuroids.Datastructures.NeuroidNetworkDescriptor;
 import ptrman.agix0.Neuroids.Datastructures.NeuronDescriptor;
+import ptrman.agix0.Neuroids.NeuroidNetworkManipulation.GenerativeNeuroidNetworkTransformator;
+import ptrman.agix0.Neuroids.debug.GenerativeNeuroidNetworkDescriptorAbstractMathematicaDebug;
+import sun.nio.ch.Net;
 
 /**
  *
  */
 public class Evolution {
     public static void main(String[] arguments) {
-        final String pathToScript = "/home/r0b3/neuralExp/startup.js";
+        final String pathToScript = "C:\\Users\\r0b3\\github\\AGI-X0\\resources\\js\\startup.js";
 
+        // not initialized
         SimulationContext simulationContext = new SimulationContext();
+
 
         simulationContext.loadAndExecuteSetupProcedures(pathToScript, false);
 
@@ -25,6 +31,16 @@ public class Evolution {
         //  initialize templateNeuron with data
         NetworkGlobalState.templateNeuronDescriptor = new NeuronDescriptor();
         NetworkGlobalState.templateNeuronDescriptor.firingLatency = 2;
+
+
+        // overwrite context
+        networkGlobalState.generativeNeuronNetworkSettings = new NetworkGlobalState.GenerativeNeuronNetworkSettings(3, 10, 1, 10);
+
+
+        // incomplete
+        NetworkGlobalState.templateNeuroidNetworkDescriptor = new NeuroidNetworkDescriptor();
+
+
 
         // TODO< initialize networkGlobalState >
 
@@ -69,11 +85,16 @@ public class Evolution {
 
                 NetworkGeneticExpression bestCandidate = data.getBestCandidate();
 
+                String mathematicaGraph = GenerativeNeuroidNetworkDescriptorAbstractMathematicaDebug.generateMathematicaCodeFor(bestCandidate.generativeNeuroidNetworkDescriptor);
+                System.out.println(mathematicaGraph);
+
                 // 26.07.2015 uncommented because the indirect descriptor has to be stored
                 //Serialisation.saveNetworkToFilepath(bestCandidate.networkDescriptor, "/tmp/neuroidGen" + Integer.toString(data.getGenerationNumber()) + "Candidate" + "0");
 
             }
         });
+
+
 
 
         NetworkGeneticExpression result = engine.evolve(300, 5, new GenerationCount(50000));

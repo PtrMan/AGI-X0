@@ -43,6 +43,10 @@ public class NetworkCandidateFactory implements CandidateFactory<NetworkGeneticE
 
         // TODO< add connections between clusters (at random) >
 
+        // ADD empty input and output list
+        createdGenerativeNeuroidNetworkDescriptor.inputConnections = new GenerativeNeuroidNetworkDescriptor.OutsideConnection[0];
+        createdGenerativeNeuroidNetworkDescriptor.outputConnections = new GenerativeNeuroidNetworkDescriptor.OutsideConnection[0];
+
 
         NetworkGeneticExpression result = new NetworkGeneticExpression(createdGenerativeNeuroidNetworkDescriptor);
         result.generativeNeuroidNetworkDescriptor = createdGenerativeNeuroidNetworkDescriptor;

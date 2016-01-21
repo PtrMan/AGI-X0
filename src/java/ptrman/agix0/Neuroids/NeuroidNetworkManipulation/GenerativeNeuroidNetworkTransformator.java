@@ -133,7 +133,10 @@ public class GenerativeNeuroidNetworkTransformator {
         for( int neuronConnectionsI = 0; neuronConnectionsI < neuronCluster.neuronConnections.size(); neuronConnectionsI++ ) {
             GenerativeNeuroidNetworkDescriptor.NeuronCluster.TwoWayConnection[] currentNeuronConnections = neuronCluster.neuronConnections.get(neuronConnectionsI);
 
-            debugTwoWayConnections(currentNeuronConnections);
+            boolean debug = false;
+            if( debug ) {
+                debugTwoWayConnections(currentNeuronConnections);
+            }
 
             globalIndicesOfNeurons.add(currentGlobalNeuronIndex);
             currentGlobalNeuronIndex++;
