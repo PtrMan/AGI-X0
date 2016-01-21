@@ -59,4 +59,24 @@ public class NeuroidNetworkDescriptor {
 
         return cloned;
     }
+
+    public void debugConnections() {
+        System.out.println("NeuroidNetworkDescriptor.debugConnections()");
+
+        for( Neuroid.Helper.EdgeWeightTuple<Float> iterationConnection : connections ) {
+             System.out.println(String.format("   neuroidConnection %s.%d->%s.%d", getStringOfConnectionType(iterationConnection.sourceAdress), iterationConnection.sourceAdress.index, getStringOfConnectionType(iterationConnection.destinationAdress), iterationConnection.destinationAdress.index));
+        }
+    }
+
+    private static String getStringOfConnectionType(Neuroid.Helper.EdgeWeightTuple.NeuronAdress adress) {
+        if( adress.type == Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.HIDDEN ) {
+            return "HIDDEN";
+        }
+        else if( adress.type == Neuroid.Helper.EdgeWeightTuple.NeuronAdress.EnumType.INPUT ) {
+            return "INPUT";
+        }
+        else {
+            return "OUTPUT";
+        }
+    }
 }

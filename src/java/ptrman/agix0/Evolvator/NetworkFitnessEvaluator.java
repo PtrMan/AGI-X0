@@ -5,6 +5,7 @@ import ptrman.agix0.Common.Component;
 import ptrman.agix0.Common.SimulationContext;
 import ptrman.agix0.Neuroids.Datastructures.NeuroidNetworkDescriptor;
 import ptrman.agix0.Neuroids.NeuroidNetworkManipulation.GenerativeNeuroidNetworkTransformator;
+import ptrman.agix0.Neuroids.debug.GenerativeNeuroidNetworkDescriptorAbstractMathematicaDebug;
 import ptrman.agix0.UsageCases.CritterSimpleUsageCase;
 import ptrman.agix0.UsageCases.IUsageCase;
 import ptrman.agix0.UsageCases.NullUsageCase;
@@ -55,7 +56,21 @@ public class NetworkFitnessEvaluator implements FitnessEvaluator<NetworkGeneticE
         neuroid.initialize();
         */
 
+        boolean debug = false;
+        if( debug ) {
+            String mathematicaCodeOfNetwork = GenerativeNeuroidNetworkDescriptorAbstractMathematicaDebug.generateMathematicaCodeFor(networkGeneticExpression.generativeNeuroidNetworkDescriptor);
+            System.out.println("visualisation of NetworkFitnessEvaluator.getFitness() network");
+            System.out.println(String.format("  %s", mathematicaCodeOfNetwork));
+        }
+
         final NeuroidNetworkDescriptor neuroidNetworkFromIndirectEncoding = GenerativeNeuroidNetworkTransformator.generateNetwork(NetworkGlobalState.templateNeuroidNetworkDescriptor, networkGeneticExpression.generativeNeuroidNetworkDescriptor);
+
+        boolean debugDetailed = false;
+        if( debugDetailed ) {
+            neuroidNetworkFromIndirectEncoding.debugConnections();
+        }
+
+
 
         simulationContext.setComponent(new Component());
 
