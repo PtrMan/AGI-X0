@@ -22,22 +22,6 @@ class Context {
 		return 0.0; // shouldn't ever be reached
 	}
 
-	// chromosome is the output
-	/* not needed
-	public final void translateGenotypeToChromosome(Genotype genotype, Chromosome chromosome) {
-		foreach( functionGeneIndex; 0..numberOfFunctions ) {
-			chromosome.nodes[functionGeneIndex].function_ = genotype.genes[functionGeneIndex];
-		}
-
-		foreach( connectionGeneIndex; 0..numberOfFunctions*numberOfConnectionsPerFunction ) {
-			chromosome.nodes[connectionGeneIndex / numberOfConnectionsPerFunction].connections[connectionGeneIndex % numberOfConnectionsPerFunction] = genotype.genes[numberOfFunctions + connectionGeneIndex];
-		}
-
-		foreach( outputGeneIndex; 0..numberOfOutputs ) {
-			chromosome.outputGeneIndices[outputGeneIndex] = genotype.genes[numberOfFunctions + numberOfFunctions*numberOfConnectionsPerFunction + outputGeneIndex];
-		}
-	}*/
-
 	// for testing public
 	// decoding CGP chromosomes
 	// see
@@ -124,18 +108,6 @@ class Context {
 	public final @property Globals globals() {
 		return protectedGlobals;
 	}
-
-	/+ see globals
-	//public uint numberOfNodes, numberOfInputsOfNode;
-	//public uint numberOfGlobalInputs; see globals 
-
-	public final @property uint numberOfConnections() {
-		return numberOfNodes*numberOfInputsOfNode;
-	}
-
-	public uint numberOfOutputs;
-	+/
-
 }
 
 
@@ -392,33 +364,3 @@ void main() {
 
 
 
-
-/*
-class Node {
-	public bool toEvaluate = false;
-
-	public uint[] connections;
-	public uint function_;
-
-	public ValueType output;
-}
-
-class Chromosome {
-	public Node[] nodes;
-	public GeneIndex[] outputGeneIndices;
-
-	public final void resetToEvaluate() {
-		foreach( iterationNode; nodes ) {
-			iterationNode.toEvaluate = false;
-		}
-	}
-
-	public final GeneIndex getOutputGene(uint index) {
-		return outputGeneIndices[index];
-	}
-
-	public final  @property uint numberOfOutputGenes() {
-		return outputGeneIndices.length;
-	}
-}
-*/
