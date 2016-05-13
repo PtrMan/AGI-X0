@@ -87,15 +87,8 @@ public class GenerativeNeuroidNetworkTransformator {
             final int indexOfSourceNeuron = sourceNeuronCluster.cachedFirstNeuronIndex + sourceNeuronClusterNeuronIndex;
             final int indexOfDestinationNeuron = destinationNeuronCluster.cachedFirstNeuronIndex + destinationNeuronClusterNeuronIndex;
 
-            // debug
-            if( indexOfSourceNeuron < 0 || indexOfDestinationNeuron < 0 ) {
-                int debug = 0;
-            }
-
             assert indexOfSourceNeuron >= 0;
             assert indexOfDestinationNeuron >= 0;
-
-
 
             // build and link the connection
             List<Neuroid.Helper.EdgeWeightTuple.NeuronAdress> neuronAddressedOfNeuronsOfConnection = new ArrayList<>();

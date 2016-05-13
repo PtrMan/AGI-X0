@@ -15,4 +15,6 @@ public interface IUsageCase {
     // ...
 
     void afterNeuroidSimulationStep(Environment environment, final boolean[] hiddenNeuronActivation);
+
+
 }

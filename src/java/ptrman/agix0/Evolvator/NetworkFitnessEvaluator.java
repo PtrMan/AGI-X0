@@ -8,9 +8,11 @@ import ptrman.agix0.Neuroids.NeuroidNetworkManipulation.GenerativeNeuroidNetwork
 import ptrman.agix0.Neuroids.debug.GenerativeNeuroidNetworkDescriptorAbstractMathematicaDebug;
 import ptrman.agix0.UsageCases.CritterSimpleUsageCase;
 import ptrman.agix0.UsageCases.IUsageCase;
+import ptrman.agix0.UsageCases.ImageRatingUsageCase;
 import ptrman.agix0.UsageCases.NullUsageCase;
 
 import java.util.List;
+import java.util.Random;
 
 import static java.lang.Float.max;
 import static java.lang.Math.abs;
@@ -76,7 +78,8 @@ public class NetworkFitnessEvaluator implements FitnessEvaluator<NetworkGeneticE
 
         simulationContext.getComponent().setupNeuroidNetwork(neuroidNetworkFromIndirectEncoding);
 
-        IUsageCase usageCase = new NullUsageCase(); //new CritterSimpleUsageCase(simulationContext.environmentScriptingAccessor);
+        // TODO< write code to use usageCase >
+        ImageRatingUsageCase usageCase = new ImageRatingUsageCase(new Random()); //new CritterSimpleUsageCase(simulationContext.environmentScriptingAccessor);
 
         final int numberOfNeuralSimulationSteps = usageCase.getNumberOfNeuralSimulationSteps();
 
@@ -103,6 +106,10 @@ public class NetworkFitnessEvaluator implements FitnessEvaluator<NetworkGeneticE
             usageCase.afterNeuroidSimulationStep(simulationContext.environment, neuronActivation);
 
             simulationContext.environment.timestep();
+
+
+            if(  )
+
         }
 
         // just for testing, reward for rotation
