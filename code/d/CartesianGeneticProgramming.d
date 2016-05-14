@@ -56,20 +56,35 @@ class Context {
 	public final ValueType computeNode(ValueType a, ValueType b, uint functionIndex) {
 		// TODO< code generated dispatch logic for each task >
 		if( functionIndex == 0 ) { // stupid addition
+			writeln("OP  ", a, " + ", b, " = ", a+b);
+
 			return a + b;
 		}
 		else if( functionIndex == 1 ) { // stupid multiplication
+			writeln("OP  ", a, " * ", b, " = ", a*b);
+
 			return a * b;
 		}
 		assert(false, "Internal Error");
 		return 0.0; // shouldn't ever be reached
 	}
 
+	// returns the default of the value
+	public final ValueType valueOfDefault() {
+		return 0.0f;
+	}
+	
+
 	// for testing public
 	// decoding CGP chromosomes
 	// see
 	// http://www.cartesiangp.co.uk/cgp-in-nutshell.pdf  page 8
 	public final void decodeChromosome(ChromosomeWithState chromosome) {
+		void resetOutputValues() {
+			chromosome.evalutionStates.resetOutputValues(valueOfDefault());
+		}
+		
+
 		void resetToEvaluate() {
 			chromosome.evalutionStates.resetToEvaluate();
 		}
@@ -149,6 +164,7 @@ class Context {
 			}
 		}
 
+		resetOutputValues();
 		resetToEvaluate();
 		identifiyInitialnodesWhichNeedToBeEvaluated();
 		whichNodesAreUsed();
@@ -238,8 +254,14 @@ class EvaluationStates {
 	public EvaluationState[] statesOfNodes;
 
 	public final void resetToEvaluate() {
-		foreach( iterationState; statesOfNodes ) {
+		foreach( ref iterationState; statesOfNodes ) {
 			iterationState.toEvaluate = false;
+		}
+	}
+
+	public final void resetOutputValues(ValueType value) {
+		foreach( ref iterationState; statesOfNodes ) {
+			iterationState.output = value;
 		}
 	}
 
@@ -331,6 +353,10 @@ class ChromosomeView {
 		return genotypeViewOf.getOutputGene(outputIndex);
 	}
 
+	public final Genotype getGenotypeViewOf() {
+		return genotypeViewOf;
+	}
+
 	protected Genotype genotypeViewOf;
 }
 
@@ -344,6 +370,24 @@ class ChromosomeWithState {
 		result.view = view;
 		result.evalutionStates = EvaluationStates.createBySize(view.nodes.length);
 		return result;
+	}
+
+	// helper
+	public final ValueType getValueOfOutput(uint outputIndex) {
+		uint geneIndex = view.getOutputGene(outputIndex);
+		return evalutionStates.statesOfNodes[geneIndex].output;
+	}
+
+	public final void copyChromosomeToDestination(ChromosomeWithState destination) {
+		foreach( i; 0..view.nodes.length ) {
+			// we can't assign the nodes directly because te nodes are views and it would mess up everything completly
+
+			foreach( connectionI; 0..view.getGenotypeViewOf().numberOfConnectionsPerNode ) {
+				destination.view.nodes[i].connections[connectionI] = view.nodes[i].connections[connectionI];
+			}
+			
+			destination.view.nodes[i].function_ = view.nodes[i].function_;
+		}
 	}
 
 	public final void checkInvariant() {
@@ -407,6 +451,10 @@ class Genotype {
 			genes[i].parentGenotype = this;
 			genes[i].indexInGenotype = i;
 		}
+	}
+
+	public final @property uint numberOfConnectionsPerNode() {
+		return cachedNumberOfConnectionsPerNode;
 	}
 
 	public final @property uint numberOfNodes() {
@@ -493,14 +541,35 @@ class Genotype {
 
 
 
-// TODO< evolution strategy >
+
+
+interface IRating {
+	void rate(ChromosomeWithState chromosomeWithState);
+}
+
+import std.math : isNaN;
+
+class TestRating : IRating {
+	public final void rate(ChromosomeWithState chromosomeWithState) {
+		ValueType result = chromosomeWithState.getValueOfOutput(0 /* of output 0 just for testing */);
+
+		if( isNaN(result) ) {
+			chromosomeWithState.rating = 0.0f;
+			return;
+		}
+
+		chromosomeWithState.rating = cast(float)result;
+	}
+}
+
+
 
 import std.stdio : writeln;
 
 void main() {
 	ChromosomeWithState[] chromosomesWithStates;
+	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
 
-	uint numberOfCandidates = 1;
 	uint numberOfGenerations = 500;
 
 
@@ -510,23 +579,47 @@ void main() {
 	parameters.numberOfInputsPerNode = 2; // depends on the suplied function to the Cartesian programming algorithm
 	parameters.numberOfOutputs = 1;
 
+	uint numberOfMutations = 5;
+	uint numberOfCandidates = 5; // 4 + 1  evolutionary strategy 
+
+
 	Context context = Context.make(parameters);
 
 	context.input = [3.0f, 1.5f, 0.7f];
 
+	IRating ratingImplementation = new TestRating();
+
 	// we just maintain one candidate
 	chromosomesWithStates ~= ChromosomeWithState.createFromChromosomeView(context.createRandomGenotypeView());
 	
+	foreach( i; 0..numberOfCandidates ) {
+		// TODO< can be null entities, where literaly everyting is null >
+		temporaryMutants ~= ChromosomeWithState.createFromChromosomeView(context.createRandomGenotypeView());
+	}
 
 	foreach( generation; 0..numberOfGenerations ) {
 		writeln("generation ", generation);
 
+		// copy to temporary which get mutated
+		{
+			foreach( iterationMutant; temporaryMutants ) {
+				iterationMutant.copyChromosomeToDestination(iterationMutant);
+			}
+		}
+
+		// mutate
+		{
+			foreach( iterationMutant; temporaryMutants ) {
+				context.pointMutationOnGene(iterationMutant.view.getGenotypeViewOf(), numberOfMutations);
+			}
+		}
+
 		// evaluation and rating
 		{
-			foreach( iterationChromosome; chromosomesWithStates ) {
+			foreach( iterationChromosome; temporaryMutants ) {
 				context.decodeChromosome(iterationChromosome);
-
-				// TODO< rating >
+				ratingImplementation.rate(iterationChromosome);
+				writeln("rating of mutant = ", iterationChromosome.rating);
 			}
 		}
 
