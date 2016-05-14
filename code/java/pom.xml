@@ -1,0 +1,288 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.stottlerhenke</groupId>
+  <artifactId>versionspaces</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>versionspaces</name>
+  <description>
+    Version Spaces is an implementation of the Version Space Algebra
+    Machine Learning technique described in Tessa Lau's PhD thesis:
+    
+    Tessa Lau, Steven Wolfman, Pedro Domingos, and Daniel S. Weld,
+    Programming by Demonstration using Version Space Algebra, Machine
+    Learning, 2003.
+    (http://tlau.org/research/papers/mlj01-draft.pdf)
+  </description>
+  <url>http://code.google.com/p/jversionspaces/</url>
+
+      
+  <distributionManagement>
+    <snapshotRepository>
+      <id>snapshots</id>
+      <name>Snapshots</name>
+      <url>${snapshots.url}</url>
+    </snapshotRepository>
+    <repository>
+      <id>releases</id>
+      <name>Releases</name>
+      <url>${releases.url}</url>
+    </repository>
+  </distributionManagement>
+
+  <inceptionYear>2009</inceptionYear>
+  <organization>
+    <name>Stottler Henke Associates, Inc.</name>
+    <url>http://www.stottlerhenke.com</url>
+  </organization>
+  <developers>
+    <developer>
+      <id>ercreswick</id>
+      <name>Rogan Creswick</name>
+      <email>rcreswick@stottlerhenke.com</email>
+      <url>http://blog.ciscavate.org</url>
+      <organization>Stottler Henke Associates, Inc.</organization>
+      <organizationUrl>http://www.stottlerhenke.com</organizationUrl>
+      <roles>
+        <role>architect</role>
+        <role>developer</role>
+      </roles>
+      <timezone>-8</timezone>
+    </developer>
+  </developers>
+  <licenses>
+    <license>
+      <name>GNU Lesser General Public License</name>
+      <url>http://www.gnu.org/licenses/lgpl-3.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <issueManagement>
+    <system>Google Code</system>
+    <url>http://code.google.com/p/jversionspaces/</url>
+  </issueManagement>
+  <scm>
+    <connection>scm:hg:http://jversionspaces.googlecode.com/hg/</connection>
+    <developerConnection>scm:hg:https://jversionspaces.googlecode.com/hg/</developerConnection>
+    <tag>HEAD</tag>
+    <url>http://jversionspaces.googlecode.com/hg/</url>
+  </scm>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>cobertura-maven-plugin</artifactId>
+        <configuration>
+          <instrumentation>
+            <!-- <ignores> -->
+            <!--   <ignore>com.example.boringcode.*</ignore> -->
+            <!-- </ignores> -->
+            <excludes>
+              <exclude>**/*Test.class</exclude>
+            </excludes>
+          </instrumentation>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-eclipse-plugin</artifactId>
+        <configuration>
+          <additionalProjectnatures>
+            <projectnature>edu.umd.cs.findbugs.plugin.eclipse.findbugsprojectnature</projectnature>
+          </additionalProjectnatures>
+          <additionalBuildcommands>
+            <buildcommand>edu.umd.cs.findbugs.plugin.eclipse.findbugsBuilder</buildcommand>
+          </additionalBuildcommands>
+        </configuration>
+      </plugin>
+      
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-compiler-plugin</artifactId>
+	<version>2.0.2</version>
+	<configuration>
+	  <source>1.6</source>
+	  <target>1.6</target>
+	  <showDeprecation>true</showDeprecation>
+	  <showWarnings>true</showWarnings>
+	</configuration>
+      </plugin>
+      <!-- 
+           Specify the fine name pattern to use when identifying unit tests.
+           -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+          <!-- <excludes> -->
+          <!--   <exclude>**/Abstract*</exclude> -->
+          <!-- </excludes> -->
+        </configuration>
+      </plugin>
+      <plugin>
+	    <groupId>org.apache.maven.plugins</groupId>
+	    <artifactId>maven-jar-plugin</artifactId>
+	    <executions>
+		  <execution>
+			<goals>
+				<goal>test-jar</goal>
+			</goals>
+		  </execution>
+	    </executions>
+      </plugin>
+      <!-- <plugin> -->
+      <!--   <groupId>org.apache.maven.plugins</groupId> -->
+      <!--   <artifactId>maven-jar-plugin</artifactId> -->
+      <!--   <configuration> -->
+      <!--     <archive> -->
+      <!--       <manifest> -->
+      <!--         <mainClass>com.stottlerhenke.tools.wikiparse.LowMemParse</mainClass> -->
+      <!--         <packageName>com.stottlerhenke.tools.wikiparse</packageName> -->
+      <!--         <addClasspath>true</addClasspath> -->
+      <!--         <classpathPrefix>${settings.localRepository}</classpathPrefix> -->
+      <!--         <classpathMavenRepositoryLayout>true</classpathMavenRepositoryLayout> -->
+      <!--       </manifest> -->
+      <!--       <manifestEntries> -->
+      <!--         <mode>development</mode> -->
+      <!--         <url>${pom.url}</url> -->
+      <!--       </manifestEntries> -->
+      <!--     </archive> -->
+      <!--   </configuration> -->
+      <!-- </plugin> -->
+      <plugin>
+	<!-- Invoke the dependency copy with: -->
+	<!-- mvn dependency:copy-dependencies -->
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-dependency-plugin</artifactId>
+	<configuration>
+	  <outputDirectory>
+	    ${project.build.directory}/lib
+	  </outputDirectory>
+	</configuration>
+      </plugin>
+
+      <!-- 
+           JavaDoc plugin:
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <overview>${basedir}/overview.html</overview>
+          <show>package</show>
+          <linksource>True</linksource>
+          <links>
+            <link>http://java.sun.com/javase/6/docs/api/</link>
+            <link>http://google-collections.googlecode.com/svn/trunk/javadoc/</link>
+            <link>http://www.jmock.org/javadoc/2.5.1/</link>
+            <link>http://junit.sourceforge.net/javadoc_40/</link>
+            <link>http://findbugs.sourceforge.net/api/</link>
+          </links>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <inherited>true</inherited>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.5</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jmock</groupId>
+      <artifactId>jmock-junit4</artifactId>
+      <version>2.5.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jmock</groupId>
+      <artifactId>jmock-legacy</artifactId>
+      <version>2.5.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jmock</groupId>
+      <artifactId>jmock-script</artifactId>
+      <version>2.5.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>1.3.8</version>
+    </dependency> 
+    <dependency>
+      <groupId>com.google.collections</groupId>
+      <artifactId>google-collections</artifactId>
+      <version>1.0-rc1</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.12</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>cobertura-maven-plugin</artifactId>
+	<configuration>
+          <threshold>High</threshold>
+          <effort>Default</effort>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <!-- <configuration> -->
+        <!--   <stylesheet>maven</stylesheet> -->
+        <!-- </configuration> -->
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <version>2.4.2</version>
+        <configuration>
+          <outputName>Unit Tests</outputName>
+          <showSuccess>true</showSuccess>
+        </configuration>
+      </plugin>
+      <plugin>
+      <!-- Cross-reference junit reports with source code: -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jxr-plugin</artifactId>
+        <version>2.1</version>
+      </plugin>
+    </plugins>
+  </reporting>
+</project>

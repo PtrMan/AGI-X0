@@ -1,0 +1,18 @@
+JVersionSpaces Installation instructions
+
+Author: Rogan Creswick <creswick_at_gmail_dot_com>
+
+We use maven for the build infrastructure, so "installation" is
+simple:
+
+To generate a jar (in target/versionspaces-[release version].jar):
+
+    $ mvn package
+
+
+To generate the javadocs, test coverage, etc.. the easiest thing is to
+just generate the full maven site:
+
+    $ mvn site
+
+Once you have the package, just treat it as you would any java jar.
