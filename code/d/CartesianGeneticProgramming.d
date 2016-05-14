@@ -394,7 +394,7 @@ class ChromosomeWithState {
 		assert(view.nodes.length == evalutionStates.statesOfNodes.length);
 	}
 
-	public float rating;
+	public float rating = 0.0f;
 }
 
 struct Gene {
@@ -624,7 +624,28 @@ void main() {
 		}
 
 		// selection of best one
-		// TODO
+		{
+			int bestPseudoIndex = -1;
+			float bestRating = chromosomesWithStates[0].rating;
+
+			int pseudoIndex = 0;
+			foreach( iterationChromosome; temporaryMutants ) {
+				// equal is important here to allow for genetic drift!
+				if( iterationChromosome.rating >= bestRating ) {
+					bestPseudoIndex = pseudoIndex;
+					bestRating = iterationChromosome.rating;
+				}
+
+				pseudoIndex++;
+			}
+
+			writeln("best rating = ", bestRating);
+
+			if( bestPseudoIndex != -1 ) {
+				temporaryMutants[bestPseudoIndex].copyChromosomeToDestination(chromosomesWithStates[0]);
+				chromosomesWithStates[0].rating = temporaryMutants[bestPseudoIndex].rating;
+			}
+		}
 	}
 }
 
