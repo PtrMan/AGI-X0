@@ -625,7 +625,10 @@ void main() {
 	uint numberOfTokens = 9;
 	uint readWidth = 3;
 
-	IOperatorInstancePrototype!ValueType operatorInstancePrototype = new TokenMatcherOperatorInstancePrototype(readWidth, numberOfTokens);
+	uint numberOfComperators = 3;
+	uint numberOfVariants = 2;
+
+	IOperatorInstancePrototype!ValueType operatorInstancePrototype = new TokenMatcherOperatorInstancePrototype(readWidth, numberOfTokens,  numberOfComperators, numberOfVariants);
 
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
@@ -657,7 +660,7 @@ void main() {
 		temporaryMutants ~= ChromosomeWithState.createFromChromosomeView(context.createRandomGenotypeView(), parameters.numberOfInputs);
 	}
 
-	uint generationReportInterval = 1000;
+	uint generationReportInterval = 5000;
 
 	foreach( generation; 0..numberOfGenerations ) {
 		bool reportCurrentGeneration = false, reportBestRatingChange = false;
