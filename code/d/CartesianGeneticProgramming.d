@@ -141,61 +141,63 @@ class Context {
 			}
 		}
 
+		
+		void transcribeToOperatorsForNodes() {
+			Genotype genotype = chromosome.view.getGenotypeViewOf();
+			genotype.transcribeToOperatorsForNodes();
+		}
+
+
+		resetOutputValues();
+		resetToEvaluate();
+		identifiyInitialnodesWhichNeedToBeEvaluated();
+		whichNodesAreUsed();
+		transcribeToOperatorsForNodes();
+	}
+
+	public final void executeGraph(ChromosomeWithState chromosome, ValueType[] input) {
 		void loadInputDataValues() {
 			foreach( i; 0..protectedGlobals.numberOfInputs ) {
 				chromosome.evalutionStates.statesOfNodes[i].output = input[i];
 			}
 		}
 
-		void transcribeToOperatorsForNodes() {
-			Genotype genotype = chromosome.view.getGenotypeViewOf();
-			genotype.transcribeToOperatorsForNodes();
-		}
+		// translates the index from the graph internaly to either a input index or a node index and pulls the value
+		ValueType getValueBySourceIndex(uint sourceIndex) {
+			ConnectionAdress.EnumType connectionType;
+			uint translatedConnectionIndex;
+			ConnectionAdress.translateIndexToTypeAndIndexOfType(sourceIndex, connectionType, translatedConnectionIndex, globals.numberOfInputs);
 
-		void executeGraph() {
-			// translates the index from the graph internaly to either a input index or a node index and pulls the value
-			ValueType getValueBySourceIndex(uint sourceIndex) {
-				ConnectionAdress.EnumType connectionType;
-				uint translatedConnectionIndex;
-				ConnectionAdress.translateIndexToTypeAndIndexOfType(sourceIndex, connectionType, translatedConnectionIndex, globals.numberOfInputs);
-
-				if( connectionType == ConnectionAdress.EnumType.NODE ) {
-					return chromosome.evalutionStates.statesOfNodes[translatedConnectionIndex].output;
-				}
-				else if( connectionType == ConnectionAdress.EnumType.INPUT ) {
-					return input[translatedConnectionIndex];
-				}
-				else {
-					throw new CgpException("Unreachable");
-				}
+			if( connectionType == ConnectionAdress.EnumType.NODE ) {
+				return chromosome.evalutionStates.statesOfNodes[translatedConnectionIndex].output;
 			}
-
-
-
-			Genotype genotype = chromosome.view.getGenotypeViewOf();
-			foreach( i; 0..chromosome.view.nodes.length ) {
-				if( !chromosome.evalutionStates.statesOfNodes[i].toEvaluate ) {
-					continue;
-				}
-				
-				ValueType[] inputs;
-
-				foreach( inputConnectionIndex; 0..genotype.operatorInstances[i].getNumberOfInputConnections() ) {
-					uint inputGeneIndex = genotype.operatorInstances[i].getInputGeneIndexForConnection(inputConnectionIndex);
-					inputs ~= getValueBySourceIndex(inputGeneIndex);
-				}
-
-				chromosome.evalutionStates.statesOfNodes[i].output = genotype.operatorInstances[i].calculateResult(inputs);				
+			else if( connectionType == ConnectionAdress.EnumType.INPUT ) {
+				return input[translatedConnectionIndex];
+			}
+			else {
+				throw new CgpException("Unreachable");
 			}
 		}
 
-		resetOutputValues();
-		resetToEvaluate();
-		identifiyInitialnodesWhichNeedToBeEvaluated();
-		whichNodesAreUsed();
+
 		loadInputDataValues();
-		transcribeToOperatorsForNodes();
-		executeGraph();
+
+
+		Genotype genotype = chromosome.view.getGenotypeViewOf();
+		foreach( i; 0..chromosome.view.nodes.length ) {
+			if( !chromosome.evalutionStates.statesOfNodes[i].toEvaluate ) {
+				continue;
+			}
+			
+			ValueType[] inputs;
+
+			foreach( inputConnectionIndex; 0..genotype.operatorInstances[i].getNumberOfInputConnections() ) {
+				uint inputGeneIndex = genotype.operatorInstances[i].getInputGeneIndexForConnection(inputConnectionIndex);
+				inputs ~= getValueBySourceIndex(inputGeneIndex);
+			}
+
+			chromosome.evalutionStates.statesOfNodes[i].output = genotype.operatorInstances[i].calculateResult(inputs);				
+		}
 	}
 
 	public final ChromosomeView createRandomGenotypeView() {
@@ -236,8 +238,6 @@ class Context {
 		}
 	}
 
-
-	public ValueType[] input;
 
 	public IOperatorInstancePrototype!ValueType operatorInstancePrototype;
 
@@ -580,13 +580,16 @@ class Genotype {
 
 
 interface IRating {
+	void resetRating(ChromosomeWithState chromosomeWithState);
 	void rate(ChromosomeWithState chromosomeWithState);
 }
 
 class TestRating : IRating {
-	public final void rate(ChromosomeWithState chromosomeWithState) {
+	public final void resetRating(ChromosomeWithState chromosomeWithState) {
 		chromosomeWithState.rating = 0.0f;
+	}
 
+	public final void rate(ChromosomeWithState chromosomeWithState) {		
 		ValueType result = chromosomeWithState.getValueOfOutput(0 /* of output 0 just for testing */);
 		
 		if( !result.isSet ) {
@@ -598,7 +601,7 @@ class TestRating : IRating {
 		}
 
 		if( result.tuple[1] == 2 ) { // checks for "tired"
-			chromosomeWithState.rating += 0.5f;
+			chromosomeWithState.rating += 1.0f;
 		}
 	}
 }
@@ -633,7 +636,7 @@ void main() {
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
 
-	uint numberOfGenerations = 50000;
+	uint numberOfGenerations = 5000000;
 
 
 	Parameters parameters = new Parameters();
@@ -647,8 +650,10 @@ void main() {
 
 	Context context = Context.make(parameters, operatorInstancePrototype);
 
-	context.input = [TextIndexOrTupleValue.makeTuple([0, 1, 2])]; // i am tired
-	// TODO< multiple, with "i am very tired" >
+	ValueType[][] inputs = [
+		[TextIndexOrTupleValue.makeTuple([0, 1, 2])], // i am tired
+		[TextIndexOrTupleValue.makeTuple([0, 1, 7, 2])], // i am very tired
+	];
 
 	IRating ratingImplementation = new TestRating();
 
@@ -686,7 +691,14 @@ void main() {
 		{
 			foreach( iterationChromosome; temporaryMutants ) {
 				context.decodeChromosome(iterationChromosome);
-				ratingImplementation.rate(iterationChromosome);
+				
+				ratingImplementation.resetRating(iterationChromosome);
+
+				foreach( iterationInput; inputs ) {
+					context.executeGraph(iterationChromosome, iterationInput);
+					ratingImplementation.rate(iterationChromosome);
+				}
+
 				//writeln("rating of mutant = ", iterationChromosome.rating);
 			}
 		}

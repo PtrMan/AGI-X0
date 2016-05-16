@@ -216,7 +216,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 					continue;
 				}
 
-				portA[index] = inputs[0].tuple[index];
+				portA[i] = inputs[0].tuple[index];
 			}
 		}
 
