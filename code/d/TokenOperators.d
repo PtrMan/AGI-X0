@@ -110,26 +110,38 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	public final void decodeSlicedGene(uint[] slicedGene) {
 		uint runningI = 0;
 
-		portAOffsetDeltas[0] = (cast(int)slicedGene[runningI] % (readWidth*2+1)) - readWidth; runningI++;
-		portAOffsetDeltas[1] = (cast(int)slicedGene[runningI] % (readWidth*2+1)) - readWidth; runningI++;
-		portAOffsetDeltas[2] = (cast(int)slicedGene[runningI] % (readWidth*2+1)) - readWidth; runningI++;
+		uint pullValueAndIncrementIndex() {
+			uint result = slicedGene[runningI];
+			runningI++;
+			return result;
+		}
+
+		int pullIntValueAndIncrementIndex() {
+			uint valueAsUint = pullValueAndIncrementIndex();
+			uint valueMasked = valueAsUint & (uint.max >> 1); // we do this to not screw with th sign when we do the cast
+			return cast(int)valueMasked;
+		}
+
+		portAOffsetDeltas[0] = (pullIntValueAndIncrementIndex() % (readWidth*2+1)) - readWidth;
+		portAOffsetDeltas[1] = (pullIntValueAndIncrementIndex() % (readWidth*2+1)) - readWidth;
+		portAOffsetDeltas[2] = (pullIntValueAndIncrementIndex() % (readWidth*2+1)) - readWidth;
 		
-		tokenComperators[0 + 0] = slicedGene[runningI] % numberOfTokens; runningI++;
-		tokenComperators[0 + 1] = slicedGene[runningI] % numberOfTokens; runningI++;
-		tokenComperators[0 + 2] = slicedGene[runningI] % numberOfTokens; runningI++;
-		tokenComperators[3 + 0] = slicedGene[runningI] % numberOfTokens; runningI++;
-		tokenComperators[3 + 1] = slicedGene[runningI] % numberOfTokens; runningI++;
-		tokenComperators[3 + 2] = slicedGene[runningI] % numberOfTokens; runningI++;
+		tokenComperators[0 + 0] = pullValueAndIncrementIndex() % numberOfTokens;
+		tokenComperators[0 + 1] = pullValueAndIncrementIndex() % numberOfTokens;
+		tokenComperators[0 + 2] = pullValueAndIncrementIndex() % numberOfTokens;
+		tokenComperators[3 + 0] = pullValueAndIncrementIndex() % numberOfTokens;
+		tokenComperators[3 + 1] = pullValueAndIncrementIndex() % numberOfTokens;
+		tokenComperators[3 + 2] = pullValueAndIncrementIndex() % numberOfTokens;
 
-		activatedTokenComperators[0 + 0] = (slicedGene[runningI] & 1) != 0; runningI++;
-		activatedTokenComperators[0 + 1] = (slicedGene[runningI] & 1) != 0; runningI++;
-		activatedTokenComperators[0 + 2] = (slicedGene[runningI] & 1) != 0; runningI++;
-		activatedTokenComperators[3 + 0] = (slicedGene[runningI] & 1) != 0; runningI++;
-		activatedTokenComperators[3 + 1] = (slicedGene[runningI] & 1) != 0; runningI++;
-		activatedTokenComperators[3 + 2] = (slicedGene[runningI] & 1) != 0; runningI++;
+		activatedTokenComperators[0 + 0] = (pullValueAndIncrementIndex() & 1) != 0;
+		activatedTokenComperators[0 + 1] = (pullValueAndIncrementIndex() & 1) != 0;
+		activatedTokenComperators[0 + 2] = (pullValueAndIncrementIndex() & 1) != 0;
+		activatedTokenComperators[3 + 0] = (pullValueAndIncrementIndex() & 1) != 0;
+		activatedTokenComperators[3 + 1] = (pullValueAndIncrementIndex() & 1) != 0;
+		activatedTokenComperators[3 + 2] = (pullValueAndIncrementIndex() & 1) != 0;
 
-		portAResultSelectorIndices[0] = cast(int)slicedGene[runningI] -1; runningI++;
-		portAResultSelectorIndices[1] = cast(int)slicedGene[runningI] -1; runningI++;
+		portAResultSelectorIndices[0] = (pullIntValueAndIncrementIndex() % (3+1)) -1;
+		portAResultSelectorIndices[1] = (pullIntValueAndIncrementIndex() % (3+1)) -1;
 
 		assert(runningI == getGeneSliceWidth());
 	}
@@ -147,10 +159,14 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	}
 
 	public final uint getInputGeneIndexForConnection(uint connectionIndex) {
-		assert(false, "Should never get called!");
+		return 0; // always the input (just for testing)
 	}
 
 	public final TextIndexOrTupleValue calculateResult(TextIndexOrTupleValue[] inputs) {
+		assert(inputs[0].tuple.length != 0);
+		import std.stdio;
+		writeln(inputs[0].tuple);
+
 		uint readIndex = 0; // just for testing
 
 		// -1 means invalid
