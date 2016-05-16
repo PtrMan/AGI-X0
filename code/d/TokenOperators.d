@@ -1,5 +1,6 @@
 module TokenOperators;
 
+import ValueMatrix : ValueMatrix;
 
 class TextIndexOrTupleValue {
 	public enum EnumType {
@@ -90,19 +91,45 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	public final this(uint readWidth, uint numberOfTokens) {
 		this.readWidth = readWidth;
 		this.numberOfTokens = numberOfTokens;
+
+		this.tokenComperatorMatrix = new ValueMatrix!int(3, 2);
 	}
 
 	// configuration
 	protected uint readWidth;
 	protected uint numberOfTokens;
 
+	protected final @property uint numberOfComperators() {
+		return tokenComperatorMatrix.width;
+	}
+
+	protected final @property uint numberOfVariants() {
+		return tokenComperatorMatrix.height;
+	}
+
+	protected final bool isTokenComperatorActivated(uint portIndex, uint variantIndex) {
+		return tokenComperatorMatrix[variantIndex, portIndex] != -1;
+	}
+
+	protected final int getTokenComperator(uint portIndex, uint variantIndex) {
+		return tokenComperatorMatrix[variantIndex, portIndex];
+	}
+
+	// for unittesting
+	public final void setTokenComperator(uint portIndex, uint variantIndex, int value) {
+		tokenComperatorMatrix[variantIndex, portIndex] = value;
+	}
+
+
+	protected ValueMatrix!int tokenComperatorMatrix;
+
 
 	// into port A
 	int portAOffsetDeltas[3];
 
 	
-	uint tokenComperators[2*3]; // contains the numbers of the tokens to compare to, the firings of the results get ored together, only active tokens can fire
-	bool activatedTokenComperators[2*3];
+	//uint tokenComperators[2*3]; // contains the numbers of the tokens to compare to, the firings of the results get ored together, only active tokens can fire
+	//bool activatedTokenComperators[2*3];
 
 	// picks out the words from portA to put it into the result, if it is -1 it is ignored
 	int portAResultSelectorIndices[2];
@@ -126,20 +153,12 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		portAOffsetDeltas[1] = (pullIntValueAndIncrementIndex() % (readWidth*2+1)) - readWidth;
 		portAOffsetDeltas[2] = (pullIntValueAndIncrementIndex() % (readWidth*2+1)) - readWidth;
 		
-		tokenComperators[0 + 0] = pullValueAndIncrementIndex() % numberOfTokens;
-		tokenComperators[0 + 1] = pullValueAndIncrementIndex() % numberOfTokens;
-		tokenComperators[0 + 2] = pullValueAndIncrementIndex() % numberOfTokens;
-		tokenComperators[3 + 0] = pullValueAndIncrementIndex() % numberOfTokens;
-		tokenComperators[3 + 1] = pullValueAndIncrementIndex() % numberOfTokens;
-		tokenComperators[3 + 2] = pullValueAndIncrementIndex() % numberOfTokens;
-
-		activatedTokenComperators[0 + 0] = (pullValueAndIncrementIndex() & 1) != 0;
-		activatedTokenComperators[0 + 1] = (pullValueAndIncrementIndex() & 1) != 0;
-		activatedTokenComperators[0 + 2] = (pullValueAndIncrementIndex() & 1) != 0;
-		activatedTokenComperators[3 + 0] = (pullValueAndIncrementIndex() & 1) != 0;
-		activatedTokenComperators[3 + 1] = (pullValueAndIncrementIndex() & 1) != 0;
-		activatedTokenComperators[3 + 2] = (pullValueAndIncrementIndex() & 1) != 0;
-
+		foreach( variantIndex; 0..numberOfVariants ) {
+			foreach( comperatorIndex; 0..numberOfComperators ) {
+				tokenComperatorMatrix[variantIndex, comperatorIndex] = (pullIntValueAndIncrementIndex() % (numberOfTokens+1)) - 1;
+			}
+		}
+		
 		portAResultSelectorIndices[0] = (pullIntValueAndIncrementIndex() % (3+1)) -1;
 		portAResultSelectorIndices[1] = (pullIntValueAndIncrementIndex() % (3+1)) -1;
 
@@ -149,8 +168,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	public final uint getGeneSliceWidth() {
 		return 
 			portAOffsetDeltas.length + 
-			tokenComperators.length +
-			activatedTokenComperators.length +
+			tokenComperatorMatrix.width*tokenComperatorMatrix.height +
 			portAResultSelectorIndices.length;
 	}
 
@@ -205,7 +223,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 					foreach( variantI; 0..2 ) {
 						bool variantFired = false;
 
-						if( !activatedTokenComperators[variantI*3 + portIndex] ) {
+						if( !isTokenComperatorActivated(portIndex, variantI) ) {
 							continue;
 						}
 
@@ -217,7 +235,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 						}
 
 
-						if( tokenComperators[variantI*3 + portIndex] == portA[portIndex] ) {
+						if( getTokenComperator(portIndex, variantI) == portA[portIndex] ) {
 							variantFired = true;
 							result = portA[portIndex];
 							//match = true;
@@ -270,8 +288,7 @@ unittest {
 	TokenMatcherOperatorInstance tokenMatcherOperatorInstance = new TokenMatcherOperatorInstance(readWidth, numberOfTokens);
 
 	tokenMatcherOperatorInstance.portAOffsetDeltas[0] = 0;
-	tokenMatcherOperatorInstance.activatedTokenComperators[0] = true;
-	tokenMatcherOperatorInstance.tokenComperators[0*3 + 0] = 1;
+	tokenMatcherOperatorInstance.setTokenComperator(0, 0, 1);
 
 	tokenMatcherOperatorInstance.portAResultSelectorIndices[0] = 0;
 	tokenMatcherOperatorInstance.portAResultSelectorIndices[1] = -1;
@@ -292,11 +309,8 @@ unittest {
 	TokenMatcherOperatorInstance tokenMatcherOperatorInstance = new TokenMatcherOperatorInstance(readWidth, numberOfTokens);
 
 	tokenMatcherOperatorInstance.portAOffsetDeltas[0] = 0;
-	tokenMatcherOperatorInstance.activatedTokenComperators[0*3 + 0] = true;
-	tokenMatcherOperatorInstance.tokenComperators[0*3 + 0] = 1;
-
-	tokenMatcherOperatorInstance.activatedTokenComperators[1*3 + 0] = true;
-	tokenMatcherOperatorInstance.tokenComperators[1*3 + 0] = 2;
+	tokenMatcherOperatorInstance.setTokenComperator(0, 0, 1);
+	tokenMatcherOperatorInstance.setTokenComperator(0, 1, 2);
 
 	tokenMatcherOperatorInstance.portAResultSelectorIndices[0] = 0;
 	tokenMatcherOperatorInstance.portAResultSelectorIndices[1] = -1;
@@ -329,20 +343,12 @@ unittest {
 	TokenMatcherOperatorInstance tokenMatcherOperatorInstance = new TokenMatcherOperatorInstance(readWidth, numberOfTokens);
 
 	tokenMatcherOperatorInstance.portAOffsetDeltas[0] = 0;
-	tokenMatcherOperatorInstance.activatedTokenComperators[0*3 + 0] = true;
-	tokenMatcherOperatorInstance.tokenComperators[0*3 + 0] = 1;
-
-	tokenMatcherOperatorInstance.activatedTokenComperators[1*3 + 0] = true;
-	tokenMatcherOperatorInstance.tokenComperators[1*3 + 0] = 2;
-
+	tokenMatcherOperatorInstance.setTokenComperator(0, 0,  1);
+	tokenMatcherOperatorInstance.setTokenComperator(0, 1,  2);
 
 	tokenMatcherOperatorInstance.portAOffsetDeltas[1] = 1;
-	tokenMatcherOperatorInstance.activatedTokenComperators[0*3 + 1] = true;
-	tokenMatcherOperatorInstance.tokenComperators[0*3 + 1] = 3;
-
-	tokenMatcherOperatorInstance.activatedTokenComperators[1*3 + 1] = true;
-	tokenMatcherOperatorInstance.tokenComperators[1*3 + 1] = 4;
-
+	tokenMatcherOperatorInstance.setTokenComperator(1, 0,  3);
+	tokenMatcherOperatorInstance.setTokenComperator(1, 1,  4);
 
 
 
