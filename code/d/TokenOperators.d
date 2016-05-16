@@ -164,8 +164,6 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 
 	public final TextIndexOrTupleValue calculateResult(TextIndexOrTupleValue[] inputs) {
 		assert(inputs[0].tuple.length != 0);
-		import std.stdio;
-		writeln(inputs[0].tuple);
 
 		uint readIndex = 0; // just for testing
 
@@ -183,7 +181,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 				if( index < 0 || index >= inputs[0].tuple.length ) {
 					continue;
 				}
-	
+
 				portA[index] = inputs[0].tuple[index];
 			}
 		}

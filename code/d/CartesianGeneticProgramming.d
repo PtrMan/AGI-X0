@@ -106,7 +106,6 @@ class Context {
 			foreach( i; 0..globals.numberOfOutputs ) {
 				ConnectionAdress.EnumType connectionType;
 				uint translatedConnectionIndex;
-				writeln(chromosome.view.getOutputGene(i));
 				ConnectionAdress.translateIndexToTypeAndIndexOfType(chromosome.view.getOutputGene(i), connectionType, translatedConnectionIndex, globals.numberOfInputs);
 
 				if( connectionType == ConnectionAdress.EnumType.NODE ) {
@@ -143,9 +142,6 @@ class Context {
 		}
 
 		void loadInputDataValues() {
-			import std.stdio;
-			writeln("TRACE ", "chromosome.evalutionStates.statesOfNodes.length ", chromosome.evalutionStates.statesOfNodes.length);
-
 			foreach( i; 0..protectedGlobals.numberOfInputs ) {
 				chromosome.evalutionStates.statesOfNodes[i].output = input[i];
 			}
@@ -386,9 +382,6 @@ class ChromosomeWithState {
 		ConnectionAdress.EnumType connectionType;
 		uint translatedConnectionIndex;
 
-		import std.stdio;
-		writeln("view.getOutputGene(outputIndex) ", view.getOutputGene(outputIndex));
-
 		ConnectionAdress.translateIndexToTypeAndIndexOfType(view.getOutputGene(outputIndex), connectionType, translatedConnectionIndex, cachedNumberOfInputs);
 
 		if( connectionType == ConnectionAdress.EnumType.NODE ) {
@@ -503,7 +496,7 @@ class Genotype {
 		uint sliceIndex = 0;
 
 		foreach( i; 0..protectedCachedNumberOfNodes ) {
-			uint[] slicedGene = convertGenesToUint(genes[sliceIndex  +cachedNumberOfInputs..sliceIndex  +cachedNumberOfInputs+operatorInstances[i].getGeneSliceWidth()]);
+			uint[] slicedGene = convertGenesToUint(genes[sliceIndex..sliceIndex+operatorInstances[i].getGeneSliceWidth()]);
 
 			assert(slicedGene.length == operatorInstances[i].getGeneSliceWidth());
 
@@ -600,22 +593,19 @@ class TestRating : IRating {
 			return;
 		}
 
-		import std.stdio;
-		writeln("MARKER rate()");
-
 		if( result.tuple[0] == 0 ) { // checks for "i"
 			chromosomeWithState.rating += 1.0f;
 		}
 
 		if( result.tuple[1] == 2 ) { // checks for "tired"
-			chromosomeWithState.rating += 1.0f;
+			chromosomeWithState.rating += 0.5f;
 		}
 	}
 }
 
 
 
-import std.stdio : writeln;
+import std.stdio : writeln, write;
 
 void main() {
 	// 0 : i
@@ -640,7 +630,7 @@ void main() {
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
 
-	uint numberOfGenerations = 500000;
+	uint numberOfGenerations = 50000;
 
 
 	Parameters parameters = new Parameters();
@@ -667,8 +657,13 @@ void main() {
 		temporaryMutants ~= ChromosomeWithState.createFromChromosomeView(context.createRandomGenotypeView(), parameters.numberOfInputs);
 	}
 
+	uint generationReportInterval = 1000;
+
 	foreach( generation; 0..numberOfGenerations ) {
-		writeln("generation ", generation);
+		bool reportCurrentGeneration = false, reportBestRatingChange = false;
+		float reportBestRating;
+
+		reportCurrentGeneration |= ((generation % generationReportInterval) == 0);
 
 		// copy to temporary which get mutated
 		{
@@ -689,14 +684,14 @@ void main() {
 			foreach( iterationChromosome; temporaryMutants ) {
 				context.decodeChromosome(iterationChromosome);
 				ratingImplementation.rate(iterationChromosome);
-				writeln("rating of mutant = ", iterationChromosome.rating);
+				//writeln("rating of mutant = ", iterationChromosome.rating);
 			}
 		}
 
 		// selection of best one
 		{
 			int bestPseudoIndex = -1;
-			float bestRating = chromosomesWithStates[0].rating;
+			float bestRating = chromosomesWithStates[0].rating, oldBestRating = bestRating;
 
 			int pseudoIndex = 0;
 			foreach( iterationChromosome; temporaryMutants ) {
@@ -709,12 +704,33 @@ void main() {
 				pseudoIndex++;
 			}
 
-			writeln("best rating = ", bestRating);
-
 			if( bestPseudoIndex != -1 ) {
 				temporaryMutants[bestPseudoIndex].copyChromosomeToDestination(chromosomesWithStates[0]);
 				chromosomesWithStates[0].rating = temporaryMutants[bestPseudoIndex].rating;
 			}
+
+			// report
+			if( bestRating > oldBestRating ) {
+				reportBestRatingChange = true;
+				reportBestRating = bestRating;
+			}
+		}
+
+		// report
+		reportCurrentGeneration |= reportBestRatingChange;
+
+		bool reported = reportCurrentGeneration;
+
+		if( reported ) {
+			if( reportCurrentGeneration ) {
+				write("gen=", generation, " ");
+			}
+
+			if( reportBestRatingChange ) {
+				write("bestRating=", reportBestRating, " ");
+			}
+
+			writeln();
 		}
 	}
 }
