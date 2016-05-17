@@ -121,8 +121,8 @@ class Context {
 
 			for(;;) {
 				if( chromosome.evalutionStates.statesOfNodes[p].toEvaluate ) {
-					foreach( inputConnectionIndex; 0..genotype.operatorInstances[p].getNumberOfInputConnections() ) {
-						uint connectionIndex = genotype.operatorInstances[p].getInputGeneIndexForConnection(inputConnectionIndex);
+					foreach( inputConnectionIndex; 0..genotype.operatorInstancesWithInfo[p].operatorInstance.getNumberOfInputConnections() ) {
+						uint connectionIndex = genotype.operatorInstancesWithInfo[p].operatorInstance.getInputGeneIndexForConnection(inputConnectionIndex);
 						
 						ConnectionAdress.EnumType connectionType;
 						uint translatedConnectionIndex;
@@ -191,12 +191,12 @@ class Context {
 			
 			ValueType[] inputs;
 
-			foreach( inputConnectionIndex; 0..genotype.operatorInstances[i].getNumberOfInputConnections() ) {
-				uint inputGeneIndex = genotype.operatorInstances[i].getInputGeneIndexForConnection(inputConnectionIndex);
+			foreach( inputConnectionIndex; 0..genotype.operatorInstancesWithInfo[i].operatorInstance.getNumberOfInputConnections() ) {
+				uint inputGeneIndex = genotype.operatorInstancesWithInfo[i].operatorInstance.getInputGeneIndexForConnection(inputConnectionIndex);
 				inputs ~= getValueBySourceIndex(inputGeneIndex);
 			}
 
-			chromosome.evalutionStates.statesOfNodes[i].output = genotype.operatorInstances[i].calculateResult(inputs);				
+			chromosome.evalutionStates.statesOfNodes[i].output = genotype.operatorInstancesWithInfo[i].operatorInstance.calculateResult(inputs);				
 		}
 	}
 
@@ -395,7 +395,7 @@ class ChromosomeWithState {
 		foreach( nodeIndex; 0..view.nodes.length ) {
 			// we can't assign the nodes directly because te nodes are views and it would mess up everything completly
 
-			foreach( connectionIndex; 0..view.getGenotypeViewOf().operatorInstances[nodeIndex].getNumberOfInputConnections() ) {
+			foreach( connectionIndex; 0..view.getGenotypeViewOf().operatorInstancesWithInfo[nodeIndex].operatorInstance.getNumberOfInputConnections() ) {
 				destination.view.nodes[nodeIndex].genericGenes[connectionIndex] = view.nodes[nodeIndex].genericGenes[connectionIndex];
 			}
 		}
@@ -437,6 +437,11 @@ struct Gene {
 }
 
 class Genotype {
+	static private class OperatorInstanceWithInfo {
+		public IOperatorInstance!ValueType operatorInstance;
+		public uint genomeIndex;
+	}
+
 	// function genes followed by connection genes followed by output genes
 	public Gene[] genes;
 
@@ -446,7 +451,7 @@ class Genotype {
 		this.protectedCachedNumberOfNodes = cachedNumberOfNodes;
 		this.cachedNumberOfOutputs = cachedNumberOfOutputs;
 
-		this.operatorInstances.length = cachedNumberOfNodes;
+		this.operatorInstancesWithInfo.length = cachedNumberOfNodes;
 		
 		createOperatorInstances(operatorInstancePrototype);
 		allocateGenes();
@@ -461,24 +466,31 @@ class Genotype {
 	}
 
 	protected final void createOperatorInstances(IOperatorInstancePrototype!ValueType operatorInstancePrototype) {
-		import std.stdio;
-		writeln("TRACE ", "createOperatorInstances() ", "protectedCachedNumberOfNodes ", protectedCachedNumberOfNodes);
+		uint currentGenomeIndex = 0;
 
 		foreach( i; 0..protectedCachedNumberOfNodes ) {
-			operatorInstances[i] = operatorInstancePrototype.createInstance();
+			operatorInstancesWithInfo[i] = new OperatorInstanceWithInfo();
+			operatorInstancesWithInfo[i].operatorInstance = operatorInstancePrototype.createInstance();
+			operatorInstancesWithInfo[i].genomeIndex = currentGenomeIndex;
+
+			currentGenomeIndex += operatorInstancesWithInfo[i].operatorInstance.getGeneSliceWidth();
 		}
 	}
 
-	public final @property uint numberOfConnectionsPerNode() {
-		// ASSUMTION  all operators require the same number of genes
-		return operatorInstances[0].getGeneSliceWidth();
+	public final uint getNumberOfConnectionsForNode(uint nodeIndex) {
+		return operatorInstancesWithInfo[nodeIndex].operatorInstance.getGeneSliceWidth();
 	}
+
+	public final uint getGeneOffsetForNode(uint nodeIndex) {
+		return operatorInstancesWithInfo[nodeIndex].genomeIndex;
+	}
+
 
 	public final @property uint numberOfNodes() {
 		return protectedCachedNumberOfNodes;
 	}
 
-	public IOperatorInstance!ValueType[] operatorInstances;
+	public OperatorInstanceWithInfo[] operatorInstancesWithInfo;
 
 	///////////////////////////
 	// misc
@@ -493,15 +505,10 @@ class Genotype {
 			return result;
 		}
 
-		uint sliceIndex = 0;
-
-		foreach( i; 0..protectedCachedNumberOfNodes ) {
-			uint[] slicedGene = convertGenesToUint(genes[sliceIndex..sliceIndex+operatorInstances[i].getGeneSliceWidth()]);
-
-			assert(slicedGene.length == operatorInstances[i].getGeneSliceWidth());
-
-			operatorInstances[i].decodeSlicedGene(slicedGene);
-			sliceIndex += slicedGene.length;
+		foreach( iteratorOperatorInstanceWithInfo; operatorInstancesWithInfo ) {
+			uint sliceIndex = iteratorOperatorInstanceWithInfo.genomeIndex;
+			uint[] slicedGene = convertGenesToUint(genes[sliceIndex..sliceIndex+iteratorOperatorInstanceWithInfo.operatorInstance.getGeneSliceWidth()]);
+			iteratorOperatorInstanceWithInfo.operatorInstance.decodeSlicedGene(slicedGene);
 		}
 	}
 
@@ -526,14 +533,14 @@ class Genotype {
 
 	public final void setGenericGeneOfNodeByIndex(uint nodeIndex, uint genericGeneIndex, uint value) {
 		assert(nodeIndex < protectedCachedNumberOfNodes);
-		assert(genericGeneIndex < numberOfConnectionsPerNode);
-		genes[getOffsetOfGenesForGenericGenes() + nodeIndex*numberOfConnectionsPerNode + genericGeneIndex] = value;
+		assert(genericGeneIndex < getNumberOfConnectionsForNode(nodeIndex));
+		genes[getOffsetOfGenesForGenericGenes() + getNumberOfConnectionsForNode(nodeIndex) + genericGeneIndex] = value;
 	}
 
 	public final uint getGenericGeneOfNodeIndex(uint nodeIndex, uint genericGeneIndex) {
 		assert(nodeIndex < protectedCachedNumberOfNodes);
-		assert(genericGeneIndex < numberOfConnectionsPerNode);
-		return genes[getOffsetOfGenesForGenericGenes() + nodeIndex*numberOfConnectionsPerNode + genericGeneIndex];
+		assert(genericGeneIndex < getNumberOfConnectionsForNode(nodeIndex));
+		return genes[getOffsetOfGenesForGenericGenes() + getNumberOfConnectionsForNode(nodeIndex) + genericGeneIndex];
 	}
 
 	public final uint getOutputGene(uint outputIndex) {
@@ -546,12 +553,12 @@ class Genotype {
 	// used by mutation
 
 	package final @property bool isGenericGene(uint index) {
-		assert(index < protectedCachedNumberOfNodes*numberOfConnectionsPerNode + cachedNumberOfOutputs);
+		assert(index < operatorInstancesWithInfo[$-1].genomeIndex + operatorInstancesWithInfo[$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs);
 		return index >= getOffsetOfGenesForGenericGenes() && index < getOffsetOfGenesForOutputs();
 	}
 
 	package final @property bool isOutputGene(uint index) {
-		assert(index < protectedCachedNumberOfNodes*numberOfConnectionsPerNode + cachedNumberOfOutputs);
+		assert(index < operatorInstancesWithInfo[$-1].genomeIndex + operatorInstancesWithInfo[$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs);
 		return index >= getOffsetOfGenesForOutputs();
 	}
 
@@ -564,11 +571,11 @@ class Genotype {
 	}
 
 	protected final uint getOffsetOfGenesForOutputs() {
-		return protectedCachedNumberOfNodes*numberOfConnectionsPerNode;
+		return operatorInstancesWithInfo[$-1].genomeIndex + operatorInstancesWithInfo[$-1].operatorInstance.getGeneSliceWidth();
 	}
 
 	protected final uint getNumberOfGenes() {
-		return protectedCachedNumberOfNodes*numberOfConnectionsPerNode + cachedNumberOfOutputs;
+		return operatorInstancesWithInfo[$-1].genomeIndex + operatorInstancesWithInfo[$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs;
 	}
 
 	protected uint protectedCachedNumberOfNodes, cachedNumberOfOutputs, cachedNumberOfInputs;
@@ -620,13 +627,14 @@ void main() {
 	// 6 : is
 	// 7 : very
 	// 8 : rainy
+	// 9 : extremly
 
 	// i am tired
 	// i am very tired
 	// it is very rainy
 	// it is rainy
-	uint numberOfTokens = 9;
-	uint readWidth = 3;
+	uint numberOfTokens = 10;
+	uint readWidth = 4;
 
 	uint numberOfComperators = 3;
 	uint numberOfVariants = 2;
@@ -652,6 +660,7 @@ void main() {
 
 	ValueType[][] inputs = [
 		[TextIndexOrTupleValue.makeTuple([0, 1, 2])], // i am tired
+		//[TextIndexOrTupleValue.makeTuple([0, 1, 8, 2])], // i am rainy tired   - justt for testing
 		[TextIndexOrTupleValue.makeTuple([0, 1, 7, 2])], // i am very tired
 	];
 

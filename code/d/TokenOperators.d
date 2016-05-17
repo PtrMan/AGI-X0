@@ -1,5 +1,7 @@
 module TokenOperators;
 
+// TODO< wildcard for the comperator, which is -2 >
+
 import ValueMatrix : ValueMatrix;
 
 class TextIndexOrTupleValue {
@@ -232,12 +234,12 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		// select from portA into portB
 		// if there is a mismatch of an activated possibility portB gets disabled
 		{
-			foreach( portIndex; 0..3 ) {
+			foreach( portIndex; 0..numberOfComperators ) {
 				void doesPortMatch(out bool portFired, out uint result) {
 					portFired = false;
 					bool portActivated = false;
 					
-					foreach( variantI; 0..2 ) {
+					foreach( variantI; 0..numberOfVariants ) {
 						bool variantFired = false;
 
 						if( !isTokenComperatorActivated(portIndex, variantI) ) {
