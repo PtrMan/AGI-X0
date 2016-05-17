@@ -2,6 +2,7 @@ module TokenOperators;
 
 // TODO< wildcard for the comperator, which is -2 >
 
+import CgpException : CgpException;
 import ValueMatrix : ValueMatrix;
 
 class TextIndexOrTupleValue {
@@ -56,25 +57,46 @@ class TextIndexOrTupleValue {
 
 
 interface IOperatorInstancePrototype(ValueType) {
-	IOperatorInstance!ValueType createInstance();
+	// typeId : which type of operator instance should be created?
+	// TODO< describe this with an descriptor object which contains the configuration >
+	IOperatorInstance!ValueType createInstance(uint typeId);
 }
 
 class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextIndexOrTupleValue {
-	public final this(uint readWidth, uint numberOfTokens,  uint numberOfComperators, uint numberOfVariants) {
-		this.readWidth = readWidth;
-		this.numberOfTokens = numberOfTokens;
+	public final this(
+		uint matcherReadWidth, uint matcherNumberOfTokens,
+		uint matcherNumberOfComperators, uint matcherNumberOfVariants,
 
-		this.numberOfComperators = numberOfComperators;
-		this.numberOfVariants = numberOfVariants;
+		uint selectorNumberOfInputConnections, uint selectorNumberOfOperatorsToChoose
+	) {
+		this.matcherReadWidth = matcherReadWidth;
+		this.matcherNumberOfTokens = matcherNumberOfTokens;
+
+		this.matcherNumberOfComperators = matcherNumberOfComperators;
+		this.matcherNumberOfVariants = matcherNumberOfVariants;
+
+		this.selectorNumberOfInputConnections = selectorNumberOfInputConnections;
+		this.selectorNumberOfOperatorsToChoose = selectorNumberOfOperatorsToChoose;
 	}
 
-	public final IOperatorInstance!TextIndexOrTupleValue createInstance() {
-		return new TokenMatcherOperatorInstance(readWidth, numberOfTokens,  numberOfComperators, numberOfVariants);
+	public final IOperatorInstance!TextIndexOrTupleValue createInstance(uint typeId) {
+		if( typeId == 0 ) {
+			return new TokenMatcherOperatorInstance(matcherReadWidth, matcherNumberOfTokens,  matcherNumberOfComperators, matcherNumberOfVariants);
+		}
+		else if( typeId == 1 ) {
+			return new SelectorOperatorInstance(selectorNumberOfInputConnections, selectorNumberOfOperatorsToChoose);
+		}
+		else {
+			throw new CgpException("Internal error: typeId is not recognized!");
+		}
 	}
 
 	protected uint
-		readWidth, numberOfTokens,
-		numberOfComperators, numberOfVariants;
+		matcherReadWidth, matcherNumberOfTokens,
+		matcherNumberOfComperators, matcherNumberOfVariants;
+
+	protected uint
+		selectorNumberOfInputConnections, selectorNumberOfOperatorsToChoose;
 }
 
 
@@ -92,6 +114,42 @@ interface IOperatorInstance(ValueType) {
 	in {
 		assert(inputs.length == getNumberOfInputConnections());
 	}
+}
+
+class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
+	public final this(uint numberOfInputConnections, uint numberOfOperatorsToChoose) {
+		this.numberOfInputConnections = numberOfInputConnections;
+		this.numberOfOperatorsToChoose = numberOfOperatorsToChoose;
+	}
+
+	public final uint getGeneSliceWidth() {
+		return numberOfInputConnections + 1;
+	}
+
+	// [the selectors for the connections] followed by [the selector for the input]
+	public final void decodeSlicedGene(uint[] slicedGene) {
+		slicedGeneForConnections = slicedGene[0..numberOfInputConnections];
+		currentSelector = slicedGene[numberOfInputConnections] % numberOfInputConnections;
+	}
+	
+	public final uint getNumberOfInputConnections() {
+		return numberOfInputConnections;
+	}
+
+	public final uint getInputGeneIndexForConnection(uint connectionIndex) {
+		assert(slicedGeneForConnections.length == numberOfInputConnections);
+		return slicedGeneForConnections[connectionIndex] % numberOfOperatorsToChoose;
+	}
+
+	public final TextIndexOrTupleValue calculateResult(TextIndexOrTupleValue[] inputs) {
+		assert(inputs.length == numberOfInputConnections);
+		return inputs[currentSelector];
+	}
+
+	protected uint[] slicedGeneForConnections;
+	protected uint currentSelector;
+
+	protected uint numberOfInputConnections, numberOfOperatorsToChoose;
 }
 
 class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {

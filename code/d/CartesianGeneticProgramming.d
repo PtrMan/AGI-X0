@@ -1,7 +1,7 @@
 module CartesianGeneticProgramming;
 
 import TokenOperators;
-
+import CgpException : CgpException;
 
 import std.random : uniform;
 
@@ -9,12 +9,6 @@ alias uint GeneIndex;
 
 alias TextIndexOrTupleValue ValueType;
 
-
-class CgpException : Exception {
-    this (string msg) {
-        super(msg) ;
-    }
-}
 
 class Parameters {
 	public uint numberOfInputs;
@@ -470,7 +464,8 @@ class Genotype {
 
 		foreach( i; 0..protectedCachedNumberOfNodes ) {
 			operatorInstancesWithInfo[i] = new OperatorInstanceWithInfo();
-			operatorInstancesWithInfo[i].operatorInstance = operatorInstancePrototype.createInstance();
+			uint typeId = 0;
+			operatorInstancesWithInfo[i].operatorInstance = operatorInstancePrototype.createInstance(0);
 			operatorInstancesWithInfo[i].genomeIndex = currentGenomeIndex;
 
 			currentGenomeIndex += operatorInstancesWithInfo[i].operatorInstance.getGeneSliceWidth();
@@ -636,10 +631,22 @@ void main() {
 	uint numberOfTokens = 10;
 	uint readWidth = 4;
 
-	uint numberOfComperators = 3;
+	uint numberOfComperatorsPerOperator = 3;
 	uint numberOfVariants = 2;
 
-	IOperatorInstancePrototype!ValueType operatorInstancePrototype = new TokenMatcherOperatorInstancePrototype(readWidth, numberOfTokens,  numberOfComperators, numberOfVariants);
+	uint numberOfMatchingOperators = 1; // how many matching operators are there?
+
+	uint
+		selectorNumberOfInputConnections = 3,
+		selectorNumberOfOperatorsToChoose = /* one because its the input to the whole network */1+numberOfMatchingOperators;
+
+
+	IOperatorInstancePrototype!ValueType operatorInstancePrototype = new TokenMatcherOperatorInstancePrototype(
+		readWidth, numberOfTokens,
+		numberOfComperatorsPerOperator, numberOfVariants,
+
+		selectorNumberOfInputConnections, selectorNumberOfOperatorsToChoose
+	);
 
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
