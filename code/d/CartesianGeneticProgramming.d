@@ -11,10 +11,7 @@ alias TextIndexOrTupleValue ValueType;
 
 
 class Parameters {
-	public uint numberOfInputs;
-	public uint numberOfNodes; // without input and output, just real nodes
-	
-	public uint numberOfOutputs;
+	public uint numberOfInputs, numberOfOutputs;
 
 	public IOperatorInstancePrototype!ValueType operatorInstancePrototype;
 }
@@ -41,15 +38,74 @@ class ConnectionAdress {
 	}
 }
 
+
+struct OperatorAdress {
+	uint column, row;
+}
+
+
+/*
+ * maps between the linear adress of an operator to the operator
+ *
+ * the operators are ordered in columns
+ *
+ * column   column
+ *  |         |
+ *  V         V
+ * 
+ * [op]
+ * [op]      [op]
+ * [op]      [op]
+ * [op]
+ */
+class OperatorMapping(ValueType) {
+	
+	public final OperatorAdress getOperatorAdressByLinearIndex(uint index) {
+		assert(index < adressesByLinearIndex.length);
+
+		return adressesByLinearIndex[index];
+	}
+
+	// [column][row]
+	public final void calcMapping(uint[][] typeIdsOfOperatorsToCreate) {
+		uint countInstances() {
+			return reduce!((a, b) => a + b)(map!(iterationColumn => iterationColumn.length)(typeIdsOfOperatorsToCreate), 0);
+		}
+
+		adressesByLinearIndex.length = countInstances();
+		uint adressesIndex = 0;
+
+		uint column = 0;
+
+		foreach( iterationColumn; typeIdsOfOperatorsToCreate ) {
+			uint row = 0;
+			foreach( iterationOperator; iterationColumn ) {
+				adressesByLinearIndex[adressesIndex].column = column;
+				adressesByLinearIndex[adressesIndex].row = row;
+
+				row++;
+
+				adressesIndex++;
+			}
+
+			column++;
+		}
+	}
+
+	protected OperatorAdress[] adressesByLinearIndex;
+}
+
+
 // used to dispatch the function and other global stuff
 class Context {
-	public static Context make(Parameters parameters, IOperatorInstancePrototype!ValueType operatorInstancePrototype) {
+	// typeIdsOfOperatorsToCreate are the typeId's (and at the same type the layout) of the to be created operators
+	public static Context make(Parameters parameters, IOperatorInstancePrototype!ValueType operatorInstancePrototype, uint[][] typeIdsOfOperatorsToCreate) {
 		Context result = new Context();
 		result.protectedGlobals.numberOfInputs = parameters.numberOfInputs;
-		result.protectedGlobals.numberOfNodes = parameters.numberOfNodes;
 		result.protectedGlobals.numberOfOutputs = parameters.numberOfOutputs;
 
 		result.operatorInstancePrototype = operatorInstancePrototype;
+		result.typeIdsOfOperatorsToCreate = typeIdsOfOperatorsToCreate;
 
 		return result;
 	}
@@ -199,7 +255,7 @@ class Context {
 	}
 
 	protected final Genotype createRandomGenotype() {
-		Genotype randomGenotype = new Genotype(operatorInstancePrototype, globals.numberOfNodes, globals.numberOfInputs, globals.numberOfOutputs);
+		Genotype randomGenotype = new Genotype(operatorInstancePrototype, typeIdsOfOperatorsToCreate, globals.numberOfInputs, globals.numberOfOutputs);
 		
 		foreach( geneIndex; 0..randomGenotype.genes.length ) {
 			flipGeneToRandom(randomGenotype, geneIndex);
@@ -247,6 +303,9 @@ class Context {
 	public final @property Globals globals() {
 		return protectedGlobals;
 	}
+
+	// are the typeIds of the operators to be created, and it contains the layout of the different operators too
+	protected uint[][] typeIdsOfOperatorsToCreate;
 }
 
 
@@ -439,16 +498,24 @@ class Genotype {
 	// function genes followed by connection genes followed by output genes
 	public Gene[] genes;
 
-	public final this(IOperatorInstancePrototype!ValueType operatorInstancePrototype, uint cachedNumberOfNodes, uint cachedNumberOfInputs, uint cachedNumberOfOutputs) {
-		this.cachedNumberOfInputs = cachedNumberOfInputs;
+	public final OperatorInstanceWithInfo getOperatorInstanceWithInfoByLinearIndex(uint index) {
+		OperatorAdress adress = operatorMapping.getOperatorAdressByLinearIndex(index);
+		return operatorInstancesWithInfo2[adress.column][adress.row];
+	}
 
-		this.protectedCachedNumberOfNodes = cachedNumberOfNodes;
+	public final this(IOperatorInstancePrototype!ValueType operatorInstancePrototype, uint[][] typeIdsOfOperatorsToCreate,   uint cachedNumberOfInputs, uint cachedNumberOfOutputs) {
+		this.cachedNumberOfInputs = cachedNumberOfInputs;
 		this.cachedNumberOfOutputs = cachedNumberOfOutputs;
 
-		this.operatorInstancesWithInfo.length = cachedNumberOfNodes;
+		///this.operatorInstancesWithInfo.length = cachedNumberOfNodes;
 		
-		createOperatorInstances(operatorInstancePrototype);
+		initOperatorMapping(typeIdsOfOperatorsToCreate);
+		createOperatorInstances(operatorInstancePrototype, typeIdsOfOperatorsToCreate);
 		allocateGenes();
+	}
+
+	protected final void initOperatorMapping(uint[][] typeIdsOfOperatorsToCreate) {
+		operatorMapping.calcMapping(typeIdsOfOperatorsToCreate);
 	}
 
 	protected final void allocateGenes() {
@@ -459,25 +526,38 @@ class Genotype {
 		}
 	}
 
-	protected final void createOperatorInstances(IOperatorInstancePrototype!ValueType operatorInstancePrototype) {
+	protected final void createOperatorInstances(IOperatorInstancePrototype!ValueType operatorInstancePrototype, uint[][] typeIdsOfOperatorsToCreate) {
 		uint currentGenomeIndex = 0;
 
-		foreach( i; 0..protectedCachedNumberOfNodes ) {
-			operatorInstancesWithInfo[i] = new OperatorInstanceWithInfo();
-			uint typeId = 0;
-			operatorInstancesWithInfo[i].operatorInstance = operatorInstancePrototype.createInstance(0);
-			operatorInstancesWithInfo[i].genomeIndex = currentGenomeIndex;
+		uint adressesIndex = 0;
+		uint column = 0;
 
-			currentGenomeIndex += operatorInstancesWithInfo[i].operatorInstance.getGeneSliceWidth();
+		foreach( iterationColumn; typeIdsOfOperatorsToCreate ) {
+			uint row = 0;
+			foreach( iterationOperator; iterationColumn ) {
+				{
+					operatorInstancesWithInfo2[column][row] = new OperatorInstanceWithInfo();
+					uint typeId = typeIdsOfOperatorsToCreate[column][row];
+					operatorInstancesWithInfo2[column][row].operatorInstance = operatorInstancePrototype.createInstance(typeId);
+					operatorInstancesWithInfo2[column][row].genomeIndex = currentGenomeIndex;
+
+					currentGenomeIndex += operatorInstancesWithInfo2[column][row].operatorInstance.getGeneSliceWidth();
+				}
+
+				row++;
+				adressesIndex++;
+			}
+
+			column++;
 		}
 	}
 
-	public final uint getNumberOfConnectionsForNode(uint nodeIndex) {
-		return operatorInstancesWithInfo[nodeIndex].operatorInstance.getGeneSliceWidth();
+	public final uint getNumberOfGenesForNode(OperatorAdress operatorAdress) {
+		return operatorInstancesWithInfo2[operatorAdress.column][operatorAdress.row].operatorInstance.getGeneSliceWidth();
 	}
 
-	public final uint getGeneOffsetForNode(uint nodeIndex) {
-		return operatorInstancesWithInfo[nodeIndex].genomeIndex;
+	public final uint getGeneOffsetForNode(OperatorAdress operatorAdress) {
+		return operatorInstancesWithInfo2[operatorAdress.column][operatorAdress.row].genomeIndex;
 	}
 
 
@@ -485,7 +565,13 @@ class Genotype {
 		return protectedCachedNumberOfNodes;
 	}
 
-	public OperatorInstanceWithInfo[] operatorInstancesWithInfo;
+	// TODO< rename >
+	public OperatorInstanceWithInfo[][] operatorInstancesWithInfo2;
+
+	protected OperatorMapping!ValueType operatorMapping = new OperatorMapping!ValueType;
+
+
+
 
 	///////////////////////////
 	// misc
@@ -500,10 +586,12 @@ class Genotype {
 			return result;
 		}
 
-		foreach( iteratorOperatorInstanceWithInfo; operatorInstancesWithInfo ) {
-			uint sliceIndex = iteratorOperatorInstanceWithInfo.genomeIndex;
-			uint[] slicedGene = convertGenesToUint(genes[sliceIndex..sliceIndex+iteratorOperatorInstanceWithInfo.operatorInstance.getGeneSliceWidth()]);
-			iteratorOperatorInstanceWithInfo.operatorInstance.decodeSlicedGene(slicedGene);
+		foreach( iterationColumn; operatorInstancesWithInfo2 ) {
+			foreach( iteratorOperatorInstanceWithInfo; iterationColumn ) {
+				uint sliceIndex = iteratorOperatorInstanceWithInfo.genomeIndex;
+				uint[] slicedGene = convertGenesToUint(genes[sliceIndex..sliceIndex+iteratorOperatorInstanceWithInfo.operatorInstance.getGeneSliceWidth()]);
+				iteratorOperatorInstanceWithInfo.operatorInstance.decodeSlicedGene(slicedGene);
+			}
 		}
 	}
 
@@ -528,14 +616,14 @@ class Genotype {
 
 	public final void setGenericGeneOfNodeByIndex(uint nodeIndex, uint genericGeneIndex, uint value) {
 		assert(nodeIndex < protectedCachedNumberOfNodes);
-		assert(genericGeneIndex < getNumberOfConnectionsForNode(nodeIndex));
-		genes[getOffsetOfGenesForGenericGenes() + getNumberOfConnectionsForNode(nodeIndex) + genericGeneIndex] = value;
+		assert(genericGeneIndex < getNumberOfGenesForNode(nodeIndex));
+		genes[getOffsetOfGenesForGenericGenes() + getNumberOfGenesForNode(nodeIndex) + genericGeneIndex] = value;
 	}
 
 	public final uint getGenericGeneOfNodeIndex(uint nodeIndex, uint genericGeneIndex) {
 		assert(nodeIndex < protectedCachedNumberOfNodes);
-		assert(genericGeneIndex < getNumberOfConnectionsForNode(nodeIndex));
-		return genes[getOffsetOfGenesForGenericGenes() + getNumberOfConnectionsForNode(nodeIndex) + genericGeneIndex];
+		assert(genericGeneIndex < getNumberOfGenesForNode(nodeIndex));
+		return genes[getOffsetOfGenesForGenericGenes() + getNumberOfGenesForNode(nodeIndex) + genericGeneIndex];
 	}
 
 	public final uint getOutputGene(uint outputIndex) {
@@ -548,12 +636,12 @@ class Genotype {
 	// used by mutation
 
 	package final @property bool isGenericGene(uint index) {
-		assert(index < operatorInstancesWithInfo[$-1].genomeIndex + operatorInstancesWithInfo[$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs);
+		assert(index < operatorInstancesWithInfo2[$-1][$-1].genomeIndex + operatorInstancesWithInfo2[$-1][$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs);
 		return index >= getOffsetOfGenesForGenericGenes() && index < getOffsetOfGenesForOutputs();
 	}
 
 	package final @property bool isOutputGene(uint index) {
-		assert(index < operatorInstancesWithInfo[$-1].genomeIndex + operatorInstancesWithInfo[$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs);
+		assert(index < operatorInstancesWithInfo2[$-1][$-1].genomeIndex + operatorInstancesWithInfo2[$-1][$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs);
 		return index >= getOffsetOfGenesForOutputs();
 	}
 
@@ -566,14 +654,14 @@ class Genotype {
 	}
 
 	protected final uint getOffsetOfGenesForOutputs() {
-		return operatorInstancesWithInfo[$-1].genomeIndex + operatorInstancesWithInfo[$-1].operatorInstance.getGeneSliceWidth();
+		return operatorInstancesWithInfo2[$-1][$-1].genomeIndex + operatorInstancesWithInfo2[$-1][$-1].operatorInstance.getGeneSliceWidth();
 	}
 
 	protected final uint getNumberOfGenes() {
-		return operatorInstancesWithInfo[$-1].genomeIndex + operatorInstancesWithInfo[$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs;
+		return operatorInstancesWithInfo2[$-1][$-1].genomeIndex + operatorInstancesWithInfo2[$-1][$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs;
 	}
 
-	protected uint protectedCachedNumberOfNodes, cachedNumberOfOutputs, cachedNumberOfInputs;
+	protected uint cachedNumberOfOutputs, cachedNumberOfInputs;
 }
 
 
