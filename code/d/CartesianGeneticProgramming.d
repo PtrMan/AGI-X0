@@ -114,24 +114,6 @@ class Context {
 		protectedGlobals = new Globals();
 	}
 
-	/*
-	public final ValueType computeNode(ValueType a, ValueType b, uint functionIndex) {
-		// TODO< code generated dispatch logic for each task >
-		if( functionIndex == 0 ) { // stupid addition
-			writeln("OP  ", a, " + ", b, " = ", a+b);
-
-			return a + b;
-		}
-		else if( functionIndex == 1 ) { // stupid multiplication
-			writeln("OP  ", a, " * ", b, " = ", a*b);
-
-			return a * b;
-		}
-		assert(false, "Internal Error");
-		return 0.0; // shouldn't ever be reached
-	}
-	*/
-
 	// returns the default of the value
 	public final ValueType valueOfDefault() {
 		return ValueType.makeDefaultValue();
@@ -292,10 +274,6 @@ class Context {
 	public IOperatorInstancePrototype!ValueType operatorInstancePrototype;
 
 	protected static class Globals : Parameters {
-		/*
-		public final @property uint numberOfConnections() {
-			return numberOfNodes * numberOfInputsPerNode;
-		}*/
 	}
 
 	protected Globals protectedGlobals;
@@ -598,21 +576,6 @@ class Genotype {
 
 	///////////////////////////
 	// used by chromosome views
-
-	
-	/*
-	public final uint getFunctionOfNodeIndex(uint nodeIndex) {
-		assert(nodeIndex < protectedCachedNumberOfNodes);
-		uint functionIndex = genes[getOffsetOfGenesForFunctions() + nodeIndex];
-		assert(functionIndex < cachedNumberOfFunctions);
-		return functionIndex;
-	}
-
-	public final void setFunctionOfNodeIndex(uint nodeIndex, uint newFunction) {
-		assert(nodeIndex < protectedCachedNumberOfNodes);
-		assert(newFunction < cachedNumberOfFunctions);
-		genes[getOffsetOfGenesForFunctions() + nodeIndex] = newFunction;
-	}*/
 
 	public final void setGenericGeneOfNodeByIndex(uint nodeIndex, uint genericGeneIndex, uint value) {
 		assert(nodeIndex < protectedCachedNumberOfNodes);
