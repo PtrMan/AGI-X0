@@ -109,8 +109,9 @@ interface IOperatorInstance(ValueType) {
 	
 	uint getNumberOfInputConnections();
 	
+	// numberOfOperatorsBeforeColumn : each operator in every column can just select the operators before this column as inputs, so we need to know how many operator there are to choose from
 	// returns the index (where the range is defined by the inputs followed by the ouputs of the operators) for the connection
-	uint getInputIndexForConnection(uint connectionIndex);
+	uint getInputIndexForConnection(uint connectionIndex, uint numberOfOperatorsBeforeColumn);
 
 	ValueType calculateResult(ValueType[] inputs)
 	in {
@@ -138,7 +139,7 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		return numberOfInputConnections;
 	}
 
-	public final uint getInputIndexForConnection(uint connectionIndex) {
+	public final uint getInputIndexForConnection(uint connectionIndex, uint numberOfOperatorsBeforeColumn) {
 		assert(slicedGeneForConnections.length == numberOfInputConnections);
 		return slicedGeneForConnections[connectionIndex] % numberOfOperatorsToChoose;
 	}
@@ -253,7 +254,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		return 1;
 	}
 
-	public final uint getInputIndexForConnection(uint connectionIndex) {
+	public final uint getInputIndexForConnection(uint connectionIndex, uint numberOfOperatorsBeforeColumn) {
 		return 0; // always the input (just for testing)
 	}
 

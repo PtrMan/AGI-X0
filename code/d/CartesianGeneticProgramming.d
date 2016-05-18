@@ -154,7 +154,8 @@ class Context {
 			for(;;) {
 				if( chromosome.evalutionStates.statesOfNodes[p].toEvaluate ) {
 					foreach( inputConnectionIndex; 0..genotype.getOperatorInstanceWithInfoByLinearIndex(p).operatorInstance.getNumberOfInputConnections() ) {
-						uint connectionIndex = genotype.getOperatorInstanceWithInfoByLinearIndex(p).operatorInstance.getInputIndexForConnection(inputConnectionIndex);
+						uint numberOfOperatorsBeforeColumn = genotype.getOperatorInstanceWithInfoByLinearIndex(p).numberOfOperatorsBeforeThisColumn;
+						uint connectionIndex = genotype.getOperatorInstanceWithInfoByLinearIndex(p).operatorInstance.getInputIndexForConnection(inputConnectionIndex, numberOfOperatorsBeforeColumn);
 						
 						ConnectionAdress.EnumType connectionType;
 						uint translatedConnectionIndex;
@@ -224,7 +225,8 @@ class Context {
 			ValueType[] inputs;
 
 			foreach( inputConnectionIndex; 0..genotype.getOperatorInstanceWithInfoByLinearIndex(i).operatorInstance.getNumberOfInputConnections() ) {
-				uint inputGeneIndex = genotype.getOperatorInstanceWithInfoByLinearIndex(i).operatorInstance.getInputIndexForConnection(inputConnectionIndex);
+				uint numberOfOperatorsBeforeColumn = genotype.getOperatorInstanceWithInfoByLinearIndex(i).numberOfOperatorsBeforeThisColumn;
+				uint inputGeneIndex = genotype.getOperatorInstanceWithInfoByLinearIndex(i).operatorInstance.getInputIndexForConnection(inputConnectionIndex, numberOfOperatorsBeforeColumn);
 				inputs ~= getValueBySourceIndex(inputGeneIndex);
 			}
 
@@ -353,6 +355,7 @@ class Genotype {
 	static public class OperatorInstanceWithInfo {
 		public IOperatorInstance!ValueType operatorInstance;
 		public uint genomeIndex;
+		public uint numberOfOperatorsBeforeThisColumn;
 	}
 
 	public alias uint Gene;
@@ -398,6 +401,8 @@ class Genotype {
 		uint adressesIndex = 0;
 		uint column = 0;
 
+		uint runningCounterForOperatorsBeforeThisColumn = 0;
+
 		foreach( iterationColumn; typeIdsOfOperatorsToCreate ) {
 			operatorInstancesWithInfo2[column].length = typeIdsOfOperatorsToCreate[column].length;
 
@@ -408,6 +413,7 @@ class Genotype {
 					uint typeId = typeIdsOfOperatorsToCreate[column][row];
 					operatorInstancesWithInfo2[column][row].operatorInstance = operatorInstancePrototype.createInstance(typeId);
 					operatorInstancesWithInfo2[column][row].genomeIndex = currentGenomeIndex;
+					operatorInstancesWithInfo2[column][row].numberOfOperatorsBeforeThisColumn = runningCounterForOperatorsBeforeThisColumn;
 
 					currentGenomeIndex += operatorInstancesWithInfo2[column][row].operatorInstance.getGeneSliceWidth();
 				}
@@ -415,6 +421,8 @@ class Genotype {
 				row++;
 				adressesIndex++;
 			}
+
+			runningCounterForOperatorsBeforeThisColumn += operatorInstancesWithInfo2[column].length;
 
 			column++;
 		}
