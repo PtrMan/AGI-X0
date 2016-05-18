@@ -234,10 +234,6 @@ class Context {
 		}
 	}
 
-	///public final ChromosomeView createRandomGenotypeView() {
-	///	return ChromosomeView.makeViewOfGenotype(createRandomGenotype());
-	///}
-
 	protected final Genotype createRandomGenotype() {
 		Genotype randomGenotype = new Genotype(operatorInstancePrototype, typeIdsOfOperatorsToCreate, globals.numberOfInputs, globals.numberOfOutputs);
 		
