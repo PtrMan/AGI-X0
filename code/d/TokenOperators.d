@@ -246,7 +246,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		}
 
 		foreach( ref iterationPartAOffsetDelta; portAOffsetDeltas ) {
-			iterationPartAOffsetDelta = (pullIntValueAndIncrementIndex() % (readWidth*2+1)) - readWidth;
+			iterationPartAOffsetDelta = pullValueAndIncrementIndex() % readWidth;
 		}
 		
 		foreach( variantIndex; 0..numberOfVariants ) {
@@ -255,8 +255,8 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 			}
 		}
 		
-		portAResultSelectorIndices[0] = (pullIntValueAndIncrementIndex() % (3+1)) -1;
-		portAResultSelectorIndices[1] = (pullIntValueAndIncrementIndex() % (3+1)) -1;
+		portAResultSelectorIndices[0] = (pullIntValueAndIncrementIndex() % (numberOfComperators+1)) -1;
+		portAResultSelectorIndices[1] = (pullIntValueAndIncrementIndex() % (numberOfComperators+1)) -1;
 
 		assert(runningI == getGeneSliceWidth());
 	}

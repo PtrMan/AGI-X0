@@ -507,7 +507,7 @@ class TestRating : IRating {
 			return;
 		}
 
-		if( result.tuple[0] == 0 ) { // checks for "i"
+		if( result.tuple[0] == 4 ) { // checks for "i"
 			chromosomeWithState.rating += 1.0f;
 		}
 
@@ -538,7 +538,7 @@ void main() {
 	// it is very rainy
 	// it is rainy
 	uint numberOfTokens = 10;
-	uint readWidth = 4;
+	uint readWidth = 5;
 
 	uint numberOfComperatorsPerOperator = 3;
 	uint numberOfVariants = 2;
@@ -566,7 +566,7 @@ void main() {
 	parameters.numberOfInputs = 1;
 	parameters.numberOfOutputs = 1;
 
-	uint numberOfMutations = 1;
+	uint numberOfMutations = 2;
 	uint numberOfCandidates = 5; // 4 + 1  evolutionary strategy 
 
 	uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1, 1]];
@@ -575,9 +575,13 @@ void main() {
 	Context context = Context.make(parameters, operatorInstancePrototype, typeIdsOfOperatorsToCreate);
 
 	ValueType[][] inputs = [
-		[TextIndexOrTupleValue.makeTuple([0, 1, 2])], // i am tired
+		[TextIndexOrTupleValue.makeTuple([4, 1, 2])], // road am tired
 		//[TextIndexOrTupleValue.makeTuple([0, 1, 8, 2])], // i am rainy tired   - justt for testing
-		[TextIndexOrTupleValue.makeTuple([0, 1, 7, 2])], // i am very tired
+		
+
+		// THE ALGORITHM SEEMS TO HAVE A PROBLEM WITH ALIASING
+		//[TextIndexOrTupleValue.makeTuple([4, 1, 7, 2])] // road am very tired     <- max rating with this is 3, should be 4    
+		[TextIndexOrTupleValue.makeTuple([4, 2, 5, 1])] // road tired am it     <- max rating with this is 4 as it should be
 	];
 
 	IRating ratingImplementation = new TestRating();
