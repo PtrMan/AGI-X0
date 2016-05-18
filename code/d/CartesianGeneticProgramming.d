@@ -69,7 +69,7 @@ class OperatorMapping(ValueType) {
 	// [column][row]
 	public final void calcMapping(uint[][] typeIdsOfOperatorsToCreate) {
 		uint countInstances() {
-			return reduce!((a, b) => a + b)(map!(iterationColumn => iterationColumn.length)(typeIdsOfOperatorsToCreate), 0);
+			return sum(map!(iterationColumn => iterationColumn.length)(typeIdsOfOperatorsToCreate), 0);
 		}
 
 		adressesByLinearIndex.length = countInstances();
@@ -138,7 +138,7 @@ class Context {
 			foreach( i; 0..globals.numberOfOutputs ) {
 				ConnectionAdress.EnumType connectionType;
 				uint translatedConnectionIndex;
-				ConnectionAdress.translateIndexToTypeAndIndexOfType(chromosome.view.getOutputGene(i), connectionType, translatedConnectionIndex, globals.numberOfInputs);
+				ConnectionAdress.translateIndexToTypeAndIndexOfType(chromosome.genotype.getOutputGene(i), connectionType, translatedConnectionIndex, globals.numberOfInputs);
 
 				if( connectionType == ConnectionAdress.EnumType.NODE ) {
 					chromosome.evalutionStates.statesOfNodes[translatedConnectionIndex].toEvaluate = true;
@@ -147,14 +147,14 @@ class Context {
 		}
 
 		void whichNodesAreUsed() {
-			Genotype genotype = chromosome.view.getGenotypeViewOf();
+			Genotype genotype = chromosome.genotype;
 
-			int p = chromosome.view.nodes.length-1;
+			int p = genotype.numberOfOperatorInstances()-1;
 
 			for(;;) {
 				if( chromosome.evalutionStates.statesOfNodes[p].toEvaluate ) {
-					foreach( inputConnectionIndex; 0..genotype.operatorInstancesWithInfo[p].operatorInstance.getNumberOfInputConnections() ) {
-						uint connectionIndex = genotype.operatorInstancesWithInfo[p].operatorInstance.getInputGeneIndexForConnection(inputConnectionIndex);
+					foreach( inputConnectionIndex; 0..genotype.getOperatorInstanceWithInfoByLinearIndex(p).operatorInstance.getNumberOfInputConnections() ) {
+						uint connectionIndex = genotype.getOperatorInstanceWithInfoByLinearIndex(p).operatorInstance.getInputIndexForConnection(inputConnectionIndex);
 						
 						ConnectionAdress.EnumType connectionType;
 						uint translatedConnectionIndex;
@@ -175,8 +175,7 @@ class Context {
 
 		
 		void transcribeToOperatorsForNodes() {
-			Genotype genotype = chromosome.view.getGenotypeViewOf();
-			genotype.transcribeToOperatorsForNodes();
+			chromosome.genotype.transcribeToOperatorsForNodes();
 		}
 
 
@@ -215,26 +214,27 @@ class Context {
 		loadInputDataValues();
 
 
-		Genotype genotype = chromosome.view.getGenotypeViewOf();
-		foreach( i; 0..chromosome.view.nodes.length ) {
+
+		Genotype genotype = chromosome.genotype;
+		foreach( i; 0..genotype.numberOfOperatorInstances() ) {
 			if( !chromosome.evalutionStates.statesOfNodes[i].toEvaluate ) {
 				continue;
 			}
 			
 			ValueType[] inputs;
 
-			foreach( inputConnectionIndex; 0..genotype.operatorInstancesWithInfo[i].operatorInstance.getNumberOfInputConnections() ) {
-				uint inputGeneIndex = genotype.operatorInstancesWithInfo[i].operatorInstance.getInputGeneIndexForConnection(inputConnectionIndex);
+			foreach( inputConnectionIndex; 0..genotype.getOperatorInstanceWithInfoByLinearIndex(i).operatorInstance.getNumberOfInputConnections() ) {
+				uint inputGeneIndex = genotype.getOperatorInstanceWithInfoByLinearIndex(i).operatorInstance.getInputIndexForConnection(inputConnectionIndex);
 				inputs ~= getValueBySourceIndex(inputGeneIndex);
 			}
 
-			chromosome.evalutionStates.statesOfNodes[i].output = genotype.operatorInstancesWithInfo[i].operatorInstance.calculateResult(inputs);				
+			chromosome.evalutionStates.statesOfNodes[i].output = genotype.getOperatorInstanceWithInfoByLinearIndex(i).operatorInstance.calculateResult(inputs);				
 		}
 	}
 
-	public final ChromosomeView createRandomGenotypeView() {
-		return ChromosomeView.makeViewOfGenotype(createRandomGenotype());
-	}
+	///public final ChromosomeView createRandomGenotypeView() {
+	///	return ChromosomeView.makeViewOfGenotype(createRandomGenotype());
+	///}
 
 	protected final Genotype createRandomGenotype() {
 		Genotype randomGenotype = new Genotype(operatorInstancePrototype, typeIdsOfOperatorsToCreate, globals.numberOfInputs, globals.numberOfOutputs);
@@ -256,18 +256,7 @@ class Context {
 	}
 
 	protected final void flipGeneToRandom(Genotype genotype, uint geneIndex) {
-		if( genotype.genes[geneIndex].isGenericGene ) {
-			// change gene to a randomly chosen new valid function
-			genotype.genes[geneIndex] = uniform!"[)"(0, uint.max);
-		}
-		else if( genotype.genes[geneIndex].isOutputGene ) {
-			// change gene to a new valid output connection
-			genotype.genes[geneIndex] = globals.numberOfInputs + uniform!"[)"(0, globals.numberOfNodes);
-		}
-		else {
-			throw new CgpException("Unreachable");
-			assert(false, "Unreachable!");
-		}
+		genotype.genes[geneIndex] = uniform!"[)"(0, uint.max);
 	}
 
 
@@ -317,92 +306,16 @@ class EvaluationStates {
 
 }
 
-// simulates a c like array of uint's, but does something more fancier
-class GenericGeneView {
-	public final this(uint nodeIndex, ChromosomeView chromosomeView) {
-		this.nodeIndex = nodeIndex;
-		this.chromosomeView = chromosomeView;
-	}
-
-	public final uint opIndexAssign(uint value, size_t connectionIndex) {
-		chromosomeView.setGenericGeneOfNodeByIndex(nodeIndex, connectionIndex, value);
-		return value;
-	}
-
-	public final uint opIndex(size_t connectionIndex) {
-		return chromosomeView.getGenericGeneOfNodeIndex(nodeIndex, connectionIndex);
-	}
-
-	protected uint nodeIndex;
-	protected ChromosomeView chromosomeView;
-}
-
-// view to a Chromosomeview and the NodeStateVector
-class NodeView {
-	public final this(uint nodeIndex, ChromosomeView chromosomeView) {
-		this.nodeIndex = nodeIndex;
-		this.chromosomeView = chromosomeView;
-		genericGeneView = new GenericGeneView(nodeIndex, chromosomeView);
-	}
-
-	public final @property GenericGeneView genericGenes() {
-		return genericGeneView;
-	}
-
-	protected uint nodeIndex;
-	protected GenericGeneView genericGeneView;
-	protected ChromosomeView chromosomeView;
-}
-
-// the chromosome is just a view on the Genotype
-class ChromosomeView {
-	public static ChromosomeView makeViewOfGenotype(Genotype genotypeViewOf) {
-		ChromosomeView result = new ChromosomeView();
-		result.genotypeViewOf = genotypeViewOf;
-
-		result.nodes.length = genotypeViewOf.numberOfNodes;
-
-		foreach( i; 0..result.nodes.length ) {
-			result.nodes[i] = new NodeView(i, result);
-		}
-
-		return result;
-	}
-
-	protected final this() {
-	}
-
-
-	public NodeView[] nodes;
-
-	public final void setGenericGeneOfNodeByIndex(uint nodeIndex, uint connectionIndex, uint value) {
-		genotypeViewOf.setGenericGeneOfNodeByIndex(nodeIndex, connectionIndex, value);
-	}
-
-	public final uint getGenericGeneOfNodeIndex(uint nodeIndex, uint connectionIndex) {
-		return genotypeViewOf.getGenericGeneOfNodeIndex(nodeIndex, connectionIndex);
-	}
-
-	public final uint getOutputGene(uint outputIndex) {
-		return genotypeViewOf.getOutputGene(outputIndex);
-	}
-
-	public final Genotype getGenotypeViewOf() {
-		return genotypeViewOf;
-	}
-
-	protected Genotype genotypeViewOf;
-}
 
 
 class ChromosomeWithState {
-	public ChromosomeView view;
+	public Genotype genotype;
 	public EvaluationStates evalutionStates;
 
-	public static ChromosomeWithState createFromChromosomeView(ChromosomeView view, uint numberOfInputs) {
+	public static ChromosomeWithState createFromGenotype(Genotype genotype, uint numberOfInputs) {
 		ChromosomeWithState result = new ChromosomeWithState();
-		result.view = view;
-		result.evalutionStates = EvaluationStates.createBySize(view.nodes.length + numberOfInputs);
+		result.genotype = genotype;
+		result.evalutionStates = EvaluationStates.createBySize(numberOfInputs + genotype.numberOfOperatorInstances());
 		
 		result.cachedNumberOfInputs = numberOfInputs;
 		return result;
@@ -413,7 +326,7 @@ class ChromosomeWithState {
 		ConnectionAdress.EnumType connectionType;
 		uint translatedConnectionIndex;
 
-		ConnectionAdress.translateIndexToTypeAndIndexOfType(view.getOutputGene(outputIndex), connectionType, translatedConnectionIndex, cachedNumberOfInputs);
+		ConnectionAdress.translateIndexToTypeAndIndexOfType(genotype.getOutputGene(outputIndex), connectionType, translatedConnectionIndex, cachedNumberOfInputs);
 
 		if( connectionType == ConnectionAdress.EnumType.NODE ) {
 			return evalutionStates.statesOfNodes[translatedConnectionIndex].output;
@@ -423,17 +336,10 @@ class ChromosomeWithState {
 	}
 
 	public final void copyChromosomeToDestination(ChromosomeWithState destination) {
-		foreach( nodeIndex; 0..view.nodes.length ) {
-			// we can't assign the nodes directly because te nodes are views and it would mess up everything completly
-
-			foreach( connectionIndex; 0..view.getGenotypeViewOf().operatorInstancesWithInfo[nodeIndex].operatorInstance.getNumberOfInputConnections() ) {
-				destination.view.nodes[nodeIndex].genericGenes[connectionIndex] = view.nodes[nodeIndex].genericGenes[connectionIndex];
-			}
+		assert(destination.genotype.genes.length == genotype.genes.length);
+		foreach( geneI; 0..destination.genotype.genes.length ) {
+			destination.genotype.genes[geneI] = genotype.genes[geneI];
 		}
-	}
-
-	public final void checkInvariant() {
-		assert(view.nodes.length == evalutionStates.statesOfNodes.length);
 	}
 
 	public float rating = 0.0f;
@@ -441,37 +347,15 @@ class ChromosomeWithState {
 	protected uint cachedNumberOfInputs;
 }
 
-struct Gene {
-	public final this(Genotype parentGenotype, uint indexInGenotype, uint value) {
-		this.parentGenotype = parentGenotype;
-		this.indexInGenotype = indexInGenotype;
-		this.value = value;
-	}
-
-	public final @property bool isGenericGene() {
-		return parentGenotype.isGenericGene(indexInGenotype);
-	}
-
-	public final @property bool isOutputGene() {
-		return parentGenotype.isOutputGene(indexInGenotype);
-	}
-
-    /*public final void opAssign(uint other) {
-    	value = other;
-    }*/
-
-    alias value this;
-
-	protected Genotype parentGenotype;
-	protected uint value;
-	protected uint indexInGenotype;
-}
+import std.algorithm.iteration : sum, map;
 
 class Genotype {
-	static private class OperatorInstanceWithInfo {
+	static public class OperatorInstanceWithInfo {
 		public IOperatorInstance!ValueType operatorInstance;
 		public uint genomeIndex;
 	}
+
+	public alias uint Gene;
 
 	// function genes followed by connection genes followed by output genes
 	public Gene[] genes;
@@ -482,35 +366,41 @@ class Genotype {
 	}
 
 	public final this(IOperatorInstancePrototype!ValueType operatorInstancePrototype, uint[][] typeIdsOfOperatorsToCreate,   uint cachedNumberOfInputs, uint cachedNumberOfOutputs) {
+		uint countNumberOfOperatorInstances() {
+			uint numberOfOperatorInstances = sum(map!(iterationColumn => iterationColumn.length)(operatorInstancesWithInfo2));
+			assert( numberOfOperatorInstances > 0);
+			return numberOfOperatorInstances;
+		}
+
+		void initOperatorMapping(uint[][] typeIdsOfOperatorsToCreate) {
+			operatorMapping.calcMapping(typeIdsOfOperatorsToCreate);
+		}
+
+		void allocateGenes() {
+			genes.length = getNumberOfGenes();
+		}
+
 		this.cachedNumberOfInputs = cachedNumberOfInputs;
 		this.cachedNumberOfOutputs = cachedNumberOfOutputs;
-
-		///this.operatorInstancesWithInfo.length = cachedNumberOfNodes;
 		
 		initOperatorMapping(typeIdsOfOperatorsToCreate);
 		createOperatorInstances(operatorInstancePrototype, typeIdsOfOperatorsToCreate);
 		allocateGenes();
-	}
-
-	protected final void initOperatorMapping(uint[][] typeIdsOfOperatorsToCreate) {
-		operatorMapping.calcMapping(typeIdsOfOperatorsToCreate);
-	}
-
-	protected final void allocateGenes() {
-		genes.length = getNumberOfGenes();
-		foreach( i; 0..genes.length ) {
-			genes[i].parentGenotype = this;
-			genes[i].indexInGenotype = i;
-		}
+		cachedNumberOfOperatorInstances = countNumberOfOperatorInstances();
 	}
 
 	protected final void createOperatorInstances(IOperatorInstancePrototype!ValueType operatorInstancePrototype, uint[][] typeIdsOfOperatorsToCreate) {
+		operatorInstancesWithInfo2.length = typeIdsOfOperatorsToCreate.length;
+
+
 		uint currentGenomeIndex = 0;
 
 		uint adressesIndex = 0;
 		uint column = 0;
 
 		foreach( iterationColumn; typeIdsOfOperatorsToCreate ) {
+			operatorInstancesWithInfo2[column].length = typeIdsOfOperatorsToCreate[column].length;
+
 			uint row = 0;
 			foreach( iterationOperator; iterationColumn ) {
 				{
@@ -530,25 +420,26 @@ class Genotype {
 		}
 	}
 
-	public final uint getNumberOfGenesForNode(OperatorAdress operatorAdress) {
-		return operatorInstancesWithInfo2[operatorAdress.column][operatorAdress.row].operatorInstance.getGeneSliceWidth();
-	}
-
-	public final uint getGeneOffsetForNode(OperatorAdress operatorAdress) {
-		return operatorInstancesWithInfo2[operatorAdress.column][operatorAdress.row].genomeIndex;
-	}
-
-
-	public final @property uint numberOfNodes() {
-		return protectedCachedNumberOfNodes;
-	}
-
 	// TODO< rename >
 	public OperatorInstanceWithInfo[][] operatorInstancesWithInfo2;
 
 	protected OperatorMapping!ValueType operatorMapping = new OperatorMapping!ValueType;
 
+	protected uint cachedNumberOfOperatorInstances;
 
+	public final @property uint numberOfOperatorInstances() {
+		return cachedNumberOfOperatorInstances;
+	}
+
+	public final uint getOutputGene(uint outputIndex) {
+		// calculate the output gene,
+		// the output gene starts with all inputs followed by all operator instances
+		uint numberOfGenesExceptOuputGenes = getNumberOfGenes() - cachedNumberOfOutputs;
+		uint index = numberOfGenesExceptOuputGenes + outputIndex;
+		Gene gene = genes[index];
+
+		return gene % (cachedNumberOfInputs + numberOfOperatorInstances);
+	}
 
 
 	///////////////////////////
@@ -572,53 +463,13 @@ class Genotype {
 			}
 		}
 	}
-
-
-	///////////////////////////
-	// used by chromosome views
-
-	public final void setGenericGeneOfNodeByIndex(uint nodeIndex, uint genericGeneIndex, uint value) {
-		assert(nodeIndex < protectedCachedNumberOfNodes);
-		assert(genericGeneIndex < getNumberOfGenesForNode(nodeIndex));
-		genes[getOffsetOfGenesForGenericGenes() + getNumberOfGenesForNode(nodeIndex) + genericGeneIndex] = value;
-	}
-
-	public final uint getGenericGeneOfNodeIndex(uint nodeIndex, uint genericGeneIndex) {
-		assert(nodeIndex < protectedCachedNumberOfNodes);
-		assert(genericGeneIndex < getNumberOfGenesForNode(nodeIndex));
-		return genes[getOffsetOfGenesForGenericGenes() + getNumberOfGenesForNode(nodeIndex) + genericGeneIndex];
-	}
-
-	public final uint getOutputGene(uint outputIndex) {
-		assert(outputIndex < cachedNumberOfOutputs);
-		return genes[getOffsetOfGenesForOutputs() + outputIndex];
-	}
 	
-
-	////////////////////////
-	// used by mutation
-
-	package final @property bool isGenericGene(uint index) {
-		assert(index < operatorInstancesWithInfo2[$-1][$-1].genomeIndex + operatorInstancesWithInfo2[$-1][$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs);
-		return index >= getOffsetOfGenesForGenericGenes() && index < getOffsetOfGenesForOutputs();
-	}
-
-	package final @property bool isOutputGene(uint index) {
-		assert(index < operatorInstancesWithInfo2[$-1][$-1].genomeIndex + operatorInstancesWithInfo2[$-1][$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs);
-		return index >= getOffsetOfGenesForOutputs();
-	}
 
 	///////////////////////////
 	// calculate the offsets of the different sections of the genome
 
 	
-	protected final uint getOffsetOfGenesForGenericGenes() {
-		return 0;
-	}
 
-	protected final uint getOffsetOfGenesForOutputs() {
-		return operatorInstancesWithInfo2[$-1][$-1].genomeIndex + operatorInstancesWithInfo2[$-1][$-1].operatorInstance.getGeneSliceWidth();
-	}
 
 	protected final uint getNumberOfGenes() {
 		return operatorInstancesWithInfo2[$-1][$-1].genomeIndex + operatorInstancesWithInfo2[$-1][$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs;
@@ -707,14 +558,15 @@ void main() {
 
 	Parameters parameters = new Parameters();
 	parameters.numberOfInputs = 1;
-	parameters.numberOfNodes = 1;
 	parameters.numberOfOutputs = 1;
 
 	uint numberOfMutations = 1;
 	uint numberOfCandidates = 5; // 4 + 1  evolutionary strategy 
 
+	uint[][] typeIdsOfOperatorsToCreate = [[0]];
 
-	Context context = Context.make(parameters, operatorInstancePrototype);
+
+	Context context = Context.make(parameters, operatorInstancePrototype, typeIdsOfOperatorsToCreate);
 
 	ValueType[][] inputs = [
 		[TextIndexOrTupleValue.makeTuple([0, 1, 2])], // i am tired
@@ -725,11 +577,11 @@ void main() {
 	IRating ratingImplementation = new TestRating();
 
 	// we just maintain one candidate
-	chromosomesWithStates ~= ChromosomeWithState.createFromChromosomeView(context.createRandomGenotypeView(), parameters.numberOfInputs);
+	chromosomesWithStates ~= ChromosomeWithState.createFromGenotype(context.createRandomGenotype(), parameters.numberOfInputs);
 	
 	foreach( i; 0..numberOfCandidates ) {
 		// TODO< can be null entities, where literaly everyting is null >
-		temporaryMutants ~= ChromosomeWithState.createFromChromosomeView(context.createRandomGenotypeView(), parameters.numberOfInputs);
+		temporaryMutants ~= ChromosomeWithState.createFromGenotype(context.createRandomGenotype(), parameters.numberOfInputs);
 	}
 
 	uint generationReportInterval = 5000;
@@ -750,7 +602,7 @@ void main() {
 		// mutate
 		{
 			foreach( iterationMutant; temporaryMutants ) {
-				context.pointMutationOnGene(iterationMutant.view.getGenotypeViewOf(), numberOfMutations);
+				context.pointMutationOnGene(iterationMutant.genotype, numberOfMutations);
 			}
 		}
 

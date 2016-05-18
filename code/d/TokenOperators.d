@@ -108,7 +108,9 @@ interface IOperatorInstance(ValueType) {
 	void decodeSlicedGene(uint[] slicedGene);
 	
 	uint getNumberOfInputConnections();
-	uint getInputGeneIndexForConnection(uint connectionIndex);
+	
+	// returns the index (where the range is defined by the inputs followed by the ouputs of the operators) for the connection
+	uint getInputIndexForConnection(uint connectionIndex);
 
 	ValueType calculateResult(ValueType[] inputs)
 	in {
@@ -136,7 +138,7 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		return numberOfInputConnections;
 	}
 
-	public final uint getInputGeneIndexForConnection(uint connectionIndex) {
+	public final uint getInputIndexForConnection(uint connectionIndex) {
 		assert(slicedGeneForConnections.length == numberOfInputConnections);
 		return slicedGeneForConnections[connectionIndex] % numberOfOperatorsToChoose;
 	}
@@ -251,7 +253,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		return 1;
 	}
 
-	public final uint getInputGeneIndexForConnection(uint connectionIndex) {
+	public final uint getInputIndexForConnection(uint connectionIndex) {
 		return 0; // always the input (just for testing)
 	}
 
