@@ -438,7 +438,7 @@ class Genotype {
 		uint index = numberOfGenesExceptOuputGenes + outputIndex;
 		Gene gene = genes[index];
 
-		return gene % (cachedNumberOfInputs + numberOfOperatorInstances);
+		return cachedNumberOfInputs + (gene % (numberOfOperatorInstances));
 	}
 
 
