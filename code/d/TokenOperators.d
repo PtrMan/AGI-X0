@@ -126,13 +126,13 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	}
 
 	public final uint getGeneSliceWidth() {
-		return numberOfInputConnections + 1;
+		return numberOfInputConnections;
 	}
 
 	// [the selectors for the connections] followed by [the selector for the input]
 	public final void decodeSlicedGene(uint[] slicedGene) {
 		slicedGeneForConnections = slicedGene[0..numberOfInputConnections];
-		currentSelector = slicedGene[numberOfInputConnections] % numberOfInputConnections;
+		//currentSelector = slicedGene[numberOfInputConnections] % numberOfInputConnections;
 	}
 	
 	public final uint getNumberOfInputConnections() {
@@ -140,17 +140,26 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	}
 
 	public final uint getInputIndexForConnection(uint connectionIndex, uint numberOfOperatorsBeforeColumn) {
+		assert(numberOfInputConnections > 0);
 		assert(slicedGeneForConnections.length == numberOfInputConnections);
 		return slicedGeneForConnections[connectionIndex] % numberOfOperatorsToChoose;
 	}
 
 	public final TextIndexOrTupleValue calculateResult(TextIndexOrTupleValue[] inputs) {
 		assert(inputs.length == numberOfInputConnections);
-		return inputs[currentSelector];
+
+		// search the first result which is set and return it
+		foreach( TextIndexOrTupleValue iterationInput; inputs ) {
+			if( iterationInput.isSet ) {
+				return iterationInput;
+			}
+		}
+
+		return TextIndexOrTupleValue.makeDefaultValue();
 	}
 
 	protected uint[] slicedGeneForConnections;
-	protected uint currentSelector;
+	//protected uint currentSelector;
 
 	protected uint numberOfInputConnections, numberOfOperatorsToChoose;
 }

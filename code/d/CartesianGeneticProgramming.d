@@ -175,17 +175,19 @@ class Context {
 		}
 
 		
-		void transcribeToOperatorsForNodes() {
-			chromosome.genotype.transcribeToOperatorsForNodes();
-		}
-
+		
 
 		resetOutputValues();
 		resetToEvaluate();
 		identifiyInitialnodesWhichNeedToBeEvaluated();
+		transcribeToOperatorsForNodes(chromosome);
 		whichNodesAreUsed();
-		transcribeToOperatorsForNodes();
 	}
+
+	protected void transcribeToOperatorsForNodes(ChromosomeWithState chromosome) {
+		chromosome.genotype.transcribeToOperatorsForNodes();
+	}
+
 
 	public final void executeGraph(ChromosomeWithState chromosome, ValueType[] input) {
 		void loadInputDataValues() {
@@ -213,6 +215,7 @@ class Context {
 
 
 		loadInputDataValues();
+		transcribeToOperatorsForNodes(chromosome);
 
 
 
@@ -540,7 +543,7 @@ void main() {
 	uint numberOfComperatorsPerOperator = 3;
 	uint numberOfVariants = 2;
 
-	uint numberOfMatchingOperators = 1; // how many matching operators are there?
+	uint numberOfMatchingOperators = 2; // how many matching operators are there?
 
 	uint
 		selectorNumberOfInputConnections = 3,
@@ -567,7 +570,7 @@ void main() {
 	uint numberOfMutations = 1;
 	uint numberOfCandidates = 5; // 4 + 1  evolutionary strategy 
 
-	uint[][] typeIdsOfOperatorsToCreate = [[0]];
+	uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1, 1]];
 
 
 	Context context = Context.make(parameters, operatorInstancePrototype, typeIdsOfOperatorsToCreate);
