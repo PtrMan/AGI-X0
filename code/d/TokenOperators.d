@@ -67,7 +67,7 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 		uint matcherReadWidth, uint matcherNumberOfTokens,
 		uint matcherNumberOfComperators, uint matcherNumberOfVariants,
 
-		uint selectorNumberOfInputConnections, uint selectorNumberOfOperatorsToChoose
+		uint selectorNumberOfInputConnections
 	) {
 		this.matcherReadWidth = matcherReadWidth;
 		this.matcherNumberOfTokens = matcherNumberOfTokens;
@@ -76,7 +76,7 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 		this.matcherNumberOfVariants = matcherNumberOfVariants;
 
 		this.selectorNumberOfInputConnections = selectorNumberOfInputConnections;
-		this.selectorNumberOfOperatorsToChoose = selectorNumberOfOperatorsToChoose;
+
 	}
 
 	public final IOperatorInstance!TextIndexOrTupleValue createInstance(uint typeId) {
@@ -84,7 +84,7 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 			return new TokenMatcherOperatorInstance(matcherReadWidth, matcherNumberOfTokens,  matcherNumberOfComperators, matcherNumberOfVariants);
 		}
 		else if( typeId == 1 ) {
-			return new SelectorOperatorInstance(selectorNumberOfInputConnections, selectorNumberOfOperatorsToChoose);
+			return new SelectorOperatorInstance(selectorNumberOfInputConnections);
 		}
 		else {
 			throw new CgpException("Internal error: typeId is not recognized!");
@@ -96,7 +96,7 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 		matcherNumberOfComperators, matcherNumberOfVariants;
 
 	protected uint
-		selectorNumberOfInputConnections, selectorNumberOfOperatorsToChoose;
+		selectorNumberOfInputConnections;
 }
 
 
@@ -117,12 +117,13 @@ interface IOperatorInstance(ValueType) {
 	in {
 		assert(inputs.length == getNumberOfInputConnections());
 	}
+
+	string getDebugMathematica();
 }
 
 class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
-	public final this(uint numberOfInputConnections, uint numberOfOperatorsToChoose) {
+	public final this(uint numberOfInputConnections) {
 		this.numberOfInputConnections = numberOfInputConnections;
-		this.numberOfOperatorsToChoose = numberOfOperatorsToChoose;
 	}
 
 	public final uint getGeneSliceWidth() {
@@ -142,7 +143,7 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	public final uint getInputIndexForConnection(uint connectionIndex, uint numberOfOperatorsBeforeColumn) {
 		assert(numberOfInputConnections > 0);
 		assert(slicedGeneForConnections.length == numberOfInputConnections);
-		return slicedGeneForConnections[connectionIndex] % numberOfOperatorsToChoose;
+		return slicedGeneForConnections[connectionIndex] % numberOfOperatorsBeforeColumn;
 	}
 
 	public final TextIndexOrTupleValue calculateResult(TextIndexOrTupleValue[] inputs) {
@@ -158,10 +159,18 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		return TextIndexOrTupleValue.makeDefaultValue();
 	}
 
+	public final string getDebugMathematica() {
+		string result;
+
+		// TODO
+
+		return result;
+	}
+
 	protected uint[] slicedGeneForConnections;
 	//protected uint currentSelector;
 
-	protected uint numberOfInputConnections, numberOfOperatorsToChoose;
+	protected uint numberOfInputConnections; //, numberOfOperatorsToChoose;
 }
 
 class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
@@ -366,6 +375,14 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 
 			return TextIndexOrTupleValue.makeTuple(resultTuple);
 		}
+	}
+
+	public final string getDebugMathematica() {
+		string result;
+
+		// TODO
+
+		return result;
 	}
 }
 

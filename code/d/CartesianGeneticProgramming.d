@@ -546,15 +546,14 @@ void main() {
 	uint numberOfMatchingOperators = 2; // how many matching operators are there?
 
 	uint
-		selectorNumberOfInputConnections = 3,
-		selectorNumberOfOperatorsToChoose = /* one because its the input to the whole network */1+numberOfMatchingOperators;
+		selectorNumberOfInputConnections = 3;
 
 
 	IOperatorInstancePrototype!ValueType operatorInstancePrototype = new TokenMatcherOperatorInstancePrototype(
 		readWidth, numberOfTokens,
 		numberOfComperatorsPerOperator, numberOfVariants,
 
-		selectorNumberOfInputConnections, selectorNumberOfOperatorsToChoose
+		selectorNumberOfInputConnections
 	);
 
 	ChromosomeWithState[] chromosomesWithStates;
