@@ -3,7 +3,7 @@ module CartesianGeneticProgramming;
 import TokenOperators;
 import CgpException : CgpException;
 
-import std.random : uniform;
+import std.random : uniform, Random;
 
 alias uint GeneIndex;
 
@@ -99,13 +99,14 @@ class OperatorMapping(ValueType) {
 // used to dispatch the function and other global stuff
 class Context {
 	// typeIdsOfOperatorsToCreate are the typeId's (and at the same type the layout) of the to be created operators
-	public static Context make(Parameters parameters, IOperatorInstancePrototype!ValueType operatorInstancePrototype, uint[][] typeIdsOfOperatorsToCreate) {
+	public static Context make(Parameters parameters, IOperatorInstancePrototype!ValueType operatorInstancePrototype, uint[][] typeIdsOfOperatorsToCreate, Random gen) {
 		Context result = new Context();
 		result.protectedGlobals.numberOfInputs = parameters.numberOfInputs;
 		result.protectedGlobals.numberOfOutputs = parameters.numberOfOutputs;
 
 		result.operatorInstancePrototype = operatorInstancePrototype;
 		result.typeIdsOfOperatorsToCreate = typeIdsOfOperatorsToCreate;
+		result.gen = gen;
 
 		return result;
 	}
@@ -258,13 +259,13 @@ class Context {
 	// http://www.cartesiangp.co.uk/cgp-in-nutshell.pdf  page 9
 	public final void pointMutationOnGene(Genotype genotype, uint numberOfMutations) {
 		foreach( mutationIterator; 0..numberOfMutations ) {
-			uint geneIndex = uniform!"[)"(0, genotype.genes.length);
+			uint geneIndex = uniform!"[)"(0, genotype.genes.length, gen);
 			flipGeneToRandom(genotype, geneIndex);
 		}
 	}
 
 	protected final void flipGeneToRandom(Genotype genotype, uint geneIndex) {
-		genotype.genes[geneIndex] = uniform!"[)"(0, uint.max);
+		genotype.genes[geneIndex] = uniform!"[)"(0, uint.max, gen);
 	}
 
 
@@ -281,6 +282,8 @@ class Context {
 
 	// are the typeIds of the operators to be created, and it contains the layout of the different operators too
 	protected uint[][] typeIdsOfOperatorsToCreate;
+
+	protected Random gen;
 }
 
 
@@ -576,6 +579,11 @@ class TestRating : IRating {
 import std.stdio : writeln, write;
 
 void main() {
+	uint generationReportInterval = 5000;
+
+
+
+
 	// 0 : i
 	// 1 : am
 	// 2 : tired
@@ -626,8 +634,9 @@ void main() {
 	/// uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1, 1]];
 	uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1]];
 
+	Random gen = Random(); //Random(44);
 
-	Context context = Context.make(parameters, operatorInstancePrototype, typeIdsOfOperatorsToCreate);
+	Context context = Context.make(parameters, operatorInstancePrototype, typeIdsOfOperatorsToCreate, gen);
 
 	ValueType[][] inputs = [
 		[TextIndexOrTupleValue.makeTuple([1, 4, 2])], // am road tired
@@ -637,8 +646,8 @@ void main() {
 		// THE ALGORITHM SEEMS TO HAVE A PROBLEM WITH ALIASING
 		//[TextIndexOrTupleValue.makeTuple([4, 1, 7, 2])] // road am very tired     <- max rating with this is 3, should be 4    
 		//[TextIndexOrTupleValue.makeTuple([4, 2, 5, 1])] // road tired am it     <- max rating with this is 4 as it should be
-		[TextIndexOrTupleValue.makeTuple([1, 4, 1, 2, 7])], // am road very tired     <- max rating with this is 4 as it should be
-
+		//[TextIndexOrTupleValue.makeTuple([1, 4, 1, 2, 7])], // am road very tired     <- max rating with this is 4 as it should be
+		[TextIndexOrTupleValue.makeTuple([1, 2, 4])],
 
 	];
 
@@ -652,7 +661,6 @@ void main() {
 		temporaryMutants ~= ChromosomeWithState.createFromGenotype(context.createRandomGenotype(), parameters.numberOfInputs);
 	}
 
-	uint generationReportInterval = 5000;
 
 	foreach( generation; 0..numberOfGenerations ) {
 		bool reportCurrentGeneration = false, reportBestRatingChange = false;
@@ -663,7 +671,7 @@ void main() {
 		// copy to temporary which get mutated
 		{
 			foreach( iterationMutant; temporaryMutants ) {
-				iterationMutant.copyChromosomeToDestination(iterationMutant);
+				chromosomesWithStates[0].copyChromosomeToDestination(iterationMutant);
 			}
 		}
 
@@ -742,30 +750,29 @@ void main() {
 
 			// debug
 			bool debugEnabled = true;
-			if( debugEnabled ){
-				import std.stdio;
+			if( debugEnabled ) {
 				chromosomesWithStates[0].genotype.transcribeToOperatorsForNodes();
+				import std.stdio;
 				writeln(chromosomesWithStates[0].genotype.getDebugMathematica());
+
+
+
+
+
+				// check rating
+
+				context.decodeChromosome(chromosomesWithStates[0]);
+					
+				ratingImplementation.resetRating(chromosomesWithStates[0]);
+
+				foreach( iterationInput; inputs ) {
+					context.executeGraph(chromosomesWithStates[0], iterationInput);
+					ratingImplementation.rate(chromosomesWithStates[0]);
+				}
+
+				writeln("real rating  ", chromosomesWithStates[0].rating);
+
 			}
-
-
-
-			// check rating
-
-			context.decodeChromosome(chromosomesWithStates[0]);
-				
-			ratingImplementation.resetRating(chromosomesWithStates[0]);
-
-			foreach( iterationInput; inputs ) {
-				context.executeGraph(chromosomesWithStates[0], iterationInput);
-				ratingImplementation.rate(chromosomesWithStates[0]);
-			}
-
-			writeln("real rating  ", chromosomesWithStates[0].rating);
-
-
-
-
 		}
 	}
 }
