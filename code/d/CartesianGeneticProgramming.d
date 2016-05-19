@@ -213,9 +213,16 @@ class Context {
 			}
 		}
 
+		void resetReturnValues() {
+			foreach( iterationEvaluationState; chromosome.evalutionStates.statesOfNodes ) {
+				iterationEvaluationState.output = valueOfDefault();
+			}
+		}
+
 
 		loadInputDataValues();
 		transcribeToOperatorsForNodes(chromosome);
+		resetReturnValues();
 
 
 
@@ -362,6 +369,29 @@ class Genotype {
 	// function genes followed by connection genes followed by output genes
 	public Gene[] genes;
 
+	public final string getDebugMathematica() {
+		string result;
+
+		uint column = 0;
+
+		foreach( iterationColumn; operatorInstancesWithInfo2 ) {
+			import std.format : format;
+			result ~= format("column %d\n", column);
+
+			uint row = 0;
+			foreach( iterationOperator; iterationColumn ) {
+				result ~= (format("\t[%d]\t", row) ~ iterationOperator.operatorInstance.getDebugMathematica(iterationOperator.numberOfOperatorsBeforeThisColumn)  ~ "\n");
+
+				row++;
+				
+			}
+
+			column++;
+		}
+
+		return result;
+	}
+
 	public final OperatorInstanceWithInfo getOperatorInstanceWithInfoByLinearIndex(uint index) {
 		OperatorAdress adress = operatorMapping.getOperatorAdressByLinearIndex(index);
 		return operatorInstancesWithInfo2[adress.column][adress.row];
@@ -462,11 +492,35 @@ class Genotype {
 			return result;
 		}
 
+		// for debugging
+		bool[] geneMarker;
+		geneMarker.length = getNumberOfGenes();
+
 		foreach( iterationColumn; operatorInstancesWithInfo2 ) {
 			foreach( iteratorOperatorInstanceWithInfo; iterationColumn ) {
 				uint sliceIndex = iteratorOperatorInstanceWithInfo.genomeIndex;
 				uint[] slicedGene = convertGenesToUint(genes[sliceIndex..sliceIndex+iteratorOperatorInstanceWithInfo.operatorInstance.getGeneSliceWidth()]);
 				iteratorOperatorInstanceWithInfo.operatorInstance.decodeSlicedGene(slicedGene);
+
+
+				{
+					uint i = 0;
+
+					foreach( ref bool iterationFlag; geneMarker[sliceIndex..sliceIndex+iteratorOperatorInstanceWithInfo.operatorInstance.getGeneSliceWidth()] ) {
+						if(iterationFlag) {
+							import std.stdio;
+							writeln("i= ", i);
+							assert(false);
+						}
+						i++;
+					}
+				}
+				
+
+
+				foreach( ref bool iterationFlag; geneMarker[sliceIndex..sliceIndex+iteratorOperatorInstanceWithInfo.operatorInstance.getGeneSliceWidth()] ) {
+					iterationFlag = true;
+				}
 			}
 		}
 	}
@@ -538,10 +592,10 @@ void main() {
 	// it is very rainy
 	// it is rainy
 	uint numberOfTokens = 10;
-	uint readWidth = 5;
+	uint readWidth = 7;
 
-	uint numberOfComperatorsPerOperator = 3;
-	uint numberOfVariants = 2;
+	uint numberOfComperatorsPerOperator = 2;
+	uint numberOfVariants = 1; /// 2
 
 	uint numberOfMatchingOperators = 2; // how many matching operators are there?
 
@@ -569,19 +623,23 @@ void main() {
 	uint numberOfMutations = 2;
 	uint numberOfCandidates = 5; // 4 + 1  evolutionary strategy 
 
-	uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1, 1]];
+	/// uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1, 1]];
+	uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1]];
 
 
 	Context context = Context.make(parameters, operatorInstancePrototype, typeIdsOfOperatorsToCreate);
 
 	ValueType[][] inputs = [
-		[TextIndexOrTupleValue.makeTuple([4, 1, 2])], // road am tired
+		[TextIndexOrTupleValue.makeTuple([1, 4, 2])], // am road tired
 		//[TextIndexOrTupleValue.makeTuple([0, 1, 8, 2])], // i am rainy tired   - justt for testing
 		
 
 		// THE ALGORITHM SEEMS TO HAVE A PROBLEM WITH ALIASING
 		//[TextIndexOrTupleValue.makeTuple([4, 1, 7, 2])] // road am very tired     <- max rating with this is 3, should be 4    
-		[TextIndexOrTupleValue.makeTuple([4, 2, 5, 1])] // road tired am it     <- max rating with this is 4 as it should be
+		//[TextIndexOrTupleValue.makeTuple([4, 2, 5, 1])] // road tired am it     <- max rating with this is 4 as it should be
+		[TextIndexOrTupleValue.makeTuple([1, 4, 1, 2, 7])], // am road very tired     <- max rating with this is 4 as it should be
+
+
 	];
 
 	IRating ratingImplementation = new TestRating();
@@ -660,6 +718,10 @@ void main() {
 			}
 		}
 
+		
+
+
+
 		// report
 		reportCurrentGeneration |= reportBestRatingChange;
 
@@ -675,6 +737,35 @@ void main() {
 			}
 
 			writeln();
+
+
+
+			// debug
+			bool debugEnabled = true;
+			if( debugEnabled ){
+				import std.stdio;
+				chromosomesWithStates[0].genotype.transcribeToOperatorsForNodes();
+				writeln(chromosomesWithStates[0].genotype.getDebugMathematica());
+			}
+
+
+
+			// check rating
+
+			context.decodeChromosome(chromosomesWithStates[0]);
+				
+			ratingImplementation.resetRating(chromosomesWithStates[0]);
+
+			foreach( iterationInput; inputs ) {
+				context.executeGraph(chromosomesWithStates[0], iterationInput);
+				ratingImplementation.rate(chromosomesWithStates[0]);
+			}
+
+			writeln("real rating  ", chromosomesWithStates[0].rating);
+
+
+
+
 		}
 	}
 }

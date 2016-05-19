@@ -118,7 +118,7 @@ interface IOperatorInstance(ValueType) {
 		assert(inputs.length == getNumberOfInputConnections());
 	}
 
-	string getDebugMathematica();
+	string getDebugMathematica(uint numberOfOperatorsBeforeColumn);
 }
 
 class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
@@ -159,10 +159,13 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		return TextIndexOrTupleValue.makeDefaultValue();
 	}
 
-	public final string getDebugMathematica() {
+	public final string getDebugMathematica(uint numberOfOperatorsBeforeColumn) {
 		string result;
 
-		// TODO
+		foreach( i; 0..getNumberOfInputConnections() ) {
+			import std.format : format;
+			result ~= format("%d ", slicedGeneForConnections[i] % numberOfOperatorsBeforeColumn);
+		}
 
 		return result;
 	}
@@ -288,7 +291,6 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 			portA[i] = -1;
 		}
 
-
 		// read to port A
 		{
 			foreach( i; 0..portA.length ) {
@@ -356,7 +358,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 			}
 		}
 
-		if( portBActivationCounter == 0 || portBActivationCounter != portBEnabledPortCounter ) {
+		if( portBActivationCounter == 0/* || portBActivationCounter != portBEnabledPortCounter*/ ) {
 			return TextIndexOrTupleValue.makeDefaultValue();
 		}
 
@@ -377,10 +379,36 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		}
 	}
 
-	public final string getDebugMathematica() {
+	public final string getDebugMathematica(uint numberOfOperatorsBeforeColumn) {
+		import std.format : format;
+
 		string result;
 
-		// TODO
+		result ~= "{" ;
+
+		// offset deltas
+		result ~= "  {  " ;
+		foreach( iterationOffsetDelta; portAOffsetDeltas ) {
+			result ~= format("%d,", iterationOffsetDelta);
+		}
+		result ~= "  },  " ;
+
+
+		// token comperators
+		foreach( variantI; 0..numberOfVariants ) {
+			result ~= "  {  " ;
+
+			foreach( portIndex; 0..numberOfComperators ) {
+				result ~= format("%d,", getTokenComperator(portIndex, variantI));
+			}
+
+			result ~= "  },  " ;
+
+		}
+
+		result ~= "}" ;
+
+		result ~= "(* offset delta, followed by the list of token comperators for the different ports *)";
 
 		return result;
 	}
