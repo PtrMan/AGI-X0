@@ -58,8 +58,6 @@ class TextIndexOrTupleValue {
 
 
 
-
-
 interface IOperatorInstancePrototype(ValueType) {
 	// typeId : which type of operator instance should be created?
 	// TODO< describe this with an descriptor object which contains the configuration >
@@ -71,15 +69,18 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 		uint matcherReadWidth, uint matcherNumberOfTokens,
 		uint matcherNumberOfComperators, uint matcherNumberOfVariants,
 		Permutation[] matcherPermutations,
+		float matcherWildcardPropability,
 
 		uint selectorNumberOfInputConnections
 	) {
 		this.matcherReadWidth = matcherReadWidth;
 		this.matcherNumberOfTokens = matcherNumberOfTokens;
 		this.matcherPermutations = matcherPermutations;
+		this.matcherWildcardPropability = matcherWildcardPropability;
 
 		this.matcherNumberOfComperators = matcherNumberOfComperators;
 		this.matcherNumberOfVariants = matcherNumberOfVariants;
+
 
 		this.selectorNumberOfInputConnections = selectorNumberOfInputConnections;
 
@@ -87,7 +88,7 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 
 	public final IOperatorInstance!TextIndexOrTupleValue createInstance(uint typeId) {
 		if( typeId == 0 ) {
-			return new TokenMatcherOperatorInstance(matcherReadWidth, matcherNumberOfTokens,  matcherNumberOfComperators, matcherNumberOfVariants,  matcherPermutations);
+			return new TokenMatcherOperatorInstance(matcherReadWidth, matcherNumberOfTokens,  matcherNumberOfComperators, matcherNumberOfVariants,  matcherPermutations, matcherWildcardPropability);
 		}
 		else if( typeId == 1 ) {
 			return new SelectorOperatorInstance(selectorNumberOfInputConnections);
@@ -101,6 +102,7 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 		matcherReadWidth, matcherNumberOfTokens,
 		matcherNumberOfComperators, matcherNumberOfVariants;
 	protected Permutation[] matcherPermutations;
+	protected float matcherWildcardPropability;
 
 	protected uint
 		selectorNumberOfInputConnections;
@@ -184,10 +186,11 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 }
 
 class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
-	public final this(uint readWidth, uint numberOfTokens,  uint parameterNumberOfComperators, uint parameterNumberOfVariants,  Permutation[] permutations) {
+	public final this(uint readWidth, uint numberOfTokens,  uint parameterNumberOfComperators, uint parameterNumberOfVariants,  Permutation[] permutations, float wildcardPropability) {
 		this.settingReadWidth = readWidth;
 		this.settingNumberOfTokens = numberOfTokens;
 		this.settingPermutations = permutations;
+		this.settingWildcardPropability = wildcardPropability;
 
 		this.geneTokenComperatorMatrix = new ValueMatrix!int(parameterNumberOfComperators, parameterNumberOfVariants);
 		disableAllComperators();
@@ -197,6 +200,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	protected uint settingReadWidth;
 	protected uint settingNumberOfTokens;
 	protected Permutation[] settingPermutations;
+	protected float settingWildcardPropability;
 
 	protected uint genePermutationIndex;
 	protected ValueMatrix!int geneTokenComperatorMatrix;
@@ -209,17 +213,10 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		return geneTokenComperatorMatrix.height;
 	}
 
-	protected final bool isTokenComperatorActivated(uint portIndex, uint variantIndex) {
-		return geneTokenComperatorMatrix[variantIndex, portIndex] != -1;
-	}
-
-	protected final int getTokenComperator(uint portIndex, uint variantIndex) {
-		return geneTokenComperatorMatrix[variantIndex, portIndex];
-	}
-
-	// for unittesting
-	public final void setTokenComperator(uint portIndex, uint variantIndex, int value) {
-		geneTokenComperatorMatrix[variantIndex, portIndex] = value;
+	version(unittest) {
+		public final void setTokenComperator(uint portIndex, uint variantIndex, int value) {
+			geneTokenComperatorMatrix[variantIndex, portIndex] = value;
+		}
 	}
 
 	protected final void disableAllComperators() {
@@ -241,17 +238,32 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 			return result;
 		}
 
+		/*
 		int pullIntValueAndIncrementIndex() {
 			uint valueAsUint = pullValueAndIncrementIndex();
 			uint valueMasked = valueAsUint & (uint.max >> 1); // we do this to not screw with th sign when we do the cast
 			return cast(int)valueMasked;
 		}
+		*/
 
 		genePermutationIndex = pullValueAndIncrementIndex() % settingPermutations.length;
 		
+
+
 		foreach( variantIndex; 0..numberOfVariants ) {
 			foreach( comperatorIndex; 0..numberOfComperators ) {
-				geneTokenComperatorMatrix[variantIndex, comperatorIndex] = (pullIntValueAndIncrementIndex() % (settingNumberOfTokens+1)) - 1;
+				bool wasWildcardChosen;
+				uint chosenToken;
+
+				uint gene = pullValueAndIncrementIndex();
+				rangeWithSpecilChoice(gene, settingNumberOfTokens, settingWildcardPropability, chosenToken, wasWildcardChosen);
+
+				if( wasWildcardChosen ) {
+					geneTokenComperatorMatrix[variantIndex, comperatorIndex] = -2;
+				}
+				else {
+					geneTokenComperatorMatrix[variantIndex, comperatorIndex] = chosenToken;
+				}
 			}
 		}
 		
@@ -274,6 +286,11 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	}
 
 	public final TextIndexOrTupleValue calculateResult(TextIndexOrTupleValue[] inputs) {
+		uint[] applyGenePermutationToInput(uint[] input, out bool success) {
+			Permutation chosenPermutation = settingPermutations[genePermutationIndex];
+			return chosenPermutation.apply(input, success);
+		}
+
 		assert(inputs[0].tuple.length != 0);
 
 		// -1 means invalid
@@ -299,7 +316,27 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		// if there is a mismatch of an activated possibility portB gets disabled
 		{
 			foreach( portIndex; 0..numberOfComperators ) {
+				bool hasPortWildCard(uint portIndex) {
+					bool isTokenComperatorWildcard(uint portIndex, uint variantIndex) {
+						return geneTokenComperatorMatrix[variantIndex, portIndex] == -2;
+					}
+
+					foreach( variantI; 0..numberOfVariants ) {
+						if( isTokenComperatorWildcard(portIndex, variantI) ) {
+							return true;
+						}
+					}
+
+					return false;
+				}
+
 				void doesPortMatch(out bool portFired, out uint result) {
+					bool isTokenComperatorActivated(uint portIndex, uint variantIndex) {
+						return geneTokenComperatorMatrix[variantIndex, portIndex] >= 0;
+					}
+
+					
+
 					portFired = false;
 					bool portActivated = false;
 					
@@ -317,7 +354,6 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 							continue;
 						}
 
-
 						if( getTokenComperator(portIndex, variantI) == portA[portIndex] ) {
 							variantFired = true;
 							result = portA[portIndex];
@@ -333,8 +369,14 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 				}
 				
 				bool portFired;
-				doesPortMatch(portFired, portB[portIndex]);
-
+				if( hasPortWildCard(portIndex) ) {
+					portFired = true; // if its a wildcard we fire the port whatever its matched with
+					portB[portIndex] = portA[portIndex];
+				}
+				else {
+					doesPortMatch(portFired, portB[portIndex]);
+				}
+				
 				if( portFired ) {
 					portBActivationCounter++;
 				}
@@ -345,6 +387,8 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 			return TextIndexOrTupleValue.makeDefaultValue();
 		}
 
+
+
 		bool calleeResult;
 		uint[] resultTuple = applyGenePermutationToInput(inputs[0].tuple, calleeResult);
 		if( !calleeResult ) {
@@ -354,10 +398,6 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		return TextIndexOrTupleValue.makeTuple(resultTuple);
 	}
 
-	protected final uint[] applyGenePermutationToInput(uint[] input, out bool success) {
-		Permutation chosenPermutation = settingPermutations[genePermutationIndex];
-		return chosenPermutation.apply(input, success);
-	}
 
 	public final string getDebugMathematica(uint numberOfOperatorsBeforeColumn) {
 		import std.format : format;
@@ -385,6 +425,10 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		result ~= "(* permutation index, followed by the list of token comperators for the different ports *)";
 
 		return result;
+	}
+
+	protected final int getTokenComperator(uint portIndex, uint variantIndex) {
+		return geneTokenComperatorMatrix[variantIndex, portIndex];
 	}
 }
 
@@ -492,3 +536,24 @@ unittest {
 	}	
 }
 +/
+
+
+// helpers
+uint calcRangeForSpecialChoice(uint numberOfDiscrete, float specialChoicePropability) {
+	return cast(uint)(cast(float)numberOfDiscrete * (1.0f / specialChoicePropability));
+}
+
+void rangeWithSpecilChoice(uint number, uint numberOfDiscrete, float specialChoicePropability, out uint discreteChoice, out bool specialChoice) {
+	uint numberOfDiscreteChoices = calcRangeForSpecialChoice(numberOfDiscrete, specialChoicePropability);
+
+	uint numberMod = number % numberOfDiscreteChoices;
+
+	specialChoice = numberOfDiscrete < numberMod;
+	if( !specialChoice ) {
+		discreteChoice = numberMod;
+	}
+}
+
+
+
+

@@ -687,24 +687,10 @@ import std.stdio : writeln, write;
 void main() {
 	Tokenizer tokenizer = new Tokenizer();
 	TokenRegister tokenRegister = new TokenRegister();
-	//string[] tokens = tokenizer.tokenize("i am a commata, point;comma,.[]{};<>(!)?com=ma");
 
 
 	uint generationReportInterval = 5000;
 
-
-
-
-	// 0 : i
-	// 1 : am
-	// 2 : tired
-	// 3 : a
-	// 4 : road
-	// 5 : it
-	// 6 : is
-	// 7 : very
-	// 8 : rainy
-	// 9 : extremly
 
 	// i am tired
 	// i am very tired
@@ -715,6 +701,8 @@ void main() {
 
 	uint numberOfComperatorsPerOperator = 3;
 	uint numberOfVariants = 2; /// 2
+
+	float matcherWildcardPropability = 0.5f;
 
 
 	uint
@@ -728,6 +716,7 @@ void main() {
 		readWidth, numberOfTokens,
 		numberOfComperatorsPerOperator, numberOfVariants,
 		permutations,
+		matcherWildcardPropability,
 
 		selectorNumberOfInputConnections
 	);
@@ -735,7 +724,7 @@ void main() {
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
 
-	ulong numberOfGenerations = 50000;
+	ulong numberOfGenerations = 200000;
 
 
 	Parameters parameters = new Parameters();
