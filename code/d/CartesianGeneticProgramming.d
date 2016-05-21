@@ -2,8 +2,9 @@ module CartesianGeneticProgramming;
 
 import TokenOperators;
 import CgpException : CgpException;
+import PermutationHelper;
 
-import std.random : uniform, Random;
+import std.random : uniform, Random, unpredictableSeed;
 
 alias uint GeneIndex;
 
@@ -576,9 +577,91 @@ class TestRating : IRating {
 
 
 
+
+
+
+
+class TokenRegister {
+	public string[] tokenDatabase;
+
+	public final uint[] tokenize(string[] tokens) {
+		uint[] result;
+		foreach( token; tokens ) {
+			result ~= addGetToken(token);
+		}
+		return result;
+	}
+
+	protected final uint addGetToken(string token) {
+		foreach( i; 0..tokenDatabase.length ) {
+			if( tokenDatabase[i] == token ) {
+				return i;
+			}
+		}
+
+		// if we are here the token was not found, we add it
+		tokenDatabase ~= token;
+		return tokenDatabase.length-1;
+	}
+}
+
+
+import std.regex;
+
+class Tokenizer {
+	public final string[] tokenize(string input) {
+		string[] resultTokens;
+
+		string remainingInput = input;
+
+		for(;;) {
+			import std.stdio;
+			writeln(remainingInput);
+
+			auto matchToken = matchFirst(remainingInput, regexToken);
+			
+			if( !matchToken ) {
+				break;
+			}
+
+			string token = matchToken[1];
+
+			remainingInput = remainingInput[token.length..$];
+
+			if( token == " ") {
+				continue;
+			}
+			
+			writeln(token, "<--");
+			resultTokens ~= token;
+			
+		}
+		
+		return resultTokens;
+	}
+
+	protected auto regexToken = regex(`^([a-zA-Z0-9]+|[ <>\(\)\?!=\,;\{\}\[\]\.])`);
+}
+
+
+
+
+
 import std.stdio : writeln, write;
 
 void main() {
+	Tokenizer tokenizer = new Tokenizer();
+	string[] tokens = tokenizer.tokenize("i am a commata, point;comma,.[]{};<>(!)?com=ma");
+
+	import std.stdio;
+	writeln(tokens);
+
+
+	return;
+
+
+
+
 	uint generationReportInterval = 5000;
 
 
@@ -621,20 +704,21 @@ void main() {
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
 
-	uint numberOfGenerations = 5000000;
+	ulong numberOfGenerations = 50000000;
 
 
 	Parameters parameters = new Parameters();
 	parameters.numberOfInputs = 1;
 	parameters.numberOfOutputs = 1;
 
-	uint numberOfMutations = 2;
+	uint numberOfMutations = 3;
 	uint numberOfCandidates = 5; // 4 + 1  evolutionary strategy 
 
 	/// uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1, 1]];
 	uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1]];
 
 	Random gen = Random(); //Random(44);
+	gen.seed(unpredictableSeed);
 
 	Context context = Context.make(parameters, operatorInstancePrototype, typeIdsOfOperatorsToCreate, gen);
 
@@ -666,7 +750,7 @@ void main() {
 		bool reportCurrentGeneration = false, reportBestRatingChange = false;
 		float reportBestRating;
 
-		reportCurrentGeneration |= ((generation % generationReportInterval) == 0);
+		reportCurrentGeneration |= ((generation % cast(typeof(generation))generationReportInterval) == 0);
 
 		// copy to temporary which get mutated
 		{
