@@ -303,7 +303,6 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		// read to port A
 		portA[0..min(numberOfComperators, $)] = cast(int[])inputs[0].tuple[0..min(numberOfComperators, $)];
 
-
 		uint[] portB;
 		portB.length = portA.length;
 
@@ -321,8 +320,8 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 						return geneTokenComperatorMatrix[variantIndex, portIndex] == -2;
 					}
 
-					foreach( variantI; 0..numberOfVariants ) {
-						if( isTokenComperatorWildcard(portIndex, variantI) ) {
+					foreach( variantIndex; 0..numberOfVariants ) {
+						if( isTokenComperatorWildcard(portIndex, variantIndex) ) {
 							return true;
 						}
 					}
@@ -372,6 +371,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 				if( hasPortWildCard(portIndex) ) {
 					portFired = true; // if its a wildcard we fire the port whatever its matched with
 					portB[portIndex] = portA[portIndex];
+					portBEnabledPortCounter++;
 				}
 				else {
 					doesPortMatch(portFired, portB[portIndex]);
@@ -383,7 +383,7 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 			}
 		}
 
-		if( portBActivationCounter == 0/* || portBActivationCounter != portBEnabledPortCounter*/ ) {
+		if( portBActivationCounter == 0 || portBActivationCounter != portBEnabledPortCounter ) {
 			return TextIndexOrTupleValue.makeDefaultValue();
 		}
 

@@ -569,7 +569,7 @@ class TestRating : IRating {
 			return;
 		}
 
-		if( result.tuple[0] == tokenRegister.getToken("birds") || result.tuple[0] == tokenRegister.getToken("animals") ) {
+		if( result.tuple[0] == tokenRegister.getToken("birds") || result.tuple[0] == tokenRegister.getToken("animals") || result.tuple[0] == tokenRegister.getToken("frogs") ) {
 			chromosomeWithState.rating += 1.0f;
 		}
 
@@ -594,9 +594,6 @@ class TokenRegister {
 	    }
 	}
 
-
-	public string[] tokenDatabase;
-
 	public final uint[] register(string[] tokens) {
 		uint[] result;
 		foreach( token; tokens ) {
@@ -604,19 +601,6 @@ class TokenRegister {
 		}
 		return result;
 	}
-
-	protected final uint addGetToken(string token) {
-		foreach( i; 0..tokenDatabase.length ) {
-			if( tokenDatabase[i] == token ) {
-				return i;
-			}
-		}
-
-		// if we are here the token was not found, we add it
-		tokenDatabase ~= token;
-		return tokenDatabase.length-1;
-	}
-
 
 	public final uint getToken(string token) {
 		foreach( i; 0..tokenDatabase.length ) {
@@ -636,6 +620,24 @@ class TokenRegister {
 			writeln(i, " ", tokenDatabase[i]);
 		}
 	}
+
+	public final @property numberOfTokens() {
+		return tokenDatabase.length;
+	}
+
+	protected final uint addGetToken(string token) {
+		foreach( i; 0..tokenDatabase.length ) {
+			if( tokenDatabase[i] == token ) {
+				return i;
+			}
+		}
+
+		// if we are here the token was not found, we add it
+		tokenDatabase ~= token;
+		return tokenDatabase.length-1;
+	}
+
+	protected string[] tokenDatabase;
 }
 
 
@@ -696,8 +698,7 @@ void main() {
 	// i am very tired
 	// it is very rainy
 	// it is rainy
-	uint numberOfTokens = 10;
-	uint readWidth = 7;
+	uint readWidth = 5;
 
 	uint numberOfComperatorsPerOperator = 3;
 	uint numberOfVariants = 2; /// 2
@@ -712,8 +713,16 @@ void main() {
 	Permutation[] permutations = [];
 	permutations ~= Permutation.calcPermutation(tokenRegister.register(tokenizer.tokenize("birds are tired")), tokenRegister.register(tokenizer.tokenize("birds tired")));
 
+
+	ValueType[][] inputs = [
+		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("birds are tired")))],
+		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("frogs are green")))],
+		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("frogs are green")))],
+		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("animals are animals")))],
+	];
+
 	IOperatorInstancePrototype!ValueType operatorInstancePrototype = new TokenMatcherOperatorInstancePrototype(
-		readWidth, numberOfTokens,
+		readWidth, tokenRegister.numberOfTokens,
 		numberOfComperatorsPerOperator, numberOfVariants,
 		permutations,
 		matcherWildcardPropability,
@@ -724,7 +733,7 @@ void main() {
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
 
-	ulong numberOfGenerations = 200000;
+	ulong numberOfGenerations = 5000;
 
 
 	Parameters parameters = new Parameters();
@@ -742,12 +751,6 @@ void main() {
 
 	Context context = Context.make(parameters, operatorInstancePrototype, typeIdsOfOperatorsToCreate, gen);
 
-	ValueType[][] inputs = [
-		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("birds are tired")))],
-		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("frogs are green")))],
-		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("frogs are green")))],
-		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("animals are animals")))],
-	];
 
 
 
