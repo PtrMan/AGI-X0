@@ -548,7 +548,7 @@ void rangeWithSpecilChoice(uint number, uint numberOfDiscrete, float specialChoi
 
 	uint numberMod = number % numberOfDiscreteChoices;
 
-	specialChoice = numberOfDiscrete < numberMod;
+	specialChoice = numberMod >= numberOfDiscrete;
 	if( !specialChoice ) {
 		discreteChoice = numberMod;
 	}
