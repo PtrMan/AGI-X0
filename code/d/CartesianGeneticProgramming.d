@@ -2,7 +2,7 @@ module CartesianGeneticProgramming;
 
 import TokenOperators;
 import CgpException : CgpException;
-import PermutationHelper;
+import Permutation : Permutation;
 
 import std.random : uniform, Random, unpredictableSeed;
 
@@ -554,6 +554,10 @@ interface IRating {
 }
 
 class TestRating : IRating {
+	public final this(TokenRegister tokenRegister) {
+		this.tokenRegister = tokenRegister;
+	}
+
 	public final void resetRating(ChromosomeWithState chromosomeWithState) {
 		chromosomeWithState.rating = 0.0f;
 	}
@@ -565,14 +569,16 @@ class TestRating : IRating {
 			return;
 		}
 
-		if( result.tuple[0] == 4 ) { // checks for "i"
+		if( result.tuple[0] == tokenRegister.getToken("birds") || result.tuple[0] == tokenRegister.getToken("animals") ) {
 			chromosomeWithState.rating += 1.0f;
 		}
 
-		if( result.tuple[1] == 2 ) { // checks for "tired"
+		if( result.tuple[1] == tokenRegister.getToken("tired") || result.tuple[1] == tokenRegister.getToken("green") || result.tuple[1] == tokenRegister.getToken("animals")  ) {
 			chromosomeWithState.rating += 1.0f;
 		}
 	}
+
+	protected TokenRegister tokenRegister;
 }
 
 
@@ -582,9 +588,16 @@ class TestRating : IRating {
 
 
 class TokenRegister {
+	public final static class TokenException : Exception {
+	    public final this () {
+	        super("TokenException") ;
+	    }
+	}
+
+
 	public string[] tokenDatabase;
 
-	public final uint[] tokenize(string[] tokens) {
+	public final uint[] register(string[] tokens) {
 		uint[] result;
 		foreach( token; tokens ) {
 			result ~= addGetToken(token);
@@ -603,6 +616,26 @@ class TokenRegister {
 		tokenDatabase ~= token;
 		return tokenDatabase.length-1;
 	}
+
+
+	public final uint getToken(string token) {
+		foreach( i; 0..tokenDatabase.length ) {
+			if( tokenDatabase[i] == token ) {
+				return i;
+			}
+		}
+
+		throw new TokenException();
+	}
+
+	// for debugging
+	public final void debugDump() {
+		import std.stdio;
+		writeln("tokens:");
+		foreach( i; 0..tokenDatabase.length ) {
+			writeln(i, " ", tokenDatabase[i]);
+		}
+	}
 }
 
 
@@ -616,7 +649,7 @@ class Tokenizer {
 
 		for(;;) {
 			import std.stdio;
-			writeln(remainingInput);
+			//writeln(remainingInput);
 
 			auto matchToken = matchFirst(remainingInput, regexToken);
 			
@@ -632,7 +665,7 @@ class Tokenizer {
 				continue;
 			}
 			
-			writeln(token, "<--");
+			//writeln(token, "<--");
 			resultTokens ~= token;
 			
 		}
@@ -649,17 +682,12 @@ class Tokenizer {
 
 import std.stdio : writeln, write;
 
+//import Permutation : Permutation;
+
 void main() {
 	Tokenizer tokenizer = new Tokenizer();
-	string[] tokens = tokenizer.tokenize("i am a commata, point;comma,.[]{};<>(!)?com=ma");
-
-	import std.stdio;
-	writeln(tokens);
-
-
-	return;
-
-
+	TokenRegister tokenRegister = new TokenRegister();
+	//string[] tokens = tokenizer.tokenize("i am a commata, point;comma,.[]{};<>(!)?com=ma");
 
 
 	uint generationReportInterval = 5000;
@@ -685,18 +713,21 @@ void main() {
 	uint numberOfTokens = 10;
 	uint readWidth = 7;
 
-	uint numberOfComperatorsPerOperator = 2;
-	uint numberOfVariants = 1; /// 2
+	uint numberOfComperatorsPerOperator = 3;
+	uint numberOfVariants = 2; /// 2
 
-	uint numberOfMatchingOperators = 2; // how many matching operators are there?
 
 	uint
 		selectorNumberOfInputConnections = 3;
 
 
+	Permutation[] permutations = [];
+	permutations ~= Permutation.calcPermutation(tokenRegister.register(tokenizer.tokenize("birds are tired")), tokenRegister.register(tokenizer.tokenize("birds tired")));
+
 	IOperatorInstancePrototype!ValueType operatorInstancePrototype = new TokenMatcherOperatorInstancePrototype(
 		readWidth, numberOfTokens,
 		numberOfComperatorsPerOperator, numberOfVariants,
+		permutations,
 
 		selectorNumberOfInputConnections
 	);
@@ -704,18 +735,18 @@ void main() {
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
 
-	ulong numberOfGenerations = 50000000;
+	ulong numberOfGenerations = 50000;
 
 
 	Parameters parameters = new Parameters();
 	parameters.numberOfInputs = 1;
 	parameters.numberOfOutputs = 1;
 
-	uint numberOfMutations = 3;
+	uint numberOfMutations = 2;
 	uint numberOfCandidates = 5; // 4 + 1  evolutionary strategy 
 
 	/// uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1, 1]];
-	uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1]];
+	uint[][] typeIdsOfOperatorsToCreate = [[0], [1]];
 
 	Random gen = Random(); //Random(44);
 	gen.seed(unpredictableSeed);
@@ -723,19 +754,19 @@ void main() {
 	Context context = Context.make(parameters, operatorInstancePrototype, typeIdsOfOperatorsToCreate, gen);
 
 	ValueType[][] inputs = [
-		[TextIndexOrTupleValue.makeTuple([1, 4, 2])], // am road tired
-		//[TextIndexOrTupleValue.makeTuple([0, 1, 8, 2])], // i am rainy tired   - justt for testing
-		
-
-		// THE ALGORITHM SEEMS TO HAVE A PROBLEM WITH ALIASING
-		//[TextIndexOrTupleValue.makeTuple([4, 1, 7, 2])] // road am very tired     <- max rating with this is 3, should be 4    
-		//[TextIndexOrTupleValue.makeTuple([4, 2, 5, 1])] // road tired am it     <- max rating with this is 4 as it should be
-		//[TextIndexOrTupleValue.makeTuple([1, 4, 1, 2, 7])], // am road very tired     <- max rating with this is 4 as it should be
-		[TextIndexOrTupleValue.makeTuple([1, 2, 4])],
-
+		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("birds are tired")))],
+		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("frogs are green")))],
+		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("frogs are green")))],
+		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("animals are animals")))],
 	];
 
-	IRating ratingImplementation = new TestRating();
+
+
+	tokenRegister.debugDump();
+
+
+
+	IRating ratingImplementation = new TestRating(tokenRegister);
 
 	// we just maintain one candidate
 	chromosomesWithStates ~= ChromosomeWithState.createFromGenotype(context.createRandomGenotype(), parameters.numberOfInputs);

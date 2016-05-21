@@ -1,7 +1,7 @@
 module CgpException;
 
 class CgpException : Exception {
-    this (string msg) {
+    public final this (string msg) {
         super(msg) ;
     }
 }
