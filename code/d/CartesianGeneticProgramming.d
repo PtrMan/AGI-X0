@@ -559,24 +559,41 @@ class TestRating : IRating {
 	}
 
 	public final void resetRating(ChromosomeWithState chromosomeWithState) {
-		chromosomeWithState.rating = 0.0f;
+		chromosomeWithState.rating = 100.0f;
 	}
 
 	public final void rate(ChromosomeWithState chromosomeWithState) {		
 		ValueType result = chromosomeWithState.getValueOfOutput(0 /* of output 0 just for testing */);
 		
-		if( !result.isSet ) {
-			return;
+		if( trainingSampleType == TrainingSample.EnumType.NEGATIVE ) {
+			if( result.isSet ) {
+				chromosomeWithState.rating -= 5.0f;
+				return;
+			}
+			else {
+				chromosomeWithState.rating += 5.0f;
+				return;
+			}
 		}
+		else {
 
-		if( result.tuple[0] == tokenRegister.getToken("birds") || result.tuple[0] == tokenRegister.getToken("animals") || result.tuple[0] == tokenRegister.getToken("frogs") ) {
-			chromosomeWithState.rating += 1.0f;
-		}
+			if( !result.isSet ) {
+				return;
+			}
 
-		if( result.tuple[1] == tokenRegister.getToken("tired") || result.tuple[1] == tokenRegister.getToken("green") || result.tuple[1] == tokenRegister.getToken("animals")  ) {
-			chromosomeWithState.rating += 1.0f;
+			if( result.tuple[0] == tokenRegister.getToken("birds") || result.tuple[0] == tokenRegister.getToken("animals") || result.tuple[0] == tokenRegister.getToken("frogs") ) {
+				chromosomeWithState.rating += 1.0f;
+			}
+
+			if( result.tuple[1] == tokenRegister.getToken("tired") || result.tuple[1] == tokenRegister.getToken("green") || result.tuple[1] == tokenRegister.getToken("animals")  ) {
+				chromosomeWithState.rating += 1.0f;
+			}
+
+
 		}
 	}
+
+	public TrainingSample.EnumType trainingSampleType;
 
 	protected TokenRegister tokenRegister;
 }
@@ -680,7 +697,20 @@ class Tokenizer {
 
 
 
+class TrainingSample {
+	enum EnumType : bool {
+		POSITIVE,
+		NEGATIVE
+	}
 
+	public uint[] tokens;
+	public EnumType type;
+
+	public final this(uint[] tokens, EnumType type) {
+		this.tokens = tokens;
+		this.type = type;
+	}
+}
 
 import std.stdio : writeln, write;
 
@@ -714,12 +744,12 @@ void main() {
 	permutations ~= Permutation.calcPermutation(tokenRegister.register(tokenizer.tokenize("birds are tired")), tokenRegister.register(tokenizer.tokenize("birds tired")));
 
 
-	ValueType[][] inputs = [
-		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("birds are tired")))],
-		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("frogs are green")))],
-		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("frogs are green")))],
-		[TextIndexOrTupleValue.makeTuple(tokenRegister.register(tokenizer.tokenize("animals are animals")))],
-	];
+	TrainingSample[] trainingSamples;
+	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("birds are tired"))   , TrainingSample.EnumType.POSITIVE);
+	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("frogs are green"))   , TrainingSample.EnumType.POSITIVE);
+	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("animals are animals"))   , TrainingSample.EnumType.POSITIVE);
+	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("penguin is octopus"))   , TrainingSample.EnumType.NEGATIVE);
+
 
 	IOperatorInstancePrototype!ValueType operatorInstancePrototype = new TokenMatcherOperatorInstancePrototype(
 		readWidth, tokenRegister.numberOfTokens,
@@ -733,7 +763,7 @@ void main() {
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
 
-	ulong numberOfGenerations = 5000;
+	ulong numberOfGenerations = 50000;
 
 
 	Parameters parameters = new Parameters();
@@ -758,7 +788,7 @@ void main() {
 
 
 
-	IRating ratingImplementation = new TestRating(tokenRegister);
+	TestRating ratingImplementation = new TestRating(tokenRegister);
 
 	// we just maintain one candidate
 	chromosomesWithStates ~= ChromosomeWithState.createFromGenotype(context.createRandomGenotype(), parameters.numberOfInputs);
@@ -796,8 +826,11 @@ void main() {
 				
 				ratingImplementation.resetRating(iterationChromosome);
 
-				foreach( iterationInput; inputs ) {
-					context.executeGraph(iterationChromosome, iterationInput);
+				foreach( iterationTrainingSample; trainingSamples ) {
+					ratingImplementation.trainingSampleType = iterationTrainingSample.type;
+
+
+					context.executeGraph(iterationChromosome, [TextIndexOrTupleValue.makeTuple(iterationTrainingSample.tokens)]);
 					ratingImplementation.rate(iterationChromosome);
 				}
 
@@ -861,24 +894,6 @@ void main() {
 				chromosomesWithStates[0].genotype.transcribeToOperatorsForNodes();
 				import std.stdio;
 				writeln(chromosomesWithStates[0].genotype.getDebugMathematica());
-
-
-
-
-
-				// check rating
-
-				context.decodeChromosome(chromosomesWithStates[0]);
-					
-				ratingImplementation.resetRating(chromosomesWithStates[0]);
-
-				foreach( iterationInput; inputs ) {
-					context.executeGraph(chromosomesWithStates[0], iterationInput);
-					ratingImplementation.rate(chromosomesWithStates[0]);
-				}
-
-				writeln("real rating  ", chromosomesWithStates[0].rating);
-
 			}
 		}
 	}
