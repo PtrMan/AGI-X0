@@ -16,10 +16,60 @@ class TextIndexOrTupleValue {
 		TUPLE
 	}
 
+	/*
+	public static struct TupleElement {
+		public static TupleElement makeValue(uint value) {
+			TupleElement result;
+			result.protectedValue = value;
+			return result;
+		}
+
+		public static TupleElement makeNotSet() {
+			TupleElement result;
+			result.protectedIsNotSet = true;
+			return result;
+		}
+
+		protected final this() {
+		}
+
+		public final @property bool isSet() {
+			return !protectedIsNotSet;
+		}
+
+		public final @property uint getValue() {
+			if( protectedIsNotSet ) {
+				throw new NotSetException();
+			}
+
+			return protectedValue;
+		}
+
+		protected uint protectedValue;
+		protected bool protectedIsNotSet;
+	}
+	*/
+
 	protected EnumType type;
 	public uint tokenIndex;
 
+	//public TupleElement[] tuple;
 	public uint[] tuple;
+
+	// array with the information about the matching of the input
+	// used by the rating to rate partial matches even if it didn't match completly
+	public bool[] inputMatched;
+
+	/*
+	public final bool isPartialySet() {
+		foreach( iterationElement; tuple ) {
+			if( !iterationElement.isSet() ) {
+				return true;
+			}
+		}
+
+		return false;
+	}*/
 
 	protected final this(EnumType type) {
 		this.type = type;
@@ -310,6 +360,9 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		uint portBActivationCounter = 0, portBEnabledPortCounter = 0;
 
 		bool match = false;
+
+		bool[] inputMatched;
+		inputMatched.length = min(numberOfComperators, portA.length);
 		
 		// select from portA into portB
 		// if there is a mismatch of an activated possibility portB gets disabled
@@ -380,6 +433,10 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 				if( portFired ) {
 					portBActivationCounter++;
 				}
+
+				if( portFired ) {
+					inputMatched[portIndex] = true;
+				}
 			}
 		}
 
@@ -391,11 +448,16 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 
 		bool calleeResult;
 		uint[] resultTuple = applyGenePermutationToInput(inputs[0].tuple, calleeResult);
+		TextIndexOrTupleValue result;
 		if( !calleeResult ) {
-			return TextIndexOrTupleValue.makeDefaultValue();
+			result = TextIndexOrTupleValue.makeDefaultValue();
+		}
+		else {
+			result = TextIndexOrTupleValue.makeTuple(resultTuple);
 		}
 
-		return TextIndexOrTupleValue.makeTuple(resultTuple);
+		result.inputMatched = inputMatched;
+		return result;
 	}
 
 
