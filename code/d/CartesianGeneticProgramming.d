@@ -554,8 +554,7 @@ interface IRating {
 }
 
 class TestRating : IRating {
-	public final this(TokenRegister tokenRegister) {
-		this.tokenRegister = tokenRegister;
+	public final this() {
 	}
 
 	public final void resetRating(ChromosomeWithState chromosomeWithState) {
@@ -577,25 +576,44 @@ class TestRating : IRating {
 		}
 		else {
 
+			// rate partial hits
+			foreach( iterationInputMatched; result.inputMatched ) {
+				if( iterationInputMatched ) {
+					chromosomeWithState.rating += 1.0f;
+				}
+				else {
+					chromosomeWithState.rating -= 0.8f;
+				}
+			}
+
+
 			if( !result.isSet ) {
 				return;
 			}
 
-			if( result.tuple[0] == tokenRegister.getToken("birds") || result.tuple[0] == tokenRegister.getToken("animals") || result.tuple[0] == tokenRegister.getToken("frogs") ) {
-				chromosomeWithState.rating += 1.0f;
+			import std.stdio;
+			writeln(result.tuple.length);
+			writeln(result.tuple);
+			writeln(trainingResultTokens.length);
+			writeln(trainingResultTokens);
+
+			assert(result.tuple.length == trainingResultTokens.length);
+
+			foreach( i; 0..trainingResultTokens.length ) {
+				if( result.tuple[i] == trainingResultTokens[i] ) {
+					chromosomeWithState.rating += 1.0f;
+				}
+				else {
+					chromosomeWithState.rating -= 1.0f;
+				}
 			}
-
-			if( result.tuple[1] == tokenRegister.getToken("tired") || result.tuple[1] == tokenRegister.getToken("green") || result.tuple[1] == tokenRegister.getToken("animals")  ) {
-				chromosomeWithState.rating += 1.0f;
-			}
-
-
 		}
 	}
 
 	public TrainingSample.EnumType trainingSampleType;
+	public uint[] trainingResultTokens; // tokens which are correct
 
-	protected TokenRegister tokenRegister;
+	//protected TokenRegister tokenRegister;
 }
 
 
@@ -714,8 +732,6 @@ class TrainingSample {
 
 import std.stdio : writeln, write;
 
-//import Permutation : Permutation;
-
 void main() {
 	Tokenizer tokenizer = new Tokenizer();
 	TokenRegister tokenRegister = new TokenRegister();
@@ -724,14 +740,9 @@ void main() {
 	uint generationReportInterval = 5000;
 
 
-	// i am tired
-	// i am very tired
-	// it is very rainy
-	// it is rainy
-	uint readWidth = 5;
 
-	uint numberOfComperatorsPerOperator = 3;
-	uint numberOfVariants = 2; /// 2
+	uint matcherNumberOfComperatorsPerOperator = 10;
+	uint matcherNumberOfVariants = 2; /// 2
 
 	float matcherWildcardPropability = 0.5f;
 
@@ -741,19 +752,21 @@ void main() {
 
 
 	Permutation[] permutations = [];
-	permutations ~= Permutation.calcPermutation(tokenRegister.register(tokenizer.tokenize("birds are tired")), tokenRegister.register(tokenizer.tokenize("birds tired")));
+	permutations ~= Permutation.calcPermutation(tokenRegister.register(tokenizer.tokenize("humans are the only extant members of hominina clade,")), tokenRegister.register(tokenizer.tokenize("humans only extant members hominina clade")));
 
 
 	TrainingSample[] trainingSamples;
-	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("birds are tired"))   , TrainingSample.EnumType.POSITIVE);
-	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("frogs are green"))   , TrainingSample.EnumType.POSITIVE);
-	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("animals are animals"))   , TrainingSample.EnumType.POSITIVE);
-	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("penguin is octopus"))   , TrainingSample.EnumType.NEGATIVE);
+	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans are the only extant members of hominina clade,"))   , TrainingSample.EnumType.POSITIVE);
+	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans are the only extant members of hominina clade."))   , TrainingSample.EnumType.POSITIVE);
+	//trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans are the only extant members of hominina clade."))   , TrainingSample.EnumType.POSITIVE);
+	//trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("animals are animals"))   , TrainingSample.EnumType.POSITIVE);
+	//trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("penguin is octopus"))   , TrainingSample.EnumType.NEGATIVE);
 
+	// TODO< generate training samples after pattern >
 
 	IOperatorInstancePrototype!ValueType operatorInstancePrototype = new TokenMatcherOperatorInstancePrototype(
-		readWidth, tokenRegister.numberOfTokens,
-		numberOfComperatorsPerOperator, numberOfVariants,
+		tokenRegister.numberOfTokens,
+		matcherNumberOfComperatorsPerOperator, matcherNumberOfVariants,
 		permutations,
 		matcherWildcardPropability,
 
@@ -763,7 +776,7 @@ void main() {
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
 
-	ulong numberOfGenerations = 50000;
+	ulong numberOfGenerations = 100000;
 
 
 	Parameters parameters = new Parameters();
@@ -788,7 +801,10 @@ void main() {
 
 
 
-	TestRating ratingImplementation = new TestRating(tokenRegister);
+	TestRating ratingImplementation = new TestRating();
+	ratingImplementation.trainingResultTokens = tokenRegister.register(tokenizer.tokenize("humans only extant members hominina clade"));
+
+
 
 	// we just maintain one candidate
 	chromosomesWithStates ~= ChromosomeWithState.createFromGenotype(context.createRandomGenotype(), parameters.numberOfInputs);
@@ -828,7 +844,6 @@ void main() {
 
 				foreach( iterationTrainingSample; trainingSamples ) {
 					ratingImplementation.trainingSampleType = iterationTrainingSample.type;
-
 
 					context.executeGraph(iterationChromosome, [TextIndexOrTupleValue.makeTuple(iterationTrainingSample.tokens)]);
 					ratingImplementation.rate(iterationChromosome);

@@ -116,14 +116,13 @@ interface IOperatorInstancePrototype(ValueType) {
 
 class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextIndexOrTupleValue {
 	public final this(
-		uint matcherReadWidth, uint matcherNumberOfTokens,
+		uint matcherNumberOfTokens,
 		uint matcherNumberOfComperators, uint matcherNumberOfVariants,
 		Permutation[] matcherPermutations,
 		float matcherWildcardPropability,
 
 		uint selectorNumberOfInputConnections
 	) {
-		this.matcherReadWidth = matcherReadWidth;
 		this.matcherNumberOfTokens = matcherNumberOfTokens;
 		this.matcherPermutations = matcherPermutations;
 		this.matcherWildcardPropability = matcherWildcardPropability;
@@ -138,7 +137,7 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 
 	public final IOperatorInstance!TextIndexOrTupleValue createInstance(uint typeId) {
 		if( typeId == 0 ) {
-			return new TokenMatcherOperatorInstance(matcherReadWidth, matcherNumberOfTokens,  matcherNumberOfComperators, matcherNumberOfVariants,  matcherPermutations, matcherWildcardPropability);
+			return new TokenMatcherOperatorInstance(matcherNumberOfTokens,  matcherNumberOfComperators, matcherNumberOfVariants,  matcherPermutations, matcherWildcardPropability);
 		}
 		else if( typeId == 1 ) {
 			return new SelectorOperatorInstance(selectorNumberOfInputConnections);
@@ -149,7 +148,7 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 	}
 
 	protected uint
-		matcherReadWidth, matcherNumberOfTokens,
+		matcherNumberOfTokens,
 		matcherNumberOfComperators, matcherNumberOfVariants;
 	protected Permutation[] matcherPermutations;
 	protected float matcherWildcardPropability;
@@ -202,7 +201,15 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	public final uint getInputIndexForConnection(uint connectionIndex, uint numberOfOperatorsBeforeColumn) {
 		assert(numberOfInputConnections > 0);
 		assert(slicedGeneForConnections.length == numberOfInputConnections);
-		return slicedGeneForConnections[connectionIndex] % numberOfOperatorsBeforeColumn;
+
+		uint resultInputIndexForConnection = slicedGeneForConnections[connectionIndex] % numberOfOperatorsBeforeColumn;
+
+		{
+			import std.stdio;
+			writeln("[D] ", "connectionIndex = ", connectionIndex, " -> resultInputIndexForConnection = ", resultInputIndexForConnection);
+		}
+
+		return 1;//resultInputIndexForConnection;
 	}
 
 	public final TextIndexOrTupleValue calculateResult(TextIndexOrTupleValue[] inputs) {
@@ -236,8 +243,7 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 }
 
 class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
-	public final this(uint readWidth, uint numberOfTokens,  uint parameterNumberOfComperators, uint parameterNumberOfVariants,  Permutation[] permutations, float wildcardPropability) {
-		this.settingReadWidth = readWidth;
+	public final this(uint numberOfTokens,  uint parameterNumberOfComperators, uint parameterNumberOfVariants,  Permutation[] permutations, float wildcardPropability) {
 		this.settingNumberOfTokens = numberOfTokens;
 		this.settingPermutations = permutations;
 		this.settingWildcardPropability = wildcardPropability;
@@ -247,7 +253,6 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	}
 
 	// configuration
-	protected uint settingReadWidth;
 	protected uint settingNumberOfTokens;
 	protected Permutation[] settingPermutations;
 	protected float settingWildcardPropability;
@@ -497,13 +502,12 @@ class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 /+ outdated
 // test for just one port wih one possibility
 unittest {
-	uint readWidth = 3;
 	uint numberOfTokens = 5;
 
 	uint numberOfComperators = 3;
 	uint numberOfVariants = 2;
 
-	TokenMatcherOperatorInstance tokenMatcherOperatorInstance = new TokenMatcherOperatorInstance(readWidth, numberOfTokens,  numberOfComperators, numberOfVariants);
+	TokenMatcherOperatorInstance tokenMatcherOperatorInstance = new TokenMatcherOperatorInstance(numberOfTokens,  numberOfComperators, numberOfVariants);
 
 	tokenMatcherOperatorInstance.portAOffsetDeltas[0] = 0;
 	tokenMatcherOperatorInstance.setTokenComperator(0, 0, 1);
@@ -521,13 +525,12 @@ unittest {
 
 // test for just one port wih two possibilities
 unittest {
-	uint readWidth = 3;
 	uint numberOfTokens = 5;
 
 	uint numberOfComperators = 3;
 	uint numberOfVariants = 2;
 
-	TokenMatcherOperatorInstance tokenMatcherOperatorInstance = new TokenMatcherOperatorInstance(readWidth, numberOfTokens,  numberOfComperators, numberOfVariants);
+	TokenMatcherOperatorInstance tokenMatcherOperatorInstance = new TokenMatcherOperatorInstance(numberOfTokens,  numberOfComperators, numberOfVariants);
 
 	tokenMatcherOperatorInstance.portAOffsetDeltas[0] = 0;
 	tokenMatcherOperatorInstance.setTokenComperator(0, 0, 1);
@@ -558,13 +561,12 @@ unittest {
 
 // test for a pair with two possibilities
 unittest {
-	uint readWidth = 3;
 	uint numberOfTokens = 5;
 
 	uint numberOfComperators = 3;
 	uint numberOfVariants = 2;
 
-	TokenMatcherOperatorInstance tokenMatcherOperatorInstance = new TokenMatcherOperatorInstance(readWidth, numberOfTokens,  numberOfComperators, numberOfVariants);
+	TokenMatcherOperatorInstance tokenMatcherOperatorInstance = new TokenMatcherOperatorInstance(numberOfTokens,  numberOfComperators, numberOfVariants);
 
 	tokenMatcherOperatorInstance.portAOffsetDeltas[0] = 0;
 	tokenMatcherOperatorInstance.setTokenComperator(0, 0,  1);
