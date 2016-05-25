@@ -591,11 +591,11 @@ class TestRating : IRating {
 				return;
 			}
 
-			import std.stdio;
-			writeln(result.tuple.length);
-			writeln(result.tuple);
-			writeln(trainingResultTokens.length);
-			writeln(trainingResultTokens);
+			//import std.stdio;
+			//writeln(result.tuple.length);
+			//writeln(result.tuple);
+			//writeln(trainingResultTokens.length);
+			//writeln(trainingResultTokens);
 
 			assert(result.tuple.length == trainingResultTokens.length);
 
@@ -749,6 +749,8 @@ void main() {
 
 	uint
 		selectorNumberOfInputConnections = 3;
+	uint selectorNumberOfNetworkInputs = 1;
+	bool selectorSelectFromInputs = false;
 
 
 	Permutation[] permutations = [];
@@ -770,7 +772,9 @@ void main() {
 		permutations,
 		matcherWildcardPropability,
 
-		selectorNumberOfInputConnections
+		selectorNumberOfInputConnections,
+		selectorNumberOfNetworkInputs,
+		selectorSelectFromInputs
 	);
 
 	ChromosomeWithState[] chromosomesWithStates;

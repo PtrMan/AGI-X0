@@ -121,7 +121,9 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 		Permutation[] matcherPermutations,
 		float matcherWildcardPropability,
 
-		uint selectorNumberOfInputConnections
+		uint selectorNumberOfInputConnections,
+		uint selectorNumberOfNetworkInputs,
+		bool selectorSelectFromInputs
 	) {
 		this.matcherNumberOfTokens = matcherNumberOfTokens;
 		this.matcherPermutations = matcherPermutations;
@@ -132,7 +134,8 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 
 
 		this.selectorNumberOfInputConnections = selectorNumberOfInputConnections;
-
+		this.selectorNumberOfNetworkInputs = selectorNumberOfNetworkInputs;
+		this.selectorSelectFromInputs = selectorSelectFromInputs;
 	}
 
 	public final IOperatorInstance!TextIndexOrTupleValue createInstance(uint typeId) {
@@ -140,7 +143,7 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 			return new TokenMatcherOperatorInstance(matcherNumberOfTokens,  matcherNumberOfComperators, matcherNumberOfVariants,  matcherPermutations, matcherWildcardPropability);
 		}
 		else if( typeId == 1 ) {
-			return new SelectorOperatorInstance(selectorNumberOfInputConnections);
+			return new SelectorOperatorInstance(selectorNumberOfInputConnections, selectorNumberOfNetworkInputs, selectorSelectFromInputs);
 		}
 		else {
 			throw new CgpException("Internal error: typeId is not recognized!");
@@ -155,6 +158,8 @@ class TokenMatcherOperatorInstancePrototype : IOperatorInstancePrototype!TextInd
 
 	protected uint
 		selectorNumberOfInputConnections;
+	protected uint selectorNumberOfNetworkInputs;
+	protected bool selectorSelectFromInputs;
 }
 
 
@@ -180,8 +185,10 @@ interface IOperatorInstance(ValueType) {
 }
 
 class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
-	public final this(uint numberOfInputConnections) {
+	public final this(uint numberOfInputConnections, uint numberOfNetworkInputs, bool selectFromInputs) {
 		this.numberOfInputConnections = numberOfInputConnections;
+		this.numberOfNetworkInputs = numberOfNetworkInputs;
+		this.selectFromInputs = selectFromInputs;
 	}
 
 	public final uint getGeneSliceWidth() {
@@ -202,14 +209,16 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 		assert(numberOfInputConnections > 0);
 		assert(slicedGeneForConnections.length == numberOfInputConnections);
 
-		uint resultInputIndexForConnection = slicedGeneForConnections[connectionIndex] % numberOfOperatorsBeforeColumn;
+		uint resultInputIndexForConnection;
 
-		{
-			import std.stdio;
-			writeln("[D] ", "connectionIndex = ", connectionIndex, " -> resultInputIndexForConnection = ", resultInputIndexForConnection);
+		if( selectFromInputs ) {
+			resultInputIndexForConnection = slicedGeneForConnections[connectionIndex] % (numberOfOperatorsBeforeColumn + numberOfNetworkInputs);
+		}
+		else {
+			resultInputIndexForConnection = numberOfNetworkInputs + (slicedGeneForConnections[connectionIndex] % numberOfOperatorsBeforeColumn);
 		}
 
-		return 1;//resultInputIndexForConnection;
+		return resultInputIndexForConnection;
 	}
 
 	public final TextIndexOrTupleValue calculateResult(TextIndexOrTupleValue[] inputs) {
@@ -239,7 +248,9 @@ class SelectorOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
 	protected uint[] slicedGeneForConnections;
 	//protected uint currentSelector;
 
-	protected uint numberOfInputConnections; //, numberOfOperatorsToChoose;
+	protected uint numberOfInputConnections;
+	protected uint numberOfNetworkInputs;
+	protected bool selectFromInputs;
 }
 
 class TokenMatcherOperatorInstance : IOperatorInstance!TextIndexOrTupleValue {
