@@ -710,7 +710,7 @@ class Tokenizer {
 		return resultTokens;
 	}
 
-	protected auto regexToken = regex(`^([a-zA-Z0-9]+|[ <>\(\)\?!=\,;\{\}\[\]\.])`);
+	protected auto regexToken = regex(`^([a-zA-Z0-9]+|[ <>\(\)\?!=\,;\{\}\[\]\.\$])`);
 }
 
 
@@ -753,13 +753,95 @@ void main() {
 	bool selectorSelectFromInputs = false;
 
 
+
+
+	// dummy token to train for negative candidates
+	uint dummyToken = tokenRegister.register(tokenizer.tokenize("$"))[0];
+
+
+	// words for replacement
+	string[] wordsForReplacement = [
+		"human", "animal", "animals", "humans", "frog", "frogs", "duck", "ducks", "ant", "ants"
+	];
+
+	uint[] tokensForReplacement;
+
+	foreach( iterationWordForReplacement; wordsForReplacement ) {
+		tokensForReplacement ~= tokenRegister.register(tokenizer.tokenize(iterationWordForReplacement))[0];
+	}
+
+	
+
+
+
+
+
 	Permutation[] permutations = [];
 	permutations ~= Permutation.calcPermutation(tokenRegister.register(tokenizer.tokenize("humans are the only extant members of hominina clade,")), tokenRegister.register(tokenizer.tokenize("humans only extant members hominina clade")));
 
 
 	TrainingSample[] trainingSamples;
-	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans are the only extant members of hominina clade,"))   , TrainingSample.EnumType.POSITIVE);
-	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans are the only extant members of hominina clade."))   , TrainingSample.EnumType.POSITIVE);
+
+	string[] positiveTrainingCandidatesAsString = [
+		"humans are the only extant members of hominina clade,",
+		"humans are the only extant members of hominina clade.",
+	];
+
+	foreach( iterationPositiveTrainingCandidateAsString; positiveTrainingCandidatesAsString ) {
+		uint[] tokens = tokenRegister.register(tokenizer.tokenize(iterationPositiveTrainingCandidateAsString));
+
+		trainingSamples ~= new TrainingSample(tokens, TrainingSample.EnumType.POSITIVE);
+
+
+		class Tokenized {
+			public final this(uint[] tokens) {
+				this.tokens = tokens;
+			}
+
+			public uint[] tokens;
+		}
+
+		// numberOfVersionsForEachToken how many versions should exist for each replacement?
+		Tokenized[] replaceTokensAtPositionsWithTokensForReplacement(uint[] tokens, uint[] indicesToReplace, uint numberOfVersionsForEachToken) {
+			Tokenized[] result;
+
+			foreach( iterationIndexToReplace; indicesToReplace ) {
+				
+				foreach( replacementToken; tokensForReplacement[$-1-numberOfVersionsForEachToken..$-1] ) {
+					uint[] replacedTokens;
+					// deep copy
+					replacedTokens.length = tokens.length;
+					foreach( i; 0..replacedTokens.length ) {
+						replacedTokens[i] = tokens[i];
+					}
+
+					replacedTokens[iterationIndexToReplace] = replacementToken;
+					result ~= new Tokenized(replacedTokens);
+				}
+			
+			}
+
+			return result;
+		}
+
+		// TODO< replace indices to replace with the indices of the example derived from the calculated permutation >
+		uint[] indicesToReplace = [0, 3, 4, 5, 7, 8];
+		uint numberOfVersionsForEachToken = matcherNumberOfVariants*1 + 1; // we add 1 to make it impossible for the matchers to create specialcases
+		Tokenized[] tokenizedStringsOfPositiveExamples = replaceTokensAtPositionsWithTokensForReplacement(tokens, indicesToReplace, numberOfVersionsForEachToken);
+
+		foreach( iterationTokenizedString; tokenizedStringsOfPositiveExamples ) {
+			trainingSamples ~= new TrainingSample(iterationTokenizedString.tokens, TrainingSample.EnumType.POSITIVE);
+		}
+	}
+
+
+	//trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans are the only extant members of hominina clade,"))   , TrainingSample.EnumType.POSITIVE);
+	//trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans are the only extant members of hominina clade."))   , TrainingSample.EnumType.POSITIVE);
+
+	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans $ the only extant members of hominina clade."))   , TrainingSample.EnumType.NEGATIVE);
+	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans are $ only extant members of hominina clade."))   , TrainingSample.EnumType.NEGATIVE);
+	trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans are the only extant members $ hominina clade."))   , TrainingSample.EnumType.NEGATIVE);
+
 	//trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("humans are the only extant members of hominina clade."))   , TrainingSample.EnumType.POSITIVE);
 	//trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("animals are animals"))   , TrainingSample.EnumType.POSITIVE);
 	//trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("penguin is octopus"))   , TrainingSample.EnumType.NEGATIVE);
@@ -780,7 +862,7 @@ void main() {
 	ChromosomeWithState[] chromosomesWithStates;
 	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
 
-	ulong numberOfGenerations = 100000;
+	ulong numberOfGenerations = 10000;
 
 
 	Parameters parameters = new Parameters();
