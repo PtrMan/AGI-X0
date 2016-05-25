@@ -1,368 +1,29 @@
-module CartesianGeneticProgramming;
+module CgpExample;
 
-import TokenOperators;
-import CgpException : CgpException;
-import Permutation : Permutation;
 
-import std.random : uniform, Random, unpredictableSeed;
+
 
 alias uint GeneIndex;
 
-alias TextIndexOrTupleValue ValueType;
 
+import CartesianGeneticProgramming;
 
-class Parameters {
-	public uint numberOfInputs, numberOfOutputs;
 
-	public IOperatorInstancePrototype!ValueType operatorInstancePrototype;
-}
+import TokenOperators;
 
-class ConnectionAdress {
-	public enum EnumType {
-		INPUT,
-		NODE
-	}
 
-	public static void translateIndexToTypeAndIndexOfType(uint index, out EnumType type, out uint typeIndex, uint numberOfInputs) {
-		// input adresses are followed by node adresses
-
-		if( index < numberOfInputs ) {
-			type = EnumType.INPUT;
-			typeIndex = index;
-			return;
-		}
-		else {
-			type = EnumType.NODE;
-			typeIndex = index - numberOfInputs;
-			return;
-		}
-	}
-}
 
 
-struct OperatorAdress {
-	uint column, row;
-}
 
 
-/*
- * maps between the linear adress of an operator to the operator
- *
- * the operators are ordered in columns
- *
- * column   column
- *  |         |
- *  V         V
- * 
- * [op]
- * [op]      [op]
- * [op]      [op]
- * [op]
- */
-class OperatorMapping(ValueType) {
-	
-	public final OperatorAdress getOperatorAdressByLinearIndex(uint index) {
-		assert(index < adressesByLinearIndex.length);
 
-		return adressesByLinearIndex[index];
-	}
 
-	// [column][row]
-	public final void calcMapping(uint[][] typeIdsOfOperatorsToCreate) {
-		uint countInstances() {
-			return sum(map!(iterationColumn => iterationColumn.length)(typeIdsOfOperatorsToCreate), 0);
-		}
 
-		adressesByLinearIndex.length = countInstances();
-		uint adressesIndex = 0;
 
-		uint column = 0;
 
-		foreach( iterationColumn; typeIdsOfOperatorsToCreate ) {
-			uint row = 0;
-			foreach( iterationOperator; iterationColumn ) {
-				adressesByLinearIndex[adressesIndex].column = column;
-				adressesByLinearIndex[adressesIndex].row = row;
 
-				row++;
 
-				adressesIndex++;
-			}
 
-			column++;
-		}
-	}
-
-	protected OperatorAdress[] adressesByLinearIndex;
-}
-
-
-
-
-
-
-struct EvaluationState {
-	bool toEvaluate;
-	ValueType output;
-}
-
-class EvaluationStates {
-	public static EvaluationStates createBySize(uint length) {
-		EvaluationStates result = new EvaluationStates();
-		result.statesOfNodes.length = length;
-		return result;
-	}
-
-	public EvaluationState[] statesOfNodes;
-
-	public final void resetToEvaluate() {
-		foreach( ref iterationState; statesOfNodes ) {
-			iterationState.toEvaluate = false;
-		}
-	}
-
-	public final void resetOutputValues(ValueType value) {
-		foreach( ref iterationState; statesOfNodes ) {
-			iterationState.output = value;
-		}
-	}
-
-}
-
-
-
-class ChromosomeWithState {
-	public Genotype genotype;
-	public EvaluationStates evalutionStates;
-
-	public static ChromosomeWithState createFromGenotype(Genotype genotype, uint numberOfInputs) {
-		ChromosomeWithState result = new ChromosomeWithState();
-		result.genotype = genotype;
-		result.evalutionStates = EvaluationStates.createBySize(numberOfInputs + genotype.numberOfOperatorInstances());
-		
-		result.cachedNumberOfInputs = numberOfInputs;
-		return result;
-	}
-
-	// helper
-	public final ValueType getValueOfOutput(uint outputIndex) {
-		ConnectionAdress.EnumType connectionType;
-		uint translatedConnectionIndex;
-
-		ConnectionAdress.translateIndexToTypeAndIndexOfType(genotype.getOutputGene(outputIndex), connectionType, translatedConnectionIndex, cachedNumberOfInputs);
-
-		if( connectionType == ConnectionAdress.EnumType.NODE ) {
-			return evalutionStates.statesOfNodes[translatedConnectionIndex].output;
-		}
-
-		throw new CgpException("Internal error: Output node is input node, is not allowed");
-	}
-
-	public final void copyChromosomeToDestination(ChromosomeWithState destination) {
-		assert(destination.genotype.genes.length == genotype.genes.length);
-		foreach( geneI; 0..destination.genotype.genes.length ) {
-			destination.genotype.genes[geneI] = genotype.genes[geneI];
-		}
-	}
-
-	public float rating = 0.0f;
-
-	protected uint cachedNumberOfInputs;
-}
-
-import std.algorithm.iteration : sum, map;
-
-class Genotype {
-	static public class OperatorInstanceWithInfo {
-		public IOperatorInstance!ValueType operatorInstance;
-		public uint genomeIndex;
-		public uint numberOfOperatorsBeforeThisColumn;
-	}
-
-	public alias uint Gene;
-
-	// function genes followed by connection genes followed by output genes
-	public Gene[] genes;
-
-	public final string getDebugMathematica() {
-		string result;
-
-		uint column = 0;
-
-		foreach( iterationColumn; operatorInstancesWithInfo2 ) {
-			import std.format : format;
-			result ~= format("column %d\n", column);
-
-			uint row = 0;
-			foreach( iterationOperator; iterationColumn ) {
-				result ~= (format("\t[%d]\t", row) ~ iterationOperator.operatorInstance.getDebugMathematica(iterationOperator.numberOfOperatorsBeforeThisColumn)  ~ "\n");
-
-				row++;
-				
-			}
-
-			column++;
-		}
-
-		return result;
-	}
-
-	public final OperatorInstanceWithInfo getOperatorInstanceWithInfoByLinearIndex(uint index) {
-		OperatorAdress adress = operatorMapping.getOperatorAdressByLinearIndex(index);
-		return operatorInstancesWithInfo2[adress.column][adress.row];
-	}
-
-	public final this(IOperatorInstancePrototype!ValueType operatorInstancePrototype, uint[][] typeIdsOfOperatorsToCreate,   uint cachedNumberOfInputs, uint cachedNumberOfOutputs) {
-		uint countNumberOfOperatorInstances() {
-			uint numberOfOperatorInstances = sum(map!(iterationColumn => iterationColumn.length)(operatorInstancesWithInfo2));
-			assert( numberOfOperatorInstances > 0);
-			return numberOfOperatorInstances;
-		}
-
-		void initOperatorMapping(uint[][] typeIdsOfOperatorsToCreate) {
-			operatorMapping.calcMapping(typeIdsOfOperatorsToCreate);
-		}
-
-		void allocateGenes() {
-			genes.length = getNumberOfGenes();
-		}
-
-		this.cachedNumberOfInputs = cachedNumberOfInputs;
-		this.cachedNumberOfOutputs = cachedNumberOfOutputs;
-		
-		initOperatorMapping(typeIdsOfOperatorsToCreate);
-		createOperatorInstances(operatorInstancePrototype, typeIdsOfOperatorsToCreate);
-		allocateGenes();
-		cachedNumberOfOperatorInstances = countNumberOfOperatorInstances();
-	}
-
-	protected final void createOperatorInstances(IOperatorInstancePrototype!ValueType operatorInstancePrototype, uint[][] typeIdsOfOperatorsToCreate) {
-		operatorInstancesWithInfo2.length = typeIdsOfOperatorsToCreate.length;
-
-
-		uint currentGenomeIndex = 0;
-
-		uint adressesIndex = 0;
-		uint column = 0;
-
-		uint runningCounterForOperatorsBeforeThisColumn = 0;
-
-		foreach( iterationColumn; typeIdsOfOperatorsToCreate ) {
-			operatorInstancesWithInfo2[column].length = typeIdsOfOperatorsToCreate[column].length;
-
-			uint row = 0;
-			foreach( iterationOperator; iterationColumn ) {
-				{
-					operatorInstancesWithInfo2[column][row] = new OperatorInstanceWithInfo();
-					uint typeId = typeIdsOfOperatorsToCreate[column][row];
-					operatorInstancesWithInfo2[column][row].operatorInstance = operatorInstancePrototype.createInstance(typeId);
-					operatorInstancesWithInfo2[column][row].genomeIndex = currentGenomeIndex;
-					operatorInstancesWithInfo2[column][row].numberOfOperatorsBeforeThisColumn = runningCounterForOperatorsBeforeThisColumn;
-
-					currentGenomeIndex += operatorInstancesWithInfo2[column][row].operatorInstance.getGeneSliceWidth();
-				}
-
-				row++;
-				adressesIndex++;
-			}
-
-			runningCounterForOperatorsBeforeThisColumn += operatorInstancesWithInfo2[column].length;
-
-			column++;
-		}
-	}
-
-	// TODO< rename >
-	public OperatorInstanceWithInfo[][] operatorInstancesWithInfo2;
-
-	protected OperatorMapping!ValueType operatorMapping = new OperatorMapping!ValueType;
-
-	protected uint cachedNumberOfOperatorInstances;
-
-	public final @property uint numberOfOperatorInstances() {
-		return cachedNumberOfOperatorInstances;
-	}
-
-	public final uint getOutputGene(uint outputIndex) {
-		// calculate the output gene,
-		// the output gene starts with all inputs followed by all operator instances
-		uint numberOfGenesExceptOuputGenes = getNumberOfGenes() - cachedNumberOfOutputs;
-		uint index = numberOfGenesExceptOuputGenes + outputIndex;
-		Gene gene = genes[index];
-
-		return cachedNumberOfInputs + (gene % (numberOfOperatorInstances));
-	}
-
-
-	///////////////////////////
-	// misc
-
-	public final void transcribeToOperatorsForNodes() {
-		uint[] convertGenesToUint(Gene[] array) {
-			uint[] result;
-			result.length = array.length;
-			foreach( i; 0..array.length ) {
-				result[i] = array[i];
-			}
-			return result;
-		}
-
-		// for debugging
-		bool[] geneMarker;
-		geneMarker.length = getNumberOfGenes();
-
-		foreach( iterationColumn; operatorInstancesWithInfo2 ) {
-			foreach( iteratorOperatorInstanceWithInfo; iterationColumn ) {
-				uint sliceIndex = iteratorOperatorInstanceWithInfo.genomeIndex;
-				uint[] slicedGene = convertGenesToUint(genes[sliceIndex..sliceIndex+iteratorOperatorInstanceWithInfo.operatorInstance.getGeneSliceWidth()]);
-				iteratorOperatorInstanceWithInfo.operatorInstance.decodeSlicedGene(slicedGene);
-
-
-				{
-					uint i = 0;
-
-					foreach( ref bool iterationFlag; geneMarker[sliceIndex..sliceIndex+iteratorOperatorInstanceWithInfo.operatorInstance.getGeneSliceWidth()] ) {
-						if(iterationFlag) {
-							import std.stdio;
-							writeln("i= ", i);
-							assert(false);
-						}
-						i++;
-					}
-				}
-				
-
-
-				foreach( ref bool iterationFlag; geneMarker[sliceIndex..sliceIndex+iteratorOperatorInstanceWithInfo.operatorInstance.getGeneSliceWidth()] ) {
-					iterationFlag = true;
-				}
-			}
-		}
-	}
-	
-
-	///////////////////////////
-	// calculate the offsets of the different sections of the genome
-
-	
-
-
-	protected final uint getNumberOfGenes() {
-		return operatorInstancesWithInfo2[$-1][$-1].genomeIndex + operatorInstancesWithInfo2[$-1][$-1].operatorInstance.getGeneSliceWidth() + cachedNumberOfOutputs;
-	}
-
-	protected uint cachedNumberOfOutputs, cachedNumberOfInputs;
-}
-
-
-
-
-
-
-interface IRating {
-	void resetRating(ChromosomeWithState chromosomeWithState);
-	void rate(ChromosomeWithState chromosomeWithState);
-}
 
 class TestRating : IRating {
 	public final this() {
@@ -401,12 +62,6 @@ class TestRating : IRating {
 			if( !result.isSet ) {
 				return;
 			}
-
-			//import std.stdio;
-			//writeln(result.tuple.length);
-			//writeln(result.tuple);
-			//writeln(trainingResultTokens.length);
-			//writeln(trainingResultTokens);
 
 			assert(result.tuple.length == trainingResultTokens.length);
 
@@ -541,6 +196,9 @@ class TrainingSample {
 	}
 }
 
+import Permutation : Permutation;
+
+import std.random : uniform, Random, unpredictableSeed;
 import std.stdio : writeln, write;
 
 void main() {
@@ -657,7 +315,6 @@ void main() {
 	//trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("animals are animals"))   , TrainingSample.EnumType.POSITIVE);
 	//trainingSamples ~= new TrainingSample(tokenRegister.register(tokenizer.tokenize("penguin is octopus"))   , TrainingSample.EnumType.NEGATIVE);
 
-	// TODO< generate training samples after pattern >
 
 	IOperatorInstancePrototype!ValueType operatorInstancePrototype = new TokenMatcherOperatorInstancePrototype(
 		tokenRegister.numberOfTokens,
@@ -670,18 +327,12 @@ void main() {
 		selectorSelectFromInputs
 	);
 
-	ChromosomeWithState[] chromosomesWithStates;
-	ChromosomeWithState[] temporaryMutants; // all time allocated to speed up the algorithm
-
 	ulong numberOfGenerations = 10000;
 
 
-	Parameters parameters = new Parameters();
-	parameters.numberOfInputs = 1;
-	parameters.numberOfOutputs = 1;
 
-	uint numberOfMutations = 2;
-	uint numberOfCandidates = 5; // 4 + 1  evolutionary strategy 
+
+	
 
 	/// uint[][] typeIdsOfOperatorsToCreate = [[0, 0], [1, 1]];
 	uint[][] typeIdsOfOperatorsToCreate = [[0], [1]];
@@ -689,6 +340,9 @@ void main() {
 	Random gen = Random(); //Random(44);
 	gen.seed(unpredictableSeed);
 
+	Parameters parameters = new Parameters();
+	parameters.numberOfInputs = 1;
+	parameters.numberOfOutputs = 1;
 	Context context = Context.make(parameters, operatorInstancePrototype, typeIdsOfOperatorsToCreate, gen);
 
 
@@ -703,87 +357,42 @@ void main() {
 
 
 
-	// we just maintain one candidate
-	chromosomesWithStates ~= ChromosomeWithState.createFromGenotype(context.createRandomGenotype(), parameters.numberOfInputs);
-	
-	foreach( i; 0..numberOfCandidates ) {
-		// TODO< can be null entities, where literaly everyting is null >
-		temporaryMutants ~= ChromosomeWithState.createFromGenotype(context.createRandomGenotype(), parameters.numberOfInputs);
+
+	void ratingDelegate(IRating rating, ChromosomeWithState chromosome, Context context) {
+		TestRating castedRating = cast(TestRating)rating;
+
+		foreach( iterationTrainingSample; trainingSamples ) {
+			castedRating.trainingSampleType = iterationTrainingSample.type;
+
+			context.executeGraph(chromosome, [TextIndexOrTupleValue.makeTuple(iterationTrainingSample.tokens)]);
+			castedRating.rate(chromosome);
+		}
 	}
+
+	uint numberOfMutations = 2;
+	uint numberOfCandidates = 5; // 4 + 1  evolutionary strategy 
+	EvolutionState evolutionState = new EvolutionState(numberOfCandidates, numberOfMutations, &ratingDelegate, context, ratingImplementation, parameters);
+
 
 
 	foreach( generation; 0..numberOfGenerations ) {
-		bool reportCurrentGeneration = false, reportBestRatingChange = false;
-		float reportBestRating;
+		bool reportCurrentGeneration = false, selectionReportBestRatingChange;
+		float selectionReportBestRating;
 
 		reportCurrentGeneration |= ((generation % cast(typeof(generation))generationReportInterval) == 0);
 
-		// copy to temporary which get mutated
-		{
-			foreach( iterationMutant; temporaryMutants ) {
-				chromosomesWithStates[0].copyChromosomeToDestination(iterationMutant);
-			}
-		}
 
-		// mutate
-		{
-			foreach( iterationMutant; temporaryMutants ) {
-				context.pointMutationOnGene(iterationMutant.genotype, numberOfMutations);
-			}
-		}
 
-		// evaluation and rating
-		{
-			foreach( iterationChromosome; temporaryMutants ) {
-				context.decodeChromosome(iterationChromosome);
-				
-				ratingImplementation.resetRating(iterationChromosome);
-
-				foreach( iterationTrainingSample; trainingSamples ) {
-					ratingImplementation.trainingSampleType = iterationTrainingSample.type;
-
-					context.executeGraph(iterationChromosome, [TextIndexOrTupleValue.makeTuple(iterationTrainingSample.tokens)]);
-					ratingImplementation.rate(iterationChromosome);
-				}
-
-				//writeln("rating of mutant = ", iterationChromosome.rating);
-			}
-		}
-
-		// selection of best one
-		{
-			int bestPseudoIndex = -1;
-			float bestRating = chromosomesWithStates[0].rating, oldBestRating = bestRating;
-
-			int pseudoIndex = 0;
-			foreach( iterationChromosome; temporaryMutants ) {
-				// equal is important here to allow for genetic drift!
-				if( iterationChromosome.rating >= bestRating ) {
-					bestPseudoIndex = pseudoIndex;
-					bestRating = iterationChromosome.rating;
-				}
-
-				pseudoIndex++;
-			}
-
-			if( bestPseudoIndex != -1 ) {
-				temporaryMutants[bestPseudoIndex].copyChromosomeToDestination(chromosomesWithStates[0]);
-				chromosomesWithStates[0].rating = temporaryMutants[bestPseudoIndex].rating;
-			}
-
-			// report
-			if( bestRating > oldBestRating ) {
-				reportBestRatingChange = true;
-				reportBestRating = bestRating;
-			}
-		}
+		evolutionState.copyToTemporary();
+		evolutionState.mutate();
+		evolutionState.evaluateAndRate();
+		evolutionState.selectBestOne(selectionReportBestRating, selectionReportBestRatingChange);
 
 		
 
 
-
 		// report
-		reportCurrentGeneration |= reportBestRatingChange;
+		reportCurrentGeneration |= selectionReportBestRatingChange;
 
 		bool reported = reportCurrentGeneration;
 
@@ -792,8 +401,8 @@ void main() {
 				write("gen=", generation, " ");
 			}
 
-			if( reportBestRatingChange ) {
-				write("bestRating=", reportBestRating, " ");
+			if( selectionReportBestRatingChange ) {
+				write("bestRating=", selectionReportBestRating, " ");
 			}
 
 			writeln();
@@ -803,9 +412,9 @@ void main() {
 			// debug
 			bool debugEnabled = true;
 			if( debugEnabled ) {
-				chromosomesWithStates[0].genotype.transcribeToOperatorsForNodes();
+				evolutionState.chromosomesWithStates[0].genotype.transcribeToOperatorsForNodes();
 				import std.stdio;
-				writeln(chromosomesWithStates[0].genotype.getDebugMathematica());
+				writeln(evolutionState.chromosomesWithStates[0].genotype.getDebugMathematica());
 			}
 		}
 	}
