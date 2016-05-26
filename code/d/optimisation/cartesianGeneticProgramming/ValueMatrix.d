@@ -1,4 +1,4 @@
-module ValueMatrix;
+module optimisation.cartesianGeneticProgramming.ValueMatrix;
 
 template ValueMatrix(Type) {
     class ValueMatrix {

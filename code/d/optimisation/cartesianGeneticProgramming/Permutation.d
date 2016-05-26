@@ -1,6 +1,6 @@
-module Permutation;
+module optimisation.cartesianGeneticProgramming.Permutation;
 
-import CgpException : CgpException;
+import optimisation.cartesianGeneticProgramming.CgpException : CgpException;
 
 class Permutation {
 	uint[] srcIndices;

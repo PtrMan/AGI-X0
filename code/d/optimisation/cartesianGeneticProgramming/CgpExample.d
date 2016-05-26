@@ -1,4 +1,4 @@
-module CgpExample;
+module optimisation.cartesianGeneticProgramming.CgpExample;
 
 
 
@@ -6,10 +6,8 @@ module CgpExample;
 alias uint GeneIndex;
 
 
-import CartesianGeneticProgramming;
-
-
-import TokenOperators;
+import optimisation.cartesianGeneticProgramming.CartesianGeneticProgramming;
+import optimisation.cartesianGeneticProgramming.TokenOperators;
 
 
 

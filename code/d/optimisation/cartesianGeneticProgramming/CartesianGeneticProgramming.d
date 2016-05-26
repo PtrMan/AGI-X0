@@ -1,10 +1,10 @@
-module CartesianGeneticProgramming;
+module optimisation.cartesianGeneticProgramming.CartesianGeneticProgramming;
 
 import std.random : uniform, Random, unpredictableSeed;
 
-import TokenOperators;
-import CgpException : CgpException;
-import Permutation : Permutation;
+import optimisation.cartesianGeneticProgramming.TokenOperators;
+import optimisation.cartesianGeneticProgramming.CgpException : CgpException;
+import optimisation.cartesianGeneticProgramming.Permutation : Permutation;
 
 
 public alias TextIndexOrTupleValue ValueType;

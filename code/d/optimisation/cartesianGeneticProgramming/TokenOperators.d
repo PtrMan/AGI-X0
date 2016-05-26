@@ -1,13 +1,13 @@
-module TokenOperators;
+module optimisation.cartesianGeneticProgramming.TokenOperators;
 
 // TODO< wildcard for the comperator, which is -2 >
 
 import std.algorithm : min;
 
-import CgpException : CgpException;
-import ValueMatrix : ValueMatrix;
+import optimisation.cartesianGeneticProgramming.CgpException : CgpException;
+import optimisation.cartesianGeneticProgramming.ValueMatrix : ValueMatrix;
 
-import Permutation : Permutation;
+import optimisation.cartesianGeneticProgramming.Permutation : Permutation;
 
 class TextIndexOrTupleValue {
 	public enum EnumType {
