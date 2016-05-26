@@ -383,10 +383,7 @@ void main() {
 
 
 
-		evolutionState.copyToTemporary();
-		evolutionState.mutate();
-		evolutionState.evaluateAndRate();
-		evolutionState.selectBestOne(selectionReportBestRating, selectionReportBestRatingChange);
+		evolutionState.generation(selectionReportBestRating, selectionReportBestRatingChange);
 
 		
 

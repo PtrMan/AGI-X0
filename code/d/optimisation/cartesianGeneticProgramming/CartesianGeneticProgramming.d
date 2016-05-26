@@ -566,23 +566,27 @@ class EvolutionState {
 		setup();
 	}
 
-	// for testing public 
+	public final void generation(out float selectionReportBestRating, out bool selectionReportBestRatingChange) {
+		copyToTemporary();
+		mutate();
+		evaluateAndRate();
+		selectBestOne(selectionReportBestRating, selectionReportBestRatingChange);
+	}
+
 	// copy to temporary which get mutated
-	public final void copyToTemporary() {
+	protected final void copyToTemporary() {
 		foreach( iterationMutant; temporaryMutants ) {
 			chromosomesWithStates[0].copyChromosomeToDestination(iterationMutant);
 		}
 	}
 
-	// for testing public
-	public final void mutate() {
+	protected final void mutate() {
 		foreach( iterationMutant; temporaryMutants ) {
 			context.pointMutationOnGene(iterationMutant.genotype, numberOfMutations);
 		}
 	}
 
-	// for testing public
-	public final void evaluateAndRate() {
+	protected final void evaluateAndRate() {
 		foreach( iterationChromosome; temporaryMutants ) {
 			context.decodeChromosome(iterationChromosome);
 			
@@ -592,7 +596,7 @@ class EvolutionState {
 		}
 	}
 
-	public final void selectBestOne(out float selectionReportBestRating, out bool selectionReportBestRatingChange) {
+	protected final void selectBestOne(out float selectionReportBestRating, out bool selectionReportBestRatingChange) {
 		selectionReportBestRatingChange = false;
 
 		int bestPseudoIndex = -1;
