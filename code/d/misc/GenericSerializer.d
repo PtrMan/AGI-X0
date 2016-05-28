@@ -30,39 +30,6 @@ private void serializeArray(Type, BitstreamDestinationType)(Type[] array, Bitstr
    }
 }
 
-/*
-private void serializeArray(BitstreamDestinationType)(string array, BitstreamWriter!BitstreamDestinationType bitstreamWriter, ref bool successChained) {
-   
-   foreach( iterationByte; array ) {
-      bitstreamWriter.addUint__n(iterationByte, char.sizeof*8, successChained);
-   }
-}*/
-
-/+
-private Type deserializeArray(Type, BitstreamSourceType)(BitstreamReader!BitstreamSourceType bitstreamReader, ref bool successChained) {
-   /*Type tempResult;
-   alias DataType = Unqual!(typeof(tempResult[0]));//typeof(result[0]);
-   DataType[] result;
-
-   if( !successChained ) {
-      return [];
-   }
-
-   size_t lengthOfResult = bitstreamReader.getUint_2__4_8_12_16(successChained);
-
-   result.length = lengthOfResult;
-
-   foreach( i; 0..lengthOfResult ) {
-      result[i] = cast(DataType)bitstreamReader.getUint__n(DataType.sizeof*8, successChained);
-   }
-
-   return cast(Type)result;*/
-   Type result;
-
-   return result;
-}+/
-
-
 private Type deserializeArray(Type, BitstreamSourceType)(BitstreamReader!BitstreamSourceType bitstreamReader, ref bool successChained) {
    Type tempResult;
    alias DataType = Unqual!(typeof(tempResult[0]));
