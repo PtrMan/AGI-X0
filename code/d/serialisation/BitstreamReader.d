@@ -3,15 +3,12 @@ module serialisation.BitstreamReader;
 /** \brief 
  *
  */
-class BitstreamReader {
-	invariant() {
-		if( protectedData.length == 0 ) {
-			assert(endReached, "If Length is 0, the end must be reached!");
-			assert(currentIndex == 0, "If Length is 0, the Index must be 0!");
-		}
-		else {
-			assert((currentIndex < protectedData.length) || endReached, "currentIndex must be smaller than Data-length!");
-		}
+class BitstreamReader(BitstreamSourceImplementation) {
+	protected final this() {
+	}
+
+	public final this(BitstreamSourceImplementation bitstreamSource) {
+		this.bitstreamSource = bitstreamSource;
 	}
 
 	/** \brief returns the next Bool
@@ -25,26 +22,18 @@ class BitstreamReader {
 			return false;
 		}
 
-		if( endReached ) {
+		if( isEndReached ) {
 			successChained = false;
 			return false;
 		}
 
 		// just to make sure no runtime error happens
-		if( currentIndex > protectedData.length ) {
+		if( !bitstreamSource.isValid ) {
 			successChained = false;
 			return false;
 		}
 
-		result = protectedData[currentIndex];
-
-		currentIndex++;
-
-		if( currentIndex >= protectedData.length ) {
-			endReached = true;
-		}
-
-		return result;
+		return bitstreamSource.readNextBit();
 	}
 
 	/** \brief returns a number of up to 16 bits wide
@@ -58,30 +47,24 @@ class BitstreamReader {
 			return 0;
 		}
 
-		if( endReached ) {
+		if( isEndReached ) {
 			successChained = false;
 			return 0;
 		}
 
-		if(
-			(protectedData.length <= 2) ||
-			((currentIndex + 2) > (protectedData.length - 2))
-		) {
+		if( !bitstreamSource.isValid(2) ) {
 			successChained = false;
 			return 0;
 		}
 
 		uint numberOf4Bits = 0;
-		if( protectedData[currentIndex] )
-		{
+		if( bitstreamSource.readNextBit() ) {
 			numberOf4Bits |= 2;
 		}
 
-		if( protectedData[currentIndex+1] ) {
+		if( bitstreamSource.readNextBit() ) {
 			numberOf4Bits |= 1;
 		}
-
-		currentIndex += 2;
 
 		uint numberOfBits = (numberOf4Bits+1) * 4;
 
@@ -92,7 +75,7 @@ class BitstreamReader {
 			return 0;
 		}
 
-		if( currentIndex + numberOfBits > protectedData.length ) { // correct
+		if( !bitstreamSource.isValid(numberOfBits) ) {
 			successChained = false;
 			return 0;
 		}
@@ -100,8 +83,8 @@ class BitstreamReader {
 		uint bitI = numberOfBits - 1;
 
 		for(;;) {
-			if( protectedData[currentIndex+numberOfBits-1-bitI] ) {
-				result |= (1 << bitI);
+			if( bitstreamSource.readNextBit() ) {
+				result |= 1;
 			}
 
 			if( bitI == 0 ) {
@@ -109,12 +92,7 @@ class BitstreamReader {
 			}
 
 			bitI--;
-		}
-
-		currentIndex = currentIndex + numberOfBits;
-
-		if( currentIndex >= protectedData.length ) {
-			endReached = true;
+			result <<= 1;
 		}
 
 		return result;
@@ -140,7 +118,7 @@ class BitstreamReader {
 
       for( i = 0; i < numberOfSigns; i++ )
       {
-         Return ~= cast(char)this.getUint__n(8, successChained);
+         Return ~= cast(char)getUint__n(8, successChained);
       }
 
       if( !successChained )
@@ -172,7 +150,7 @@ class BitstreamReader {
 			return 0;
 		}
 
-		if( currentIndex + bits > protectedData.length ) {
+		if( !bitstreamSource.isValid(bits) ) {
 			successChained = false;
 			return 0;
 		}
@@ -180,8 +158,8 @@ class BitstreamReader {
 		uint bitI = bits-1;
 
 		for(;;) {
-			if( protectedData[currentIndex+(bits-1)-bitI] ) {
-				result |= (1 << bitI);
+			if( bitstreamSource.readNextBit() ) {
+				result |= 1;
 			}
 
 			if( bitI == 0 ) {
@@ -189,14 +167,7 @@ class BitstreamReader {
 			}
 
 			bitI--;
-		}
-
-		currentIndex += bits;
-
-		assert(currentIndex <= protectedData.length, "Invalid index!");
-
-		if( currentIndex >= protectedData.length ) {
-			endReached = true;
+			result <<= 1;
 		}
 
 		return result;
@@ -222,13 +193,13 @@ class BitstreamReader {
 			return 0.0f;
 		}
 
-		bool sign = this.getBoolean(successChained);
+		bool sign = getBoolean(successChained);
 
 		if( !successChained ) {
 			return 0.0f;
 		}
 
-		int valueInt = this.getUint__n(bits-1, successChained);
+		int valueInt = getUint__n(bits-1, successChained);
 
 		if( !successChained ) {
 			return 0.0f;
@@ -255,7 +226,7 @@ class BitstreamReader {
 			return result;
 		}
 
-		if( currentIndex + bits > protectedData.length ) {
+		if( !bitstreamSource.isValid(bits)  ) {
 			successChained = false;
 
 			return result;
@@ -268,17 +239,11 @@ class BitstreamReader {
 				break;
 			}
 
-			result ~= protectedData[currentIndex];
+			result ~= bitstreamSource.readNextBit();
 
 			remaining--;
-			currentIndex++;
 		}
 
-		assert(currentIndex <= protectedData.length, "Invalid index!");
-
-		if( currentIndex >= protectedData.length ) {
-			endReached = true;
-		}
 
 		return result;
 	}
@@ -293,7 +258,7 @@ class BitstreamReader {
 			return 0.0f;
 		}
 
-		uint valueUint = this.getUint__n(32, successChained);
+		uint valueUint = getUint__n(32, successChained);
 
 		if( !successChained ) {
 			return 0.0f;
@@ -313,7 +278,7 @@ class BitstreamReader {
 			return 0.0f;
 		}
 
-		uint valueUint = this.getUint__n(16, successChained);
+		uint valueUint = getUint__n(16, successChained);
 
 		if( !successChained ) {
 			return 0.0f;
@@ -336,50 +301,10 @@ class BitstreamReader {
 	 * \return ...
 	 */
 	final public @property bool isEndReached() {
-		return endReached;
+		// currently not implemented
+		// TODO?
+		return false;
 	}
 
-	/** \brief fills the internal Buffer with data from data
-	 *  \param Success will be false if the function failed
-	 *  \param data is the data tata will be copied
-	 *  \param minIndex ...
-	 *  \param maxIndex ...
-	 */
-	final public void fillFrom(bool[] data, uint minIndex, uint maxIndex, out bool success) {
-		success = false;
-
-		if( maxIndex >= data.length ) {
-			return;
-		}
-
-		protectedData.length = 0;
-		currentIndex = 0;
-
-		for( uint i = minIndex; i <= maxIndex; i++ ) {
-			protectedData ~= data[i];
-		}
-
-		endReached = (protectedData.length == 0);
-
-		success = true;
-	}
-   
-	/*
-	
-	// TOOCU
-	final public uint getRemainingCount()
-	{
-		return protectedData.length - currentIndex;
-	}
-	// TOUFIIUJFI
-	final public uint getIndex()
-	{
-		return currentIndex;
-	}
-	*/
-
-   	protected bool[] protectedData;
-
-	protected uint currentIndex = 0;
-	protected bool endReached = true;
+	protected BitstreamSourceImplementation bitstreamSource;
 }

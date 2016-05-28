@@ -5,14 +5,21 @@ import std.math : abs;
 /** \brief 
  *
  */
-class BitstreamWriter {
+class BitstreamWriter(BitstreamDestinationImplementation) {
+	protected final this() {
+	}
+
+	public final this(BitstreamDestinationImplementation bitstreamDestination) {
+		this.bitstreamDestination = bitstreamDestination;
+	}
+
 	/** \brief add bits
 	 *
 	 * \param bits ...
 	 */
 	final public void addBits(bool[] bits) {
-		foreach(bool bit; bits) {
-			protectedData ~= bit;
+		foreach(bit; bits) {
+			addBoolean(bit);
 		}
 	}
 
@@ -21,7 +28,7 @@ class BitstreamWriter {
 	 * \param boolean ...
 	 */
 	final public void addBoolean(bool boolean) {
-		protectedData ~= boolean;
+		bitstreamDestination.addBoolean(boolean);
 	}
 
 	/** \brief Tries to add a Number with variable length to the Data
@@ -164,7 +171,7 @@ class BitstreamWriter {
 	/** \brief Deletes all Data which is in the Buffer
 	 */
 	final public void flush() {
-		protectedData.length = 0;
+		bitstreamDestination.flush();
 	}
 
 	/** \brief Add a 16 bit float Value
@@ -214,8 +221,8 @@ class BitstreamWriter {
 	 *
 	 * \return ... 
 	 */
-	final public @property bool[] data() {
-		return this.protectedData;
+	final public @property ubyte[] dataAsUbyte() {
+		return bitstreamDestination.dataAsUbyte;
 	}
 
 	/** \brief returns the length of the Data
@@ -223,7 +230,7 @@ class BitstreamWriter {
 	 * \return ...
 	 */
 	final public @property ulong length() {
-		return this.protectedData.length;
+		return bitstreamDestination.length;
 	}
 
 	final public void addString(string value, ref bool successChained) {
@@ -301,5 +308,5 @@ class BitstreamWriter {
       }
    }+/
 
-	protected bool[] protectedData;
+	protected BitstreamDestinationImplementation bitstreamDestination;
 }
