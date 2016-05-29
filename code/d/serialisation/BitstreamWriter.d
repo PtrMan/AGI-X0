@@ -168,12 +168,6 @@ class BitstreamWriter(BitstreamDestinationImplementation) {
 		// NOTE< successChained doesn't have to be checked! >
 	}
 
-	/** \brief Deletes all Data which is in the Buffer
-	 */
-	final public void flush() {
-		bitstreamDestination.flush();
-	}
-
 	/** \brief Add a 16 bit float Value
 	 *
 	 * \param value ...
@@ -215,22 +209,6 @@ class BitstreamWriter(BitstreamDestinationImplementation) {
 		addUint__n(valueUint, 32, successChained);
 
 		assert(successChained, "Should not fail");
-	}
-
-	/** \brief Returns the Bit Array with the Data
-	 *
-	 * \return ... 
-	 */
-	final public @property ubyte[] dataAsUbyte() {
-		return bitstreamDestination.dataAsUbyte;
-	}
-
-	/** \brief returns the length of the Data
-	 *
-	 * \return ...
-	 */
-	final public @property ulong length() {
-		return bitstreamDestination.length;
 	}
 
 	final public void addString(string value, ref bool successChained) {
