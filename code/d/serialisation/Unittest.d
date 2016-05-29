@@ -52,29 +52,52 @@ version(unittest) {
 }
 
 // test 
-version(unittest) {
-	void main() {
-		foreach( value; 0..(1<<16)-1) {
-			import std.stdio : writeln;
-			writeln("value=", value);
+unittest {
+	foreach( value; 0..(1<<16)-1) {
+		import std.stdio : writeln;
+		writeln("value=", value);
 
-			BitstreamDestination destination = new BitstreamDestination();
-			BitstreamWriter!BitstreamDestination bitstreamWriter = new BitstreamWriter!BitstreamDestination(destination);
-			bool successChained = true;
-			bitstreamWriter.addUint_2__4_8_12_16(value, successChained);
-			assert(successChained);
+		BitstreamDestination destination = new BitstreamDestination();
+		BitstreamWriter!BitstreamDestination bitstreamWriter = new BitstreamWriter!BitstreamDestination(destination);
+		bool successChained = true;
+		bitstreamWriter.addUint_2__4_8_12_16(value, successChained);
+		assert(successChained);
 
-			BitstreamSource source = new BitstreamSource();
-			source.array = destination.array;
-			source.index = 0;
-			BitstreamReader!BitstreamSource bitstreamReader = new BitstreamReader!BitstreamSource(source);
-			uint readValue = bitstreamReader.getUint_2__4_8_12_16(successChained);
-			assert(successChained);
+		BitstreamSource source = new BitstreamSource();
+		source.array = destination.array;
+		source.index = 0;
+		BitstreamReader!BitstreamSource bitstreamReader = new BitstreamReader!BitstreamSource(source);
+		uint readValue = bitstreamReader.getUint_2__4_8_12_16(successChained);
+		assert(successChained);
 
-			// end has to be reached!
-			assert(!source.isValid());
+		// end has to be reached!
+		assert(!source.isValid());
 
-			assert(readValue == value);
-		}
+		assert(readValue == value);
+	}
+}
+
+unittest {
+	foreach( value; 0..(1<<16)-1) {
+		import std.stdio : writeln;
+		writeln("value=", value);
+
+		BitstreamDestination destination = new BitstreamDestination();
+		BitstreamWriter!BitstreamDestination bitstreamWriter = new BitstreamWriter!BitstreamDestination(destination);
+		bool successChained = true;
+		bitstreamWriter.addUint__n(value, 16, successChained);
+		assert(successChained);
+
+		BitstreamSource source = new BitstreamSource();
+		source.array = destination.array;
+		source.index = 0;
+		BitstreamReader!BitstreamSource bitstreamReader = new BitstreamReader!BitstreamSource(source);
+		uint readValue = bitstreamReader.getUint__n(16, successChained);
+		assert(successChained);
+
+		// end has to be reached!
+		assert(!source.isValid());
+
+		assert(readValue == value);
 	}
 }

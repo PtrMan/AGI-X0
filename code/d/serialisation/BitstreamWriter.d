@@ -38,8 +38,7 @@ class BitstreamWriter(BitstreamDestinationImplementation) {
 	 * \param successChained will be false if something went wrong
 	 */
 	final public void addUint_2__4_8_12_16(uint value, ref bool successChained) {
-		uint n, bitI;
-		uint bitCount;
+		uint n;
 
 		if( !successChained ) {
 			return;
@@ -62,24 +61,15 @@ class BitstreamWriter(BitstreamDestinationImplementation) {
 			n = 0;
 		}
 
-		//writeln("n=", n);
-
 		// add count
 		addBoolean((n>>1) & 1);
 		addBoolean(n & 1);
 
 		// add bits
-		bitCount = (n+1) * 4;
-		bitI = bitCount-1;
+		uint bitCount = (n+1) * 4;
 
-		for(;;) {
+		foreach( bitI; 0..bitCount ) {
 			addBoolean(((1 << bitI) & value) != 0);
-
-			if( bitI == 0 ) {
-				break;
-			}
-
-			bitI--;
 		}
 	}
 
@@ -88,27 +78,27 @@ class BitstreamWriter(BitstreamDestinationImplementation) {
 	 * Important is that the Number must be small enougth to fit into n bits
 	 *
 	 * \param value is the Number
-	 * \param bits Number of bits
+	 * \param bitCount Number of bits
 	 * \param SuccessChained will be false if something went wrong
 	 */
-	final public void addUint__n(uint value, uint bits, ref bool successChained) {
-		assert(bits > 0, "Bits need to be bigger than 0");
+	final public void addUint__n(uint value, uint bitCount, ref bool successChained) {
+		assert(bitCount > 0, "Bits need to be bigger than 0");
 
 		// only assert because it is in the gamecode very inpropable that something like this happens
-		assert(bits <= 32, "Bits need to be less or equal to 32");
+		assert(bitCount <= 32, "Bits need to be less or equal to 32");
 
 		if( !successChained ) {
 			return;
 		}
 
-		if( bits == 0 ) {
+		if( bitCount == 0 ) {
 			successChained = false;
 			return;
 		}
 
 		uint mask = 0;
 
-		for( uint bitI = 0; bitI < bits; bitI++ ) {
+		for( uint bitI = 0; bitI < bitCount; bitI++ ) {
 			mask = mask | (1<<bitI);
 		}
 
@@ -118,15 +108,8 @@ class BitstreamWriter(BitstreamDestinationImplementation) {
 			return;
 		}
 
-		uint bitI = bits-1;
-		for(;;) {
+		foreach( bitI; 0..bitCount ) {
 			addBoolean(((1 << bitI) & value) != 0);
-
-			if( bitI == 0 ) {
-				break;
-			}
-
-			bitI--;
 		}
 	}
 

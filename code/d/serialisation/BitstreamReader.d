@@ -41,8 +41,6 @@ class BitstreamReader(BitstreamSourceImplementation) {
 	 *  \return ...
 	 */
 	final public uint getUint_2__4_8_12_16(ref bool successChained) {
-		uint result = 0;
-
 		if( !successChained ) {
 			return 0;
 		}
@@ -70,29 +68,17 @@ class BitstreamReader(BitstreamSourceImplementation) {
 
 		assert(numberOfBits > 0, "numberOfBits must be greater than 0!");
 
-		if( numberOfBits == 0 ) {
-			successChained = false;
-			return 0;
-		}
-
 		if( !bitstreamSource.isValid(numberOfBits) ) {
 			successChained = false;
 			return 0;
 		}
 
-		uint bitI = numberOfBits - 1;
 
-		for(;;) {
+		uint result = 0;
+		foreach( bitI; 0..numberOfBits ) {
 			if( bitstreamSource.readNextBit() ) {
-				result |= 1;
+				result |= (1<<bitI);
 			}
-
-			if( bitI == 0 ) {
-				break;
-			}
-
-			bitI--;
-			result <<= 1;
 		}
 
 		return result;
@@ -131,13 +117,13 @@ class BitstreamReader(BitstreamSourceImplementation) {
    +/
 
 	/** \brief returns a number of 'Bits' bits wide
-	 *  \param bits How many bits should be readed
+	 *  \param numberOfBits How many bits should be readed
 	 *  \param successChained will be false if the function failed
 	 *  \return ...
 	 */
-	final public uint getUint__n(uint bits, ref bool successChained) {
+	final public uint getUint__n(uint numberOfBits, ref bool successChained) {
 		// only assert because it is in the gamecode very inpropable that something like this happens
-		assert(bits <= 32, "bits need to be less or equal to 32");
+		assert(numberOfBits <= 32, "bits need to be less or equal to 32");
 
 		uint result = 0;
 
@@ -145,29 +131,20 @@ class BitstreamReader(BitstreamSourceImplementation) {
 			return 0;
 		}
 
-		if( bits == 0 ) {
+		if( numberOfBits == 0 ) {
 			successChained = false;
 			return 0;
 		}
 
-		if( !bitstreamSource.isValid(bits) ) {
+		if( !bitstreamSource.isValid(numberOfBits) ) {
 			successChained = false;
 			return 0;
 		}
 
-		uint bitI = bits-1;
-
-		for(;;) {
+		foreach( bitI; 0..numberOfBits ) {
 			if( bitstreamSource.readNextBit() ) {
-				result |= 1;
+				result |= (1 << bitI);
 			}
-
-			if( bitI == 0 ) {
-				break;
-			}
-
-			bitI--;
-			result <<= 1;
 		}
 
 		return result;
