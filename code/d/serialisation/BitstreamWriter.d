@@ -194,21 +194,20 @@ class BitstreamWriter(BitstreamDestinationImplementation) {
 		assert(successChained, "Should not fail");
 	}
 
-	final public void addString(string value, ref bool successChained) {
+	final public void addArray__16(Type)(Type[] array, ref bool successChained) {
 		if( !successChained ) {
 			return;
 		}
 
-		if( value.length > 1<<16-1 ) {
+		if( array.length >= (1<<16) ) {
 			successChained = false;
 			return;
 		}
 
-		addUint__n(value.length, 16, successChained);
+		addUint__n(array.length, 16, successChained);
 
-		foreach( iterationChar; value ) {
-			uint charAsUint = cast(uint)iterationChar;
-			addUint__n(charAsUint, 8, successChained);
+		foreach( iterationElement; array ) {
+			addUint__n(iterationElement, Type.sizeof*8, successChained);
 		}
 	}
 
