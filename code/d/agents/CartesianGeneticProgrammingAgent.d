@@ -6,11 +6,34 @@ import std.socket;
 
 
 import serialisation.BitstreamWriter;
-import misc.ConvertBitstream;
+import misc.BitstreamDestination;
+
+//import misc.ConvertBitstream;
 
 import optimisation.cartesianGeneticProgramming.CartesianGeneticProgramming;
 import optimisation.cartesianGeneticProgramming.TokenOperators;
 
+import misc.GenericSerializer;
+import distributed.GlobalStructs;
+
+
+
+enum EnumErrorType {
+	NONCRITICAL
+}
+
+// TODO< move into own file >
+void reportError(EnumErrorType errorType, string message) {
+	writeln("[ERROR] noncritical: ", message);
+}
+
+// TODO< move into own file >
+void report(string prefix, string message) {
+	writeln("[", prefix, "] ", message);
+}
+
+
+import distributed.DistributedHelpers : composeMessageWithLengthPrefix;
 
 void main() {
 	string host = "127.0.0.1";
@@ -26,22 +49,72 @@ void main() {
 
 	//amountRead = socket.receive(buffer));
 
-	BitstreamWriter sink = new BitstreamWriter();
+	BitstreamDestination payloadBitstream = new BitstreamDestination();
+
+	BitstreamWriter!BitstreamDestination bitstreamWriterForPayload = new BitstreamWriter!BitstreamDestination(payloadBitstream);
 
 	bool successChained = true;
-	sink.addString("test", successChained);
 
-	// TODO< alright serialisation and error handling >
-	if( !successChained ) {
-		writeln("Building BitstreamWriter message failed!");
-		return;
+	payloadBitstream.flush();
+	{
+		bitstreamWriterForPayload.addUint__n(1, 16, successChained); // type of message
+
+		import misc.Guid;
+
+		AgentIdentificationHandshake agentIdentificationHandshake;
+		agentIdentificationHandshake.guid = generateGuid("softComputing", 1);
+		GenericSerializer!(AgentIdentificationHandshake, BitstreamDestination).serialize(agentIdentificationHandshake, successChained, bitstreamWriterForPayload);
+
+		if( !successChained ) {
+			reportError(EnumErrorType.NONCRITICAL, "Serialisation failed!");
+		}
 	}
 
-	ubyte[] toSend = toUbyte(sink.data);
+	{
+		ubyte[] message = composeMessageWithLengthPrefix(payloadBitstream, successChained);
 
-	long sentNumber = socket.send(cast(const void[])toSend, cast(SocketFlags)0);
+		if( !successChained ) {
+			reportError(EnumErrorType.NONCRITICAL, "-verbose main() " ~ "serialisation failed!");
+		}
 
-	writeln(sentNumber);
+		writeln("bitstreamDestinationForMessage.dataAsUbyte length=", message.length);
+
+		long sentNumber = socket.send(cast(const void[])message, cast(SocketFlags)0);
+
+		writeln(sentNumber);
+	}
+
+
+
+	payloadBitstream.flush();
+	successChained = true;
+
+	{
+		bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.REGISTERSERVICE, 16, successChained); // type of message
+		RegisterService registerService;
+		registerService.serviceName = "CartesianGeneticProgramming";
+		registerService.serviceVersion = 1;
+		GenericSerializer!(RegisterService, BitstreamDestination).serialize(registerService, successChained, bitstreamWriterForPayload);
+
+		if( !successChained ) {
+			reportError(EnumErrorType.NONCRITICAL, "Serialisation failed!");
+		}
+	}
+
+	{
+		ubyte[] message = composeMessageWithLengthPrefix(payloadBitstream, successChained);
+
+		if( !successChained ) {
+			reportError(EnumErrorType.NONCRITICAL, "-verbose main() " ~ "serialisation failed!");
+		}
+
+		writeln("bitstreamDestinationForMessage.dataAsUbyte length=", message.length);
+
+		long sentNumber = socket.send(cast(const void[])message, cast(SocketFlags)0);
+
+		writeln(sentNumber);
+	}
+
 
 
 	while((amountRead = socket.receive(buffer)) != 0) {
