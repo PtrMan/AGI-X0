@@ -10,13 +10,3 @@ ubyte[] toUbyte(bool[] bitVector) {
 	}
 	return result;
 }
-
-bool[] toBool(ubyte[] byteVector) {
-	bool[] result;
-	foreach( iByte; 0..byteVector.length ) {
-		foreach( ibit; 0..8 ) {
-			result ~= ((byteVector[iByte] & (1<<(ibit % 8))) != 0);
-		}
-	}
-	return result;
-}
