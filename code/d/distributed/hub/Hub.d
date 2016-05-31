@@ -21,8 +21,54 @@ abstract class AbstractNetworkClient {
 abstract class AbstractNetworkServer(ClientType : AbstractNetworkClient) {
 	
 	public final void iteration() {
-		acceptNewClients();
-		pollData();
+		SocketSet checkReadSet = new SocketSet();
+		SocketSet checkWriteSet = new SocketSet();
+		SocketSet checkErrorSet = new SocketSet();
+
+		checkReadSet.add(serverSocket);
+
+		foreach( iterationClient; clients ) {
+			checkReadSet.add(iterationClient.socket);
+		}
+
+		
+		import core.time : dur, Duration;
+		Duration timeout = dur!"msecs"(50);
+		int selectResult = Socket.select(checkReadSet, checkWriteSet, checkErrorSet, timeout); 
+		if( selectResult == 0 ) {
+			// timeout, do nothing
+		}
+		else if( selectResult == -1 ) {
+			// interruption, do nothing
+		}
+		else {
+			int numberOfSocketsWithStatusChanges = selectResult;
+
+			foreach( iStatusChange; 0..numberOfSocketsWithStatusChanges ) {
+				if( checkReadSet.isSet(serverSocket) ) {
+					Socket clientSocket = serverSocket.accept();
+
+					assert(clientSocket.isAlive);
+					ClientType createdClient = new ClientType(clientSocket);
+					createdClient.socket.blocking = true;
+					clients ~= createdClient;
+
+					checkReadSet.remove(serverSocket);
+				}
+
+				foreach( iterationClient; clients ) {
+					if( checkReadSet.isSet(iterationClient.socket) ) {
+						receiveDataOfClient(iterationClient);
+
+						checkReadSet.remove(iterationClient.socket);
+					}
+				}
+			}
+		}
+
+
+		//acceptNewClients();
+		//pollData();
 	}
 
 	public final void start(ushort port) {
@@ -34,17 +80,18 @@ abstract class AbstractNetworkServer(ClientType : AbstractNetworkClient) {
 		sa.sin_port = htons(port);
 
 		serverSocket = new Socket(AddressFamily.INET, SocketType.STREAM, ProtocolType.TCP);
-		serverSocket.blocking = false;
+		serverSocket.blocking = true;
 		serverSocket.bind(new UnknownAddressReference(cast(sockaddr*)&sa, sa.sizeof));
 		serverSocket.listen(backlog);
 	}
 
+	/*
 	private final void acceptNewClients() {
 		Socket clientSocket = serverSocket.accept();
 
 		if( clientSocket.isAlive ) {
 			ClientType createdClient = new ClientType(clientSocket);
-			createdClient.socket.blocking = false;
+			createdClient.socket.blocking = true;
 			clients ~= createdClient;
 		}
 	}
@@ -68,6 +115,23 @@ abstract class AbstractNetworkServer(ClientType : AbstractNetworkClient) {
 			import std.stdio;
 			writeln("AbstractNetworkServer.pollData(), ", receiveResult);
 		}
+	}*/
+
+	protected final void receiveDataOfClient(ClientType client) {
+		ubyte[4096] buffer;
+
+		ptrdiff_t receiveResult = client.socket.receive(buffer);
+		if( receiveResult == -1 ) {
+			// client hasn't received new data
+			return;
+		}
+
+		client.receivedQueue ~= buffer[0..receiveResult];
+
+		clientReceivedNewData(client);
+
+		import std.stdio;
+		writeln("AbstractNetworkServer.receiveDataOfClient(), received data from client=", receiveResult);
 	}
 
 	// callback if a client has received new data
@@ -166,7 +230,7 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 
 			if( messageType == cast(uint)EnumMessageType.AGENTIDENTIFICATIONHANDSHAKE ) {
 				AgentIdentificationHandshake structure;
-	      		GenericDeserializer!(AgentIdentificationHandshake, BitstreamSource).deserialize(structure, successChained, bitstreamReaderOfMessage);
+	      		deserialize(structure, successChained, bitstreamReaderOfMessage);
 	      		
 	      		if( !successChained ) {
 	      			return;
@@ -174,20 +238,20 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 
 	      		clientMessageAgentIdentificationHandshake(client, structure);
 			}
-			else if( messageType == cast(uint)EnumMessageType.REGISTERSERVICE ) {
-				RegisterService structure;
-				GenericDeserializer!(RegisterService, BitstreamSource).deserialize(structure, successChained, bitstreamReaderOfMessage);
+			else if( messageType == cast(uint)EnumMessageType.REGISTERSERVICES ) {
+				RegisterServices structure;
+				deserialize(structure, successChained, bitstreamReaderOfMessage);
 	      		
 	      		if( !successChained ) {
 	      			return;
 	      		}
 
-	      		clientMessageRegisterService(client, structure);
+	      		clientMessageRegisterServices(client, structure);
 
 			}
 			else if( messageType == cast(uint)EnumMessageType.AGENTCONNECTTOSERVICE ) {
 				AgentConnectToService structure;
-				GenericDeserializer!(AgentConnectToService, BitstreamSource).deserialize(structure, successChained, bitstreamReaderOfMessage);
+				deserialize(structure, successChained, bitstreamReaderOfMessage);
 
 				if( !successChained ) {
 	      			return;
@@ -224,8 +288,8 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 		// TODO< call into hub >
 	}
 
-	protected final void clientMessageRegisterService(NetworkClient client, ref RegisterService registerService) {
-		hub.networkCallbackRegisterService(client, registerService.serviceName, registerService.serviceVersion);
+	protected final void clientMessageRegisterServices(NetworkClient client, ref RegisterServices registerServices) {
+		hub.networkCallbackRegisterServices(client, registerServices);
 	}
 
 	protected final void clientMessageAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
@@ -310,11 +374,16 @@ class ServiceAgentRelation {
 	protected final this() {
 	}
 
-	public final this(NetworkClient owningClientOfAgent) {
+	public final this(NetworkClient owningClientOfAgent, ServiceCapabilities capabilities, ContractInformation contract) {
 		this.owningClientOfAgent = owningClientOfAgent;
+		this.capabilities = capabilities;
+		this.contract = contract;
 	}
 
 	NetworkClient owningClientOfAgent; // which client does hold the service
+
+	ServiceCapabilities capabilities;
+	ContractInformation contract;
 
 	NetworkClient[] connectedAgents; // which agent clients are connected to the service?
 }
@@ -333,29 +402,29 @@ class Service {
 
 // ServiceRegister
 class ServiceRegister {
-	public final void registerService(string servicenName, uint serviceVersion, NetworkClient owningClientOfAgent) {
+	public final void registerService(string servicenName, uint serviceVersion, NetworkClient owningClientOfAgent, ServiceCapabilities capabilities, ContractInformation contract) {
 		Service *servicePtr = servicenName in registeredServices;
 		if( servicePtr !is null ) {
-			addServiceProviderToService(*servicePtr, serviceVersion, owningClientOfAgent);
+			addServiceProviderToService(*servicePtr, serviceVersion, owningClientOfAgent, capabilities, contract);
 		}
 		else {
-			addNewServiceProvider(servicenName, serviceVersion, owningClientOfAgent);
+			addNewServiceProvider(servicenName, serviceVersion, owningClientOfAgent, capabilities, contract);
 		}
 	}
 
-	protected final void addNewServiceProvider(string servicenName, uint serviceVersion, NetworkClient owningClientOfAgent) {
+	protected final void addNewServiceProvider(string servicenName, uint serviceVersion, NetworkClient owningClientOfAgent, ServiceCapabilities capabilities, ContractInformation contract) {
 		Service createdService = new Service();
-		createdService.serviceAgentRelationsByVersion[serviceVersion] = [new ServiceAgentRelation(owningClientOfAgent)];
+		createdService.serviceAgentRelationsByVersion[serviceVersion] = [new ServiceAgentRelation(owningClientOfAgent, capabilities, contract)];
 		registeredServices[servicenName] = createdService;
 	}
 
-	protected static void addServiceProviderToService(Service destinationService, uint serviceVersion, NetworkClient owningClientOfAgent) {
+	protected static void addServiceProviderToService(Service destinationService, uint serviceVersion, NetworkClient owningClientOfAgent, ServiceCapabilities capabilities, ContractInformation contract) {
 		ServiceAgentRelation[] *ptr = serviceVersion in destinationService.serviceAgentRelationsByVersion;
 		if( ptr !is null ) {
-			*ptr ~= new ServiceAgentRelation(owningClientOfAgent);
+			*ptr ~= new ServiceAgentRelation(owningClientOfAgent, capabilities, contract);
 		}
 		else {
-			destinationService.serviceAgentRelationsByVersion[serviceVersion] = [new ServiceAgentRelation(owningClientOfAgent)];
+			destinationService.serviceAgentRelationsByVersion[serviceVersion] = [new ServiceAgentRelation(owningClientOfAgent, capabilities, contract)];
 		}
 	}
 
@@ -413,10 +482,23 @@ class Hub {
 	}
 
 	// called by NetworkServer
-	public final void networkCallbackRegisterService(NetworkClient networkClient, string serviceName, uint serviceVersion) {
-		reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackRegisterService() called with " ~ format("servicename=%s, serviceVersion=%d", serviceName, serviceVersion));
+	public final void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices registerServices) {
+		reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackRegisterService() called with ..."); // ~ format("servicename=%s, serviceVersion=%d", serviceName, serviceVersion));
 
-		serviceRegister.registerService(serviceName, serviceVersion, networkClient);
+		foreach( iterationServiceDescriptor; registerServices.service ) {
+			reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackRegisterService() " ~ format("... name=%s, version=%s", iterationServiceDescriptor.name, iterationServiceDescriptor.version_));
+		}
+
+
+		foreach( iterationServiceDescriptor; registerServices.service ) {
+			serviceRegister.registerService(
+				iterationServiceDescriptor.name,
+				iterationServiceDescriptor.version_,
+				networkClient,
+				iterationServiceDescriptor.capabilities,
+				iterationServiceDescriptor.contract
+			);
+		}
 	}
 
 	public final void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
@@ -487,7 +569,7 @@ class Hub {
 				agentConnectToServiceResponse.providedVersions = providedVersions;
 				agentConnectToServiceResponse.connectSuccess = connectSuccess;
 
-				GenericSerializer!(AgentConnectToServiceResponse, BitstreamDestination).serialize(agentConnectToServiceResponse, successChained, bitstreamWriterForPayload);
+				serialize(agentConnectToServiceResponse, successChained, bitstreamWriterForPayload);
 
 				if( !successChained ) {
 					reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() " ~ "serialisation failed!");
@@ -506,6 +588,12 @@ class Hub {
 }
 
 
+
+
+
+
+
+
 void main() {
 	ushort port = 1555;
 
@@ -514,8 +602,6 @@ void main() {
 
 	for(;;) {
 		hub.networkMainloopIteration();
-
-		// TODO< sleep >
 	}
 
 	

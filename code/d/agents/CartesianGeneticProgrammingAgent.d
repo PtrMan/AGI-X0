@@ -57,18 +57,19 @@ void main() {
 
 	payloadBitstream.flush();
 	{
-		bitstreamWriterForPayload.addUint__n(1, 16, successChained); // type of message
+		bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.AGENTIDENTIFICATIONHANDSHAKE, 16, successChained); // type of message
 
 		import misc.Guid;
 
 		AgentIdentificationHandshake agentIdentificationHandshake;
 		agentIdentificationHandshake.guid = generateGuid("softComputing", 1);
-		GenericSerializer!(AgentIdentificationHandshake, BitstreamDestination).serialize(agentIdentificationHandshake, successChained, bitstreamWriterForPayload);
+		serialize(agentIdentificationHandshake, successChained, bitstreamWriterForPayload);
 
 		if( !successChained ) {
 			reportError(EnumErrorType.NONCRITICAL, "Serialisation failed!");
 		}
 	}
+
 
 	{
 		ubyte[] message = composeMessageWithLengthPrefix(payloadBitstream, successChained);
@@ -90,11 +91,17 @@ void main() {
 	successChained = true;
 
 	{
-		bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.REGISTERSERVICE, 16, successChained); // type of message
-		RegisterService registerService;
-		registerService.serviceName = "CartesianGeneticProgramming";
-		registerService.serviceVersion = 1;
-		GenericSerializer!(RegisterService, BitstreamDestination).serialize(registerService, successChained, bitstreamWriterForPayload);
+		bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.REGISTERSERVICES, 16, successChained); // type of message
+		RegisterServices registerServices;
+		registerServices.service.length = 1;
+		registerServices.service[0].name = "CartesianGeneticProgramming";
+		registerServices.service[0].version_ = 1;
+		registerServices.service[0].capabilities.isSoftComputing = true;
+		registerServices.service[0].capabilities.stateful = EnumStateful.PARTIAL;
+		registerServices.service[0].contract.serviceRequestFrequency = EnumContractServiceRequestFrequency.NONE;
+		registerServices.service[0].contract.serviceUsageFrequency = EnumContractServiceRequestFrequency.BULK;
+		registerServices.service[0].contract.lifecylce = EnumLifecycle.TESTING;
+		serialize(registerServices, successChained, bitstreamWriterForPayload);
 
 		if( !successChained ) {
 			reportError(EnumErrorType.NONCRITICAL, "Serialisation failed!");
