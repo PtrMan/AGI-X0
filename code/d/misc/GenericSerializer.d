@@ -1,38 +1,35 @@
 module misc.GenericSerializer;
 
-import std.traits : traitsIsArray = isArray, traitsIsBoolean = isBoolean,  Unqual;
+import std.traits :
+   traitsIsStaticArray = isStaticArray,
+   traitsIsDynamicArray = isDynamicArray,
+   traitsIsAggregateType = isAggregateType,
+   traitsIsArray = isArray,
+   traitsIsBoolean = isBoolean,
+   Unqual;
 
 version(unittest) import std.stdio;
 
 import serialisation.BitstreamWriter;
 import serialisation.BitstreamReader;
 
-
-private void serializeStaticArray(Type, size_t Size, BitstreamDestinationType)(Type[Size] array, BitstreamWriter!BitstreamDestinationType bitstreamWriter, ref bool successChained) {
-   import std.stdio;
-   writeln("serializeStaticArray() array length=", Size);
-
-   foreach( iterationElement; array ) {
-      bitstreamWriter.addUint__n(iterationElement, Type.sizeof*8, successChained);
-   }
-}
-
-
-private void serializeArray(Type, BitstreamDestinationType)(Type[] array, BitstreamWriter!BitstreamDestinationType bitstreamWriter, ref bool successChained) {
-   if( array.length > (1<<16) - 1 ) {
-      successChained = false;
-      return;
-   }
+private void serializeArray(Type, BitstreamDestinationType)(Type array, BitstreamWriter!BitstreamDestinationType bitstreamWriter, ref bool successChained) {
+   alias DataType = Unqual!(typeof(array[0]));
 
    const bool isStaticArray = __traits(isStaticArray, Type);
+   static if( !isStaticArray ) {
+      if( array.length > (1<<16) - 1 ) {
+         successChained = false;
+         return;
+      }
 
-   bitstreamWriter.addUint_2__4_8_12_16(array.length, successChained);
+      bitstreamWriter.addUint_2__4_8_12_16(array.length, successChained);
+   }
 
    foreach( iterationElement; array ) {
-      bitstreamWriter.addUint__n(iterationElement, Type.sizeof*8, successChained);
+      serialize(iterationElement, successChained, bitstreamWriter);
    }
 }
-
 
 private Type deserializeArray(Type, BitstreamSourceType)(BitstreamReader!BitstreamSourceType bitstreamReader, ref bool successChained) {
    Type tempResult;
@@ -43,7 +40,9 @@ private Type deserializeArray(Type, BitstreamSourceType)(BitstreamReader!Bitstre
       Type result;
 
       foreach( i; 0..result.length ) {
-         result[i] = cast(DataType)bitstreamReader.getUint__n(DataType.sizeof*8, successChained);
+         DataType data;
+         deserialize(data, successChained, bitstreamReader);
+         result[i] = data;
       }
 
       return result;
@@ -60,7 +59,9 @@ private Type deserializeArray(Type, BitstreamSourceType)(BitstreamReader!Bitstre
       result.length = lengthOfResult;
 
       foreach( i; 0..lengthOfResult ) {
-         result[i] = cast(DataType)bitstreamReader.getUint__n(DataType.sizeof*8, successChained);
+         DataType data;
+         deserialize(data, successChained, bitstreamReader);
+         result[i] = data;
       }
 
       return cast(Type)result;
@@ -71,108 +72,116 @@ private Type deserializeArray(Type, BitstreamSourceType)(BitstreamReader!Bitstre
 
 
 
-template GenericSerializer(StructName, BitstreamDestinationType) {
-   void serialize(ref StructName structParameter, ref bool successChained, BitstreamWriter!BitstreamDestinationType bitstreamWriter) {
-      foreach( membername; __traits(allMembers, StructName) ) {
-         version(unittest) writeln("===");
 
-         const bool isScalar = __traits(isScalar, __traits(getMember, StructName, membername));
-         const bool isStaticArray = __traits(isStaticArray, __traits(getMember, StructName, membername));
-         const bool isArray = traitsIsArray!(typeof(__traits(getMember, StructName, membername)));
+void serialize(StructName, BitstreamDestinationType)(ref StructName structParameter, ref bool successChained, BitstreamWriter!BitstreamDestinationType bitstreamWriter) {
+   const bool isScalar = __traits(isScalar, StructName);
+   const bool isAggregateType = traitsIsAggregateType!StructName;
+   const bool isDynamicArray = traitsIsDynamicArray!StructName;
+   const bool isStaticArray = traitsIsStaticArray!StructName;
 
-         version(unittest) {
-            writeln("membername ", membername);
-            writeln("isScalar   ", isScalar);
-            writeln("isArray    ", isArray);
-         }
-         
+   version(unittest) {
+      writeln("isScalar        ", isScalar);
+      writeln("isAggregateType ", isAggregateType);
+      writeln("isDynamicArray  ", isDynamicArray);
+      writeln("isStaticArray   ", isStaticArray);
+   }
+   
 
-         static if( isScalar ) {
-            static if( traitsIsBoolean!(typeof(__traits(getMember, StructName, membername))) ) {
-               bitstreamWriter.addBoolean(__traits(getMember, structParameter, membername));
-            }
-            else {
-               enum attributes = __traits(getAttributes, __traits(getMember, StructName, membername));
+   static if( isScalar ) {
+      static if( traitsIsBoolean!StructName ) {
+         bitstreamWriter.addBoolean(structParameter);
+      }
+      else {
+         enum attributes = __traits(getAttributes, structParameter);
 
-               version(unittest) writeln("length of attributes ", attributes.length);
+         version(unittest) writeln("length of attributes ", attributes.length);
 
-               static if( attributes.length == 2 ) {
-                  const string type = __traits(getAttributes, __traits(getMember, StructName, membername))[0];
+         static if( attributes.length == 2 ) {
+            const string type = __traits(getAttributes, structParameter)[0];
 
-                  static if( type == "u" ) {
-                     version(unittest) writeln("yes");
+            static if( type == "u" ) {
+               version(unittest) writeln("yes");
 
-                     const uint bitCount = __traits(getAttributes, __traits(getMember, StructName, membername))[1];
+               const uint bitCount = __traits(getAttributes, structParameter)[1];
 
-                     // TODO< check bitcount for plausibility >
+               // TODO< check bitcount for plausibility >
 
-                     version(unittest) writeln(bitCount);
+               version(unittest) writeln(bitCount);
 
-                     bitstreamWriter.addUint__n(__traits(getMember, structParameter, membername), bitCount, successChained);
-                  }
-               }
-               else if( attributes.length == 0 ) {
-                  bitstreamWriter.addUint__n(__traits(getMember, structParameter, membername), typeof(__traits(getMember, structParameter, membername)).sizeof*8, successChained);
-               }
+               bitstreamWriter.addUint__n(structParameter, bitCount, successChained);
             }
          }
-         else if( isArray ) {
-            static if( isStaticArray ) {
-               serializeStaticArray(__traits(getMember, structParameter, membername), bitstreamWriter, successChained);
-
-               version(unittest) writeln("serialize static array");
-            }
-            else {
-               serializeArray(__traits(getMember, structParameter, membername), bitstreamWriter, successChained);
-            }
+         else if( attributes.length == 0 ) {
+            bitstreamWriter.addUint__n(structParameter, StructName.sizeof*8, successChained);
          }
       }
    }
+   else static if( isAggregateType ) {
+      foreach( membername; __traits(allMembers, StructName) ) {
+         serialize(__traits(getMember, structParameter, membername), successChained, bitstreamWriter);
+      }
+   }
+   else static if( isStaticArray || isDynamicArray ) {
+      serializeArray(structParameter, bitstreamWriter, successChained);
+   }
+   else {
+      //static assert(false);
+   }
+
 }
 
-template GenericDeserializer(StructName, BitstreamSourceType) {
-   void deserialize(ref StructName structParameter, ref bool successChained, BitstreamReader!BitstreamSourceType bitstreamReader) {
-      foreach( membername; __traits(allMembers, StructName) ) {
-         const bool isScalar = __traits(isScalar, __traits(getMember, StructName, membername));
-         const bool isArray = traitsIsArray!(typeof(__traits(getMember, StructName, membername)));
 
-         static if( isScalar ) {
-            static if( traitsIsBoolean!(typeof(__traits(getMember, StructName, membername))) ) {
-               __traits(getMember, structParameter, membername) = bitstreamReader.getBoolean(successChained);
-            }
-            else {
-               enum attributes = __traits(getAttributes, __traits(getMember, StructName, membername));
 
-               version(unittest) writeln("length of attributes ", attributes.length);
+void deserialize(StructName, BitstreamSourceType)(ref StructName structParameter, ref bool successChained, BitstreamReader!BitstreamSourceType bitstreamReader) {
+   const bool isScalar = __traits(isScalar, StructName);
+   const bool isAggregateType = traitsIsAggregateType!StructName;
+   const bool isDynamicArray = traitsIsDynamicArray!StructName;
+   const bool isStaticArray = traitsIsStaticArray!StructName;
 
-               static if( attributes.length == 2 ) {
-                  const string type = __traits(getAttributes, __traits(getMember, StructName, membername))[0];
-
-                  static if( type == "u" ) {
-                     version(unittest) writeln("yes");
-
-                     const uint bitCount = __traits(getAttributes, __traits(getMember, StructName, membername))[1];
-
-                     // TODO< check bitcount for plausibility >
-
-                     version(unittest) writeln(bitCount);
-
-                     __traits(getMember, structParameter, membername) = bitstreamReader.getUint__n(bitCount, successChained);
-                  }
-               }
-               else if( attributes.length == 0 ) {
-                  __traits(getMember, structParameter, membername) = bitstreamReader.getUint__n(typeof(__traits(getMember, structParameter, membername)).sizeof*8, successChained);
-               }
-            }
-         }
-         else if( isArray ) {
-            __traits(getMember, structParameter, membername) = deserializeArray!(typeof(__traits(getMember, structParameter, membername)), BitstreamSourceType)(bitstreamReader, successChained);
-         }
-
+   static if( isScalar ) {
+      static if( traitsIsBoolean!StructName ) {
+         structParameter = bitstreamReader.getBoolean(successChained);
       }
+      else {
+         enum attributes = __traits(getAttributes, structParameter);
+
+         version(unittest) writeln("length of attributes ", attributes.length);
+
+         static if( attributes.length == 2 ) {
+            const string type = __traits(getAttributes, structParameter)[0];
+
+            static if( type == "u" ) {
+               version(unittest) writeln("yes");
+
+               const uint bitCount = __traits(getAttributes, structParameter)[1];
+
+               // TODO< check bitcount for plausibility >
+
+               version(unittest) writeln(bitCount);
+
+               structParameter = bitstreamReader.getUint__n(bitCount, successChained);
+            }
+         }
+         else if( attributes.length == 0 ) {
+            structParameter = cast(StructName)bitstreamReader.getUint__n(structParameter.sizeof*8, successChained);
+         }
+      }
+   }
+   else static if( isAggregateType ) {
+      foreach( membername; __traits(allMembers, StructName) ) {
+         deserialize(__traits(getMember, structParameter, membername), successChained, bitstreamReader);
+      }
+   }
+   else static if( isStaticArray || isDynamicArray ) {
+      structParameter = deserializeArray!(typeof(structParameter), BitstreamSourceType)(bitstreamReader, successChained);
+   }
+   else {
+      //static assert(false);
    }
 }
 
+
+// serialisation
 
 unittest {
    import misc.BitstreamDestination;
@@ -205,10 +214,11 @@ unittest {
       // serialize
       BitstreamWriter!BitstreamDestination bitstreamWriter = new BitstreamWriter!BitstreamDestination(bitstreamDestination);
       bool successChained = true;
-      GenericSerializer!(XYZ, BitstreamDestination).serialize(serilizeStruct, successChained, bitstreamWriter);
+      serialize(serilizeStruct, successChained, bitstreamWriter);
       assert(successChained);
    }
 
+   
    BitstreamSource bitstreamSource = new BitstreamSource();
    bitstreamSource.resetToArray(bitstreamDestination.dataAsUbyte);
    {
@@ -216,13 +226,15 @@ unittest {
 
       BitstreamReader!BitstreamSource bitstreamReader = new BitstreamReader!BitstreamSource(bitstreamSource);
       bool successChained = true;
-      GenericDeserializer!(XYZ, BitstreamSource).deserialize(deserilizeStruct, successChained, bitstreamReader);
+      deserialize(deserilizeStruct, successChained, bitstreamReader);
       assert(successChained);
 
       
       foreach(i; 0..16) {
          assert(serilizeStruct.x[i] == i+1);
       }
+
+      writeln(deserilizeStruct.array0.length);
 
       assert(deserilizeStruct.array0.length == 2);
       assert(deserilizeStruct.array0[0] == 5);
@@ -231,5 +243,59 @@ unittest {
       assert(deserilizeStruct.xx == 42);
       assert(deserilizeStruct.xy == 43);
       assert(deserilizeStruct.testString == "test005");
+   }
+}
+
+// nested structs
+
+unittest {
+   import misc.BitstreamDestination;
+   import misc.BitstreamSource;
+
+   struct Nested {
+      uint[] array0;
+      string testString;
+      uint xx;
+   }
+
+   struct XYZ {
+      Nested nested;
+   }
+
+   XYZ serilizeStruct;
+
+   serilizeStruct.nested.array0 ~= 5;
+   serilizeStruct.nested.array0 ~= 9;
+
+   serilizeStruct.nested.xx = 42;
+   serilizeStruct.nested.testString = "test005";
+
+   
+   BitstreamDestination bitstreamDestination = new BitstreamDestination();
+   {
+      // serialize
+      BitstreamWriter!BitstreamDestination bitstreamWriter = new BitstreamWriter!BitstreamDestination(bitstreamDestination);
+      bool successChained = true;
+      serialize(serilizeStruct, successChained, bitstreamWriter);
+      assert(successChained);
+   }
+
+   
+   BitstreamSource bitstreamSource = new BitstreamSource();
+   bitstreamSource.resetToArray(bitstreamDestination.dataAsUbyte);
+   {
+      XYZ deserilizeStruct;
+
+      BitstreamReader!BitstreamSource bitstreamReader = new BitstreamReader!BitstreamSource(bitstreamSource);
+      bool successChained = true;
+      deserialize(deserilizeStruct, successChained, bitstreamReader);
+      assert(successChained);
+
+      assert(deserilizeStruct.nested.array0.length == 2);
+      assert(deserilizeStruct.nested.array0[0] == 5);
+      assert(deserilizeStruct.nested.array0[1] == 9);
+
+      assert(deserilizeStruct.nested.xx == 42);
+      assert(deserilizeStruct.nested.testString == "test005");
    }
 }
