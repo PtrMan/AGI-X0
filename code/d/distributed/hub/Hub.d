@@ -1,336 +1,18 @@
 import std.stdio; // TODO< just >
 import std.format : format;
 
-import std.socket;
 
+import serialisation.BitstreamWriter;
 import serialisation.BitstreamReader;
 import misc.BitstreamSource;
+import misc.BitstreamDestination;
 
 import misc.ConvertBitstream;
 
-abstract class AbstractNetworkClient {
-	public final this(Socket socket) {
-		this.socket = socket;
-	}
-
-	public Socket socket;
-
-	public ubyte[] receivedQueue;
-}
-
-abstract class AbstractNetworkHost(ClientType : AbstractNetworkClient) {
-	protected final this() {
-	}
-
-	public final this(EnumRole role) {
-		this.role = role;
-	}
-
-	public final void iteration() {
-		SocketSet checkReadSet = new SocketSet();
-		SocketSet checkWriteSet = new SocketSet();
-		SocketSet checkErrorSet = new SocketSet();
-
-		if( role == EnumRole.SERVER ) {
-			checkReadSet.add(serverSocket);
-		}
-		
-		foreach( iterationClient; clients ) {
-			checkReadSet.add(iterationClient.socket);
-		}
-
-		
-		import core.time : dur, Duration;
-		Duration timeout = dur!"msecs"(50);
-		int selectResult = Socket.select(checkReadSet, checkWriteSet, checkErrorSet, timeout); 
-		if( selectResult == 0 ) {
-			// timeout, do nothing
-		}
-		else if( selectResult == -1 ) {
-			// interruption, do nothing
-		}
-		else {
-			int numberOfSocketsWithStatusChanges = selectResult;
-
-			foreach( iStatusChange; 0..numberOfSocketsWithStatusChanges ) {
-				if( role == EnumRole.SERVER && checkReadSet.isSet(serverSocket) ) {
-					Socket clientSocket = serverSocket.accept();
-
-					assert(clientSocket.isAlive);
-					ClientType createdClient = new ClientType(clientSocket);
-					createdClient.socket.blocking = true;
-					clients ~= createdClient;
-
-					checkReadSet.remove(serverSocket);
-				}
-
-				foreach( iterationClient; clients ) {
-					if( checkReadSet.isSet(iterationClient.socket) ) {
-						receiveDataOfClient(iterationClient);
-
-						checkReadSet.remove(iterationClient.socket);
-					}
-				}
-			}
-		}
-
-
-		//acceptNewClients();
-		//pollData();
-	}
-
-	public final void startServer(ushort port) {
-		uint backlog = 2;
-
-		sockaddr_in sa;
-		sa.sin_family = AF_INET;
-		sa.sin_addr.s_addr = INADDR_ANY;
-		sa.sin_port = htons(port);
-
-		serverSocket = new Socket(AddressFamily.INET, SocketType.STREAM, ProtocolType.TCP);
-		serverSocket.blocking = true;
-		serverSocket.bind(new UnknownAddressReference(cast(sockaddr*)&sa, sa.sizeof));
-		serverSocket.listen(backlog);
-	}
-
-	protected final void receiveDataOfClient(ClientType client) {
-		ubyte[4096] buffer;
-
-		ptrdiff_t receiveResult = client.socket.receive(buffer);
-		if( receiveResult == -1 ) {
-			// client hasn't received new data
-			return;
-		}
-
-		client.receivedQueue ~= buffer[0..receiveResult];
-
-		clientReceivedNewData(client);
-
-		import std.stdio;
-		writeln("AbstractNetworkServer.receiveDataOfClient(), received data from client=", receiveResult);
-	}
-
-	enum EnumRole {
-		SERVER,
-		CLIENT
-	}
-
-	protected EnumRole role;
-
-	// callback if a client has received new data
-	protected abstract void clientReceivedNewData(ClientType client);
-
-	protected Socket serverSocket;
-	protected ClientType[] clients;
-}
-
-class NetworkClient : AbstractNetworkClient {
-	public final this(Socket socket) {
-		super(socket);
-	}
-
-	// network
-	public uint remainingBytesTillEndOfMessage = 0;
-	public ubyte[] currentMessageWithBuffer; // gets filled with the complete message before it gets dispatched
-}
-
-
-import misc.BitstreamSource;
-import misc.BitstreamDestination;
 import distributed.GlobalStructs;
-import serialisation.BitstreamReader;
-import serialisation.BitstreamWriter;
+import network.Networking;
+import network.AbstractNetworking;
 import misc.GenericSerializer;
-
-
-import std.algorithm : min;
-
-class NetworkHost : AbstractNetworkHost!NetworkClient {
-	public final this(INetworkCallback networkCallback, AbstractNetworkHost!NetworkClient.EnumRole role) {
-		super(role);
-		this.networkCallback = networkCallback;
-	}
-
-	public final void sendMessageToClient(NetworkClient client, BitstreamDestination payloadBitstream) {
-		import distributed.DistributedHelpers : composeMessageWithLengthPrefix;
-
-		bool successChained;
-		ubyte[] message = composeMessageWithLengthPrefix(payloadBitstream, successChained);
-
-		if( !successChained ) {
-			reportError(EnumErrorType.NONCRITICAL, "-verbose NetworkServer.sendMessageToClient() " ~ "serialisation failed!");
-		}
-
-		writeln("bitstreamDestinationForMessage.dataAsUbyte length=", message.length);
-
-		long sentNumber = client.socket.send(cast(const void[])message, cast(SocketFlags)0);
-
-		// TODO< check sentNumber >
-	}
-
-	protected final override void clientReceivedNewData(NetworkClient client) {
-		while( client.receivedQueue.length > 0 ) {
-			// if this is zero it means we wait for at least the length of the next message, which gets stored in the first two byte in the receivedQueue
-			if( client.remainingBytesTillEndOfMessage == 0 ) {
-				if( client.receivedQueue.length >= 2 ) {
-					ubyte[] newRemainingBytesTillEndOfMessageBuffer = client.receivedQueue[0..2];
-
-					client.receivedQueue = client.receivedQueue[2..$];
-
-					// TODO< convert little/big endian by machine type >
-					uint newRemainingBytesTillEndOfMessage = (cast(uint)newRemainingBytesTillEndOfMessageBuffer[1] << 8) | cast(uint)newRemainingBytesTillEndOfMessageBuffer[0];
-					
-					writeln("newRemainingBytesTillEndOfMessage=", newRemainingBytesTillEndOfMessage);
-
-					client.remainingBytesTillEndOfMessage = newRemainingBytesTillEndOfMessage;
-				}
-			}
-
-
-			if( client.remainingBytesTillEndOfMessage > 0 ) {
-				uint numberOfTransferedBytes = min(client.remainingBytesTillEndOfMessage, client.receivedQueue.length);
-
-				client.currentMessageWithBuffer ~= client.receivedQueue[0..numberOfTransferedBytes];
-				client.receivedQueue = client.receivedQueue[numberOfTransferedBytes..$];
-
-				client.remainingBytesTillEndOfMessage -= numberOfTransferedBytes;
-
-				if( client.remainingBytesTillEndOfMessage == 0 ) {
-					// message completed, dispatch
-					dispatchMessageFromClient(client);
-				}
-			}
-		}
-
-		writeln("NetworkServer.clientReceivedNewData() exit");
-	}
-
-	// gets called if a message is completed and is ready to get parsed
-	protected final void dispatchMessageFromClient(NetworkClient client) {
-
-		void clientMessageAgentIdentificationHandshake(NetworkClient client, ref AgentIdentificationHandshake agentIdentificationHandshake) {
-			reportError(EnumErrorType.NONCRITICAL, "-verbose NetworkServer.clientMessageAgentIdentificationHandshake() called");
-
-			// TODO< call into networkCallback >
-		}
-
-	 	void clientMessageRegisterServices(NetworkClient client, ref RegisterServices registerServices) {
-			networkCallback.networkCallbackRegisterServices(client, registerServices);
-		}
-
-	 	void clientMessageAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
-			networkCallback.networkCallbackAgentConnectToService(client, structure);
-		}
-
-		void clientMessageAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
-			networkCallback.networkCallbackAgentCreateContext(client, structure);
-		}
-
-		void clientMessageAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure) {
-			networkCallback.networkCallbackAgentConnectToServiceResponse(client, structure);
-		}
-
-
-		void deserializeMessage(BitstreamReader!BitstreamSource bitstreamReaderOfMessage) {
-			// compiletime
-			struct DispatchEntry {
-				public final this(string enumName, string structureName) {
-					this.enumName = enumName;
-					this.structureName = structureName;
-				}
-
-				string enumName;
-				string structureName;
-			}
-
-			// compiletime
-			string generateDOfMessageDispatch(DispatchEntry[] dispatchTable) {
-				string result;
-
-				import std.format : format;
-
-
-				result ~= format("""
-						if( messageType == cast(uint)EnumMessageType.%s ) {
-							%s structure;
-							deserialize(structure, successChained, bitstreamReaderOfMessage);
-
-							if( !successChained ) {
-				      			return;
-				      		}
-
-				      		clientMessage%s(client, structure);
-				      	}
-						""", dispatchTable[0].enumName, dispatchTable[0].structureName, dispatchTable[0].structureName);
-
-				foreach( dispatchEntry; dispatchTable[1..$] ) {
-					result ~= format("""
-						else if( messageType == cast(uint)EnumMessageType.%s ) {
-							%s structure;
-							deserialize(structure, successChained, bitstreamReaderOfMessage);
-
-							if( !successChained ) {
-				      			return;
-				      		}
-
-				      		clientMessage%s(client, structure);
-				      	}
-						""", dispatchEntry.enumName, dispatchEntry.structureName, dispatchEntry.structureName);
-	      		}
-
-	      		result ~= """
-	      		else {
-					reportError(EnumErrorType.NONCRITICAL, \"-verbose NetworkServer.dispatchMessageFromClient() received packet with unknown message type -> throw away\");
-				}
-	      		""";
-
-	      		return result;
-			}
-
-			// compiletime
-			template generateDOfMessageDispatchTemplate(DispatchEntry[] dispatchTable) {
-				const char[] generateDOfMessageDispatch = generateDOfMessageDispatch(dispatchTable);
-			}
-
-
-
-			bool successChained = true;
-			uint messageType = bitstreamReaderOfMessage.getUint__n(16, successChained);
-
-			mixin(generateDOfMessageDispatch(
-				[
-				DispatchEntry("AGENTIDENTIFICATIONHANDSHAKE", "AgentIdentificationHandshake"),
-				DispatchEntry("REGISTERSERVICES", "RegisterServices"),
-				DispatchEntry("AGENTCONNECTTOSERVICE", "AgentConnectToService"),
-				DispatchEntry("AGENTCONNECTTOSERVICERESPONSE", "AgentConnectToServiceResponse"),
-				DispatchEntry("AGENTCREATECONTEXT", "AgentCreateContext"),
-				]));
-
-
-			if( !successChained ) {
-				reportError(EnumErrorType.NONCRITICAL, "-verbose NetworkServer.dispatchMessageFromClient() packet deserialisation failed");
-			}
-		}
-
-
-
-		BitstreamSource bitstreamSourceOfMessage = new BitstreamSource();
-		bitstreamSourceOfMessage.resetToArray(client.currentMessageWithBuffer);
-
-		BitstreamReader!BitstreamSource bitstreamReaderOfMessage = new BitstreamReader!BitstreamSource(bitstreamSourceOfMessage);
-
-		deserializeMessage(bitstreamReaderOfMessage);
-
-		client.currentMessageWithBuffer.length = 0;
-	}
-
-
-
-	protected INetworkCallback networkCallback;
-}
-
-
-
 
 
 
@@ -594,17 +276,13 @@ void report(string prefix, string message) {
 	writeln("[", prefix, "] ", message);
 }
 
-// abstract the Hub/Agent details of the networking handling away
-interface INetworkCallback {
-	void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure);
-	void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure);
-	void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure);
-	void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure);
-}
+
+import misc.TracingLogging;
 
 class Hub : INetworkCallback {
 	public final this() {
-		networkHost = new NetworkHost(this, AbstractNetworkHost!NetworkClient.EnumRole.SERVER);
+		Tracer tracer = new Tracer();
+		networkHost = new NetworkHost(this, AbstractNetworkHost!NetworkClient.EnumRole.SERVER, tracer);
 	}
 	
 
@@ -626,10 +304,10 @@ class Hub : INetworkCallback {
 
 	// called by NetworkServer
 	public final override void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure) {
-		internalEvent("called with...", structure, "UNKNOWN", 0, EnumVerbose.YES);
+		tracer.internalEvent("called with...", structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
 
 		foreach( iterationServiceDescriptor; structure.service ) {
-			internalEvent(format("... locator.name=%s, locator.version=%s", iterationServiceDescriptor.locator.name, iterationServiceDescriptor.locator.version_), structure, "UNKNOWN", 0, EnumVerbose.YES);
+			tracer.internalEvent(format("... locator.name=%s, locator.version=%s", iterationServiceDescriptor.locator.name, iterationServiceDescriptor.locator.version_), structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
 		}
 
 		// TODO< checks for blocking >
@@ -648,7 +326,7 @@ class Hub : INetworkCallback {
 	}
 
 	public final override void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
-		internalEvent(format("called with servicename=%s, acceptedVersions=%d, serviceVersionsAndUp=%s", structure.serviceName, structure.acceptedVersions, structure.serviceVersionsAndUp), structure, "UNKNOWN", 0, EnumVerbose.YES);
+		tracer.internalEvent(format("called with servicename=%s, acceptedVersions=%d, serviceVersionsAndUp=%s", structure.serviceName, structure.acceptedVersions, structure.serviceVersionsAndUp), structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
 
 		// TODO< checks for blocking >
 		// TODO< check for flooding >
@@ -697,7 +375,7 @@ class Hub : INetworkCallback {
 			}
 		}
 
-		internalEvent(format("connectSuccess=%s, providedVersions=%s", connectSuccess, providedVersions), structure, "UNKNOWN", 0, EnumVerbose.YES);
+		tracer.internalEvent(format("connectSuccess=%s, providedVersions=%s", connectSuccess, providedVersions), structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
 
 
 		// send response back
@@ -719,7 +397,7 @@ class Hub : INetworkCallback {
 				serialize(agentConnectToServiceResponse, successChained, bitstreamWriterForPayload);
 
 				if( !successChained ) {
-					internalEvent("serialisation failed!", structure, "UNKNOWN", 0, EnumVerbose.YES);
+					tracer.internalEvent("serialisation failed!", structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
 				}
 			}
 
@@ -729,7 +407,7 @@ class Hub : INetworkCallback {
 	}
 
 	public final override void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
-		internalEvent(format("called with locator.name=%s, locator.version=%s, requestId=%s", structure.locator.name, structure.locator.version_, structure.requestId), structure, "UNKNOWN", 0, EnumVerbose.YES);
+		tracer.internalEvent(format("called with locator.name=%s, locator.version=%s, requestId=%s", structure.locator.name, structure.locator.version_, structure.requestId), structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
 
 		AgentCreateContextResponse agentCreateContextResponse;
 
@@ -747,7 +425,7 @@ class Hub : INetworkCallback {
 			serialize(message, successChained, bitstreamWriterForPayload);
 
 			if( !successChained ) {
-				internalEvent("serialisation failed!", structure, "UNKNOWN", 0, EnumVerbose.YES);
+				tracer.internalEvent("serialisation failed!", structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
 			}
 
 			networkHost.sendMessageToClient(serviceAgentRelation.owningClientOfAgent, bitstreamDestinationForPayload);
@@ -764,7 +442,7 @@ class Hub : INetworkCallback {
 			serialize(agentCreateContextResponse, successChained, bitstreamWriterForPayload);
 
 			if( !successChained ) {
-				internalEvent("serialisation failed!", structure, "UNKNOWN", 0, EnumVerbose.YES);
+				tracer.internalEvent("serialisation failed!", structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
 			}
 
 			networkHost.sendMessageToClient(client, bitstreamDestinationForPayload);
@@ -800,7 +478,7 @@ class Hub : INetworkCallback {
 						serviceAgentContextRelation = serviceAgentRelation.findServiceAgentContextRelationByClient(client);
 					}
 					catch( ServiceAgentRelation.LookupException exception ) {
-						internalEvent("Service agent context creation failed, because client wasn't found", structure, "UNKNOWN", 0);
+						tracer.internalEvent("Service agent context creation failed, because client wasn't found", structure, "UNKNOWN", 0);
 						return;
 					}
 
@@ -812,7 +490,7 @@ class Hub : INetworkCallback {
 
 					success = true;
 
-					internalEvent("Service agent context was successfully created", structure, "UNKNOWN", 0);
+					tracer.internalEvent("Service agent context was successfully created", structure, "UNKNOWN", 0);
 				}
 
 				bool calleeSuccess;
@@ -830,7 +508,7 @@ class Hub : INetworkCallback {
 				agentCreateContextResponse.responseType = EnumAgentCreateContextResponseType.SERVICEFOUNDBUTWRONGVERSION;
 				agentCreateContextResponse.humanReadableError = "Service was found but version didn't match!";
 
-				internalEvent("Service was found but version didn't match!", structure, "UNKNOWN", 0);
+				tracer.internalEvent("Service was found but version didn't match!", structure, "UNKNOWN", 0);
 			}
 		}
 
@@ -840,25 +518,13 @@ class Hub : INetworkCallback {
 	}
 
 	final override void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure) {
-		internalEvent("called, ignored because in role \"Hub\"", structure, "UNKNOWN", 0);
+		tracer.internalEvent("called, ignored because in role \"Hub\"", structure, "UNKNOWN", 0);
 	}
 
-	enum EnumVerbose : bool {
-		NO,
-		YES,
-	}
-
-	// sends an internal event to an eventstore or logs it or whatever
-	protected final void internalEvent(PayloadType)(string humanreadableDescription, PayloadType payload, string sourceFunction, uint sourceLine, EnumVerbose verbose = EnumVerbose.NO) {
-		// TODO< send to eventstore if the configuration is set this way >
-
-		if( verbose == EnumVerbose.YES ) {
-			import std.format : format;
-			reportError(EnumErrorType.NONCRITICAL, format("-verbose %s line %s : %s", sourceFunction, sourceLine, humanreadableDescription));
-		}
-	}
+	
 
 	protected ServiceRegister serviceRegister = new ServiceRegister();
+	protected Tracer tracer = new Tracer();
 
 	protected NetworkHost networkHost;
 }
