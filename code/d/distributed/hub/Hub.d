@@ -752,6 +752,46 @@ class Hub {
 		reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentCreateContext() called with " ~ format("locator.name=%s, locator.version=%s, requestId=%s", structure.locator.name, structure.locator.version_, structure.requestId));
 
 		AgentCreateContextResponse agentCreateContextResponse;
+
+		void sendMessageAgentCreatedContextToOwningAgent(uint32_t agentServiceContextId, ServiceAgentRelation serviceAgentRelation) {
+			AgentCreatedContext message;
+			message.agentServiceContextId = agentServiceContextId;
+
+			BitstreamDestination bitstreamDestinationForPayload = new BitstreamDestination();
+			BitstreamWriter!BitstreamDestination bitstreamWriterForPayload = new BitstreamWriter!BitstreamDestination(bitstreamDestinationForPayload);
+
+			bool successChained = true;
+
+			bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.AGENTCREATEDCONTEXT, 16, successChained); // type of message
+			
+			serialize(message, successChained, bitstreamWriterForPayload);
+
+			if( !successChained ) {
+				reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() " ~ "serialisation failed!");
+			}
+
+			networkServer.sendMessageToClient(serviceAgentRelation.owningClientOfAgent, bitstreamDestinationForPayload);
+		}
+
+		void sendResponseToClient() {
+			BitstreamDestination bitstreamDestinationForPayload = new BitstreamDestination();
+			BitstreamWriter!BitstreamDestination bitstreamWriterForPayload = new BitstreamWriter!BitstreamDestination(bitstreamDestinationForPayload);
+
+			bool successChained = true;
+
+			bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.AGENTCREATECONTEXTRESPONSE, 16, successChained); // type of message
+			
+			serialize(agentCreateContextResponse, successChained, bitstreamWriterForPayload);
+
+			if( !successChained ) {
+				reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() " ~ "serialisation failed!");
+			}
+
+			networkServer.sendMessageToClient(client, bitstreamDestinationForPayload);
+		}
+
+
+		
 		agentCreateContextResponse.responseType = EnumAgentCreateContextResponseType.SERVICENOTFOUND;
 		agentCreateContextResponse.humanReadableError = "Service was not found";
 
@@ -786,7 +826,7 @@ class Hub {
 
 					import std.random : uniform, Random, unpredictableSeed;
 					Random gen = Random(unpredictableSeed);
-					agentCreateContextResponse.agentServiceContextId = uniform!"[)"(0, uint.max, gen);
+					agentCreateContextResponse.agentServiceContextId = uniform!"[)"(0, uint32_t.max, gen);
 
 					serviceAgentContextRelation.openContexts ~= new AgentServiceContext(agentCreateContextResponse.agentServiceContextId);
 
@@ -802,6 +842,10 @@ class Hub {
 					agentCreateContextResponse.responseType = EnumAgentCreateContextResponseType.SUCCESS;
 					agentCreateContextResponse.humanReadableError = "";
 				}
+
+				if( calleeSuccess ) {
+					sendMessageAgentCreatedContextToOwningAgent(agentCreateContextResponse.agentServiceContextId, serviceAgentRelation);
+				}
 			}
 			else {
 				agentCreateContextResponse.responseType = EnumAgentCreateContextResponseType.SERVICEFOUNDBUTWRONGVERSION;
@@ -811,23 +855,7 @@ class Hub {
 
 
 
-		// send response back
-		{
-			BitstreamDestination bitstreamDestinationForPayload = new BitstreamDestination();
-			BitstreamWriter!BitstreamDestination bitstreamWriterForPayload = new BitstreamWriter!BitstreamDestination(bitstreamDestinationForPayload);
-
-			bool successChained = true;
-
-			bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.AGENTCREATECONTEXTRESPONSE, 16, successChained); // type of message
-			
-			serialize(agentCreateContextResponse, successChained, bitstreamWriterForPayload);
-
-			if( !successChained ) {
-				reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() " ~ "serialisation failed!");
-			}
-
-			networkServer.sendMessageToClient(client, bitstreamDestinationForPayload);
-		}
+		sendResponseToClient();
 	}
 
 	protected ServiceRegister serviceRegister = new ServiceRegister();

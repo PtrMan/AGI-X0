@@ -11,6 +11,8 @@ enum EnumMessageType : uint16_t {
 
 	AGENTCREATECONTEXT,
 	AGENTCREATECONTEXTRESPONSE,
+
+	AGENTCREATEDCONTEXT,
 }
 
 // Agent -> hub
@@ -102,4 +104,9 @@ enum EnumAgentCreateContextResponseType {
 	SERVICEFOUNDBUTWRONGVERSION,
 	IGNORED_TOOMANYREQUESTS, // only if the Agent makes/made too many requests
 	IGNORED_BLOCKED, // client is blocked for some reason and the request is completly ignored
+}
+
+// hub->agent
+struct AgentCreatedContext {
+	uint32_t agentServiceContextId;
 }
