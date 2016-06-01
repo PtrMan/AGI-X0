@@ -163,8 +163,8 @@ import misc.GenericSerializer;
 import std.algorithm : min;
 
 class NetworkServer : AbstractNetworkServer!NetworkClient {
-	public final this(Hub hub) {
-		this.hub = hub;
+	public final this(INetworkCallback networkCallback) {
+		this.networkCallback = networkCallback;
 	}
 
 	// used by the hub
@@ -228,19 +228,19 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 		void clientMessageAgentIdentificationHandshake(NetworkClient client, ref AgentIdentificationHandshake agentIdentificationHandshake) {
 			reportError(EnumErrorType.NONCRITICAL, "-verbose NetworkServer.clientMessageAgentIdentificationHandshake() called");
 
-			// TODO< call into hub >
+			// TODO< call into networkCallback >
 		}
 
 	 	void clientMessageRegisterServices(NetworkClient client, ref RegisterServices registerServices) {
-			hub.networkCallbackRegisterServices(client, registerServices);
+			networkCallback.networkCallbackRegisterServices(client, registerServices);
 		}
 
 	 	void clientMessageAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
-			hub.networkCallbackAgentConnectToService(client, structure);
+			networkCallback.networkCallbackAgentConnectToService(client, structure);
 		}
 
 		void clientMessageAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
-			hub.networkCallbackAgentCreateContext(client, structure);
+			networkCallback.networkCallbackAgentCreateContext(client, structure);
 		}
 
 
@@ -340,7 +340,7 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 
 
 
-	protected Hub hub;
+	protected INetworkCallback networkCallback;
 }
 
 
@@ -625,7 +625,14 @@ void report(string prefix, string message) {
 	writeln("[", prefix, "] ", message);
 }
 
-class Hub {
+// abstract the Hub/Agent details of the networking handling away
+interface INetworkCallback {
+	void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure);
+	void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure);
+	void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure);
+}
+
+class Hub : INetworkCallback {
 	public final this() {
 		networkServer = new NetworkServer(this);
 	}
@@ -648,18 +655,18 @@ class Hub {
 	}
 
 	// called by NetworkServer
-	public final void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices registerServices) {
-		internalEvent("called with...", registerServices, "UNKNOWN", 0, EnumVerbose.YES);
+	public final override void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure) {
+		internalEvent("called with...", structure, "UNKNOWN", 0, EnumVerbose.YES);
 
-		foreach( iterationServiceDescriptor; registerServices.service ) {
-			internalEvent(format("... locator.name=%s, locator.version=%s", iterationServiceDescriptor.locator.name, iterationServiceDescriptor.locator.version_), registerServices, "UNKNOWN", 0, EnumVerbose.YES);
+		foreach( iterationServiceDescriptor; structure.service ) {
+			internalEvent(format("... locator.name=%s, locator.version=%s", iterationServiceDescriptor.locator.name, iterationServiceDescriptor.locator.version_), structure, "UNKNOWN", 0, EnumVerbose.YES);
 		}
 
 		// TODO< checks for blocking >
 		// TODO< check for flooding >
 
 
-		foreach( iterationServiceDescriptor; registerServices.service ) {
+		foreach( iterationServiceDescriptor; structure.service ) {
 			serviceRegister.registerService(
 				iterationServiceDescriptor.locator.name,
 				iterationServiceDescriptor.locator.version_,
@@ -670,7 +677,7 @@ class Hub {
 		}
 	}
 
-	public final void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
+	public final override void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
 		internalEvent(format("called with servicename=%s, acceptedVersions=%d, serviceVersionsAndUp=%s", structure.serviceName, structure.acceptedVersions, structure.serviceVersionsAndUp), structure, "UNKNOWN", 0, EnumVerbose.YES);
 
 		// TODO< checks for blocking >
@@ -751,7 +758,7 @@ class Hub {
 		}
 	}
 
-	public final void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
+	public final override void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
 		internalEvent(format("called with locator.name=%s, locator.version=%s, requestId=%s", structure.locator.name, structure.locator.version_, structure.requestId), structure, "UNKNOWN", 0, EnumVerbose.YES);
 
 		AgentCreateContextResponse agentCreateContextResponse;
