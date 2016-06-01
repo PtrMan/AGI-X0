@@ -649,10 +649,10 @@ class Hub {
 
 	// called by NetworkServer
 	public final void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices registerServices) {
-		reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackRegisterService() called with ..."); // ~ format("servicename=%s, serviceVersion=%d", serviceName, serviceVersion));
+		internalEvent("called with...", registerServices, "UNKNOWN", 0, EnumVerbose.YES);
 
 		foreach( iterationServiceDescriptor; registerServices.service ) {
-			reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackRegisterService() " ~ format("... locator.name=%s, locator.version=%s", iterationServiceDescriptor.locator.name, iterationServiceDescriptor.locator.version_));
+			internalEvent(format("... locator.name=%s, locator.version=%s", iterationServiceDescriptor.locator.name, iterationServiceDescriptor.locator.version_), registerServices, "UNKNOWN", 0, EnumVerbose.YES);
 		}
 
 		// TODO< checks for blocking >
@@ -671,7 +671,7 @@ class Hub {
 	}
 
 	public final void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
-		reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() called with " ~ format("servicename=%s, acceptedVersions=%d, serviceVersionsAndUp=%s", structure.serviceName, structure.acceptedVersions, structure.serviceVersionsAndUp));
+		internalEvent(format("called with servicename=%s, acceptedVersions=%d, serviceVersionsAndUp=%s", structure.serviceName, structure.acceptedVersions, structure.serviceVersionsAndUp), structure, "UNKNOWN", 0, EnumVerbose.YES);
 
 		// TODO< checks for blocking >
 		// TODO< check for flooding >
@@ -720,9 +720,7 @@ class Hub {
 			}
 		}
 
-
-		reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() " ~ format("connectSuccess=%s, providedVersions=%s", connectSuccess, providedVersions));
-
+		internalEvent(format("connectSuccess=%s, providedVersions=%s", connectSuccess, providedVersions), structure, "UNKNOWN", 0, EnumVerbose.YES);
 
 
 		// send response back
@@ -744,7 +742,7 @@ class Hub {
 				serialize(agentConnectToServiceResponse, successChained, bitstreamWriterForPayload);
 
 				if( !successChained ) {
-					reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() " ~ "serialisation failed!");
+					internalEvent("serialisation failed!", structure, "UNKNOWN", 0, EnumVerbose.YES);
 				}
 			}
 
@@ -754,7 +752,7 @@ class Hub {
 	}
 
 	public final void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
-		reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentCreateContext() called with " ~ format("locator.name=%s, locator.version=%s, requestId=%s", structure.locator.name, structure.locator.version_, structure.requestId));
+		internalEvent(format("called with locator.name=%s, locator.version=%s, requestId=%s", structure.locator.name, structure.locator.version_, structure.requestId), structure, "UNKNOWN", 0, EnumVerbose.YES);
 
 		AgentCreateContextResponse agentCreateContextResponse;
 
@@ -772,7 +770,7 @@ class Hub {
 			serialize(message, successChained, bitstreamWriterForPayload);
 
 			if( !successChained ) {
-				reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() " ~ "serialisation failed!");
+				internalEvent("serialisation failed!", structure, "UNKNOWN", 0, EnumVerbose.YES);
 			}
 
 			networkServer.sendMessageToClient(serviceAgentRelation.owningClientOfAgent, bitstreamDestinationForPayload);
@@ -789,7 +787,7 @@ class Hub {
 			serialize(agentCreateContextResponse, successChained, bitstreamWriterForPayload);
 
 			if( !successChained ) {
-				reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() " ~ "serialisation failed!");
+				internalEvent("serialisation failed!", structure, "UNKNOWN", 0, EnumVerbose.YES);
 			}
 
 			networkServer.sendMessageToClient(client, bitstreamDestinationForPayload);
@@ -854,6 +852,8 @@ class Hub {
 			else {
 				agentCreateContextResponse.responseType = EnumAgentCreateContextResponseType.SERVICEFOUNDBUTWRONGVERSION;
 				agentCreateContextResponse.humanReadableError = "Service was found but version didn't match!";
+
+				internalEvent("Service was found but version didn't match!", structure, "UNKNOWN", 0);
 			}
 		}
 
@@ -862,9 +862,19 @@ class Hub {
 		sendResponseToClient();
 	}
 
+	enum EnumVerbose : bool {
+		NO,
+		YES,
+	}
+
 	// sends an internal event to an eventstore or logs it or whatever
-	protected final void internalEvent(PayloadType)(string humanreadableDescription, PayloadType payload, string sourceFunction, uint sourceLine) {
-		// TODO
+	protected final void internalEvent(PayloadType)(string humanreadableDescription, PayloadType payload, string sourceFunction, uint sourceLine, EnumVerbose verbose = EnumVerbose.NO) {
+		// TODO< send to eventstore if the configuration is set this way >
+
+		if( verbose == EnumVerbose.YES ) {
+			import std.format : format;
+			reportError(EnumErrorType.NONCRITICAL, format("-verbose %s line %s : %s", sourceFunction, sourceLine, humanreadableDescription));
+		}
 	}
 
 	protected ServiceRegister serviceRegister = new ServiceRegister();
