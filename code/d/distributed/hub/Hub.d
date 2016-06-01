@@ -224,44 +224,95 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 
 	// gets called if a message is completed and is ready to get parsed
 	protected final void dispatchMessageFromClient(NetworkClient client) {
+
+		void clientMessageAgentIdentificationHandshake(NetworkClient client, ref AgentIdentificationHandshake agentIdentificationHandshake) {
+			reportError(EnumErrorType.NONCRITICAL, "-verbose NetworkServer.clientMessageAgentIdentificationHandshake() called");
+
+			// TODO< call into hub >
+		}
+
+	 	void clientMessageRegisterServices(NetworkClient client, ref RegisterServices registerServices) {
+			hub.networkCallbackRegisterServices(client, registerServices);
+		}
+
+	 	void clientMessageAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
+			hub.networkCallbackAgentConnectToService(client, structure);
+		}
+
+
 		void deserializeMessage(BitstreamReader!BitstreamSource bitstreamReaderOfMessage) {
+			// compiletime
+			struct DispatchEntry {
+				public final this(string enumName, string structureName) {
+					this.enumName = enumName;
+					this.structureName = structureName;
+				}
+
+				string enumName;
+				string structureName;
+			}
+
+			// compiletime
+			string generateDOfMessageDispatch(DispatchEntry[] dispatchTable) {
+				string result;
+
+				import std.format : format;
+
+
+				result ~= format("""
+						if( messageType == cast(uint)EnumMessageType.%s ) {
+							%s structure;
+							deserialize(structure, successChained, bitstreamReaderOfMessage);
+
+							if( !successChained ) {
+				      			return;
+				      		}
+
+				      		clientMessage%s(client, structure);
+				      	}
+						""", dispatchTable[0].enumName, dispatchTable[0].structureName, dispatchTable[0].structureName);
+
+				foreach( dispatchEntry; dispatchTable[1..$] ) {
+					result ~= format("""
+						else if( messageType == cast(uint)EnumMessageType.%s ) {
+							%s structure;
+							deserialize(structure, successChained, bitstreamReaderOfMessage);
+
+							if( !successChained ) {
+				      			return;
+				      		}
+
+				      		clientMessage%s(client, structure);
+				      	}
+						""", dispatchEntry.enumName, dispatchEntry.structureName, dispatchEntry.structureName);
+	      		}
+
+	      		result ~= """
+	      		else {
+					reportError(EnumErrorType.NONCRITICAL, \"-verbose NetworkServer.dispatchMessageFromClient() received packet with unknown message type -> throw away\");
+				}
+	      		""";
+
+	      		return result;
+			}
+
+			// compiletime
+			template generateDOfMessageDispatchTemplate(DispatchEntry[] dispatchTable) {
+				const char[] generateDOfMessageDispatch = generateDOfMessageDispatch(dispatchTable);
+			}
+
+
+
 			bool successChained = true;
 			uint messageType = bitstreamReaderOfMessage.getUint__n(16, successChained);
 
-			if( messageType == cast(uint)EnumMessageType.AGENTIDENTIFICATIONHANDSHAKE ) {
-				AgentIdentificationHandshake structure;
-	      		deserialize(structure, successChained, bitstreamReaderOfMessage);
-	      		
-	      		if( !successChained ) {
-	      			return;
-	      		}
+			mixin(generateDOfMessageDispatch(
+				[
+				DispatchEntry("AGENTIDENTIFICATIONHANDSHAKE", "AgentIdentificationHandshake"),
+				DispatchEntry("REGISTERSERVICES", "RegisterServices"),
+				DispatchEntry("AGENTCONNECTTOSERVICE", "AgentConnectToService"),
+				]));
 
-	      		clientMessageAgentIdentificationHandshake(client, structure);
-			}
-			else if( messageType == cast(uint)EnumMessageType.REGISTERSERVICES ) {
-				RegisterServices structure;
-				deserialize(structure, successChained, bitstreamReaderOfMessage);
-	      		
-	      		if( !successChained ) {
-	      			return;
-	      		}
-
-	      		clientMessageRegisterServices(client, structure);
-
-			}
-			else if( messageType == cast(uint)EnumMessageType.AGENTCONNECTTOSERVICE ) {
-				AgentConnectToService structure;
-				deserialize(structure, successChained, bitstreamReaderOfMessage);
-
-				if( !successChained ) {
-	      			return;
-	      		}
-
-	      		clientMessageAgentConnectToService(client, structure);
-			}
-			else {
-				reportError(EnumErrorType.NONCRITICAL, "-verbose NetworkServer.dispatchMessageFromClient() received packet with unknown message type -> throw away");
-			}
 
 			if( !successChained ) {
 				reportError(EnumErrorType.NONCRITICAL, "-verbose NetworkServer.dispatchMessageFromClient() packet deserialisation failed");
@@ -282,19 +333,6 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 		client.currentMessageWithBuffer.length = 0;
 	}
 
-	protected final void clientMessageAgentIdentificationHandshake(NetworkClient client, ref AgentIdentificationHandshake agentIdentificationHandshake) {
-		reportError(EnumErrorType.NONCRITICAL, "-verbose NetworkServer.clientMessageAgentIdentificationHandshake() called");
-
-		// TODO< call into hub >
-	}
-
-	protected final void clientMessageRegisterServices(NetworkClient client, ref RegisterServices registerServices) {
-		hub.networkCallbackRegisterServices(client, registerServices);
-	}
-
-	protected final void clientMessageAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
-		hub.networkCallbackAgentConnectToService(client, structure);
-	}
 
 
 	protected Hub hub;
@@ -317,14 +355,14 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 // Used services of agents can be relocated by the hub.
 
 // state diagram of an service and the agent relationship
-
+// ------------------------------------------------------
 
 //    +--------------------------------------------------------------------------------------------------------+
 //    |                                               disconnected                                             |
 //    +--------------------------------------------------------------------------------------------------------+
 //         |                               /\                                        /\                                           /\
 //         |                               |                                         |                                            |
-//   AGENT CONNECT TO SERVICE ----> AGENT CONNECT TO SERVICE RESPONSE        AGENT DISCONNECT FROM SERVICE                  AGENT FORCE DISCONNECT FROM SERVICE
+//   AGENT CONNECT TO SERVICE ----> AGENT CONNECT TO SERVICE RESPONSE       TODO: AGENT DISCONNECT FROM SERVICE                TODO:  AGENT FORCE DISCONNECT FROM SERVICE
 //   agent->hub                      hub->agent                                  agent->hub                                      hub->agent
 //                                         |                                          |                                            |
 //                                         V                                          |                                            |
@@ -333,7 +371,7 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 //    +--------------------------------------------------------------------------------------------------------+
 //         |                                              /\
 //         |                                              |
-//    AGENT SERVICE RELOCATE PENDING                 AGENT SERVICE RELOCATED
+//    TODO:  AGENT SERVICE RELOCATE PENDING    TODO: AGENT SERVICE RELOCATED
 //    hub->agent                                      hub->agent
 //         |                                              |
 //         V                                              |
@@ -349,8 +387,51 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 
 
 
+
+
 // TODO< state diagram for context of an service which is used by an agent >
 
+// state diagram for the context of an service which is used by an agent
+
+// +--------------------------------------------------------------------------------------------------------------+
+// |       (not created)                                                                                          |
+// +--------------------------------------------------------------------------------------------------------------+
+//     /\                               /\                                           /\                         /\                              
+//     |                                 |                                           |                          |                              
+//  TODO: AGENT CREATE CONTEXT   TODO: AGENT CREATE CONTEXT RESPONSE         TODO: CONTEXT DISPOSE              |                                                    
+//  agent->hub            --------->  hub->agent                                  hub->agent                    |                                         
+//                                       |                                        agent->hub                    |                                                  
+//                                       V                                           |                          |                              
+// +-----------------------------------------------------------------------------------+                        |               
+// |  USABLE                                                                           |                        |                                   
+// +-----------------------------------------------------------------------------------+                        |                                   
+//      |                                               /\                                                      |                
+//      \/                                               |                                                      |                  
+//  TODO: CONTEXT RELOCATION REQUEST           TODO: CONTEXT RELOCATION SUCCESS                  TODO: CONTEXT RELOCATION DENIED                              
+//  hub->agent                                         hub->agent                                           hub->agent
+//  agent->hub                                       agent->hub?                                                |                      
+//      |                                                |                                                      |                
+//      \/                                               |                                                      |
+// +--------------------------------------------------------------------------------------------------------------+
+// |  RELOCATION PENDING                                                                                          |
+// +--------------------------------------------------------------------------------------------------------------+
+
+// TODO< implement this >
+// in the usable state a context can be used with
+
+// types can be
+//  REQUEST    agent->hub->agent   for requesting something, receiver agent doesn't have to answer it, depending on Service/Agent specific protocol
+//  RESPONSE   agent->hub->agent   for responding to a request
+//  PUSH       agent->hub->agent   for transfering some data
+
+// messages get enqueued into a Agent queue, for this there are two types of 
+// EnumQueueAction
+//  ENQUEUE    request for the enquing of a message
+//  ENQUEUED   response which gives information if the message got enqueued or not
+
+
+// if the hub is in tracing mode for the context the agent must send a decorated decoded payload besides the usual payload.
+// the decoded payload then can be sent to an eventstore by the hub
 
 
 
