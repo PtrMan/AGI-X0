@@ -263,7 +263,7 @@ class ServiceRegister {
 	protected Service[string] registeredServices;
 }
 
-
+/*
 enum EnumErrorType {
 	NONCRITICAL
 }
@@ -274,7 +274,7 @@ void reportError(EnumErrorType errorType, string message) {
 
 void report(string prefix, string message) {
 	writeln("[", prefix, "] ", message);
-}
+}*/
 
 
 import misc.TracingLogging;
