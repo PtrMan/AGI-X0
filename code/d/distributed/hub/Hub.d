@@ -655,6 +655,9 @@ class Hub {
 			reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackRegisterService() " ~ format("... locator.name=%s, locator.version=%s", iterationServiceDescriptor.locator.name, iterationServiceDescriptor.locator.version_));
 		}
 
+		// TODO< checks for blocking >
+		// TODO< check for flooding >
+
 
 		foreach( iterationServiceDescriptor; registerServices.service ) {
 			serviceRegister.registerService(
@@ -670,6 +673,8 @@ class Hub {
 	public final void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
 		reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() called with " ~ format("servicename=%s, acceptedVersions=%d, serviceVersionsAndUp=%s", structure.serviceName, structure.acceptedVersions, structure.serviceVersionsAndUp));
 
+		// TODO< checks for blocking >
+		// TODO< check for flooding >
 
 		bool connectSuccess = false;
 		uint[] providedVersions;
@@ -820,7 +825,7 @@ class Hub {
 						serviceAgentContextRelation = serviceAgentRelation.findServiceAgentContextRelationByClient(client);
 					}
 					catch( ServiceAgentRelation.LookupException exception ) {
-						// TODO< send event to eventstore or whatever  >
+						internalEvent("Service agent context creation failed, because client wasn't found", structure, "UNKNOWN", 0);
 						return;
 					}
 
@@ -832,8 +837,7 @@ class Hub {
 
 					success = true;
 
-
-					// TODO< send event to eventstore or whatever about adding the new context >
+					internalEvent("Service agent context was successfully created", structure, "UNKNOWN", 0);
 				}
 
 				bool calleeSuccess;
@@ -856,6 +860,11 @@ class Hub {
 
 
 		sendResponseToClient();
+	}
+
+	// sends an internal event to an eventstore or logs it or whatever
+	protected final void internalEvent(PayloadType)(string humanreadableDescription, PayloadType payload, string sourceFunction, uint sourceLine) {
+		// TODO
 	}
 
 	protected ServiceRegister serviceRegister = new ServiceRegister();
