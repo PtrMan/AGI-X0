@@ -94,8 +94,8 @@ void main() {
 		bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.REGISTERSERVICES, 16, successChained); // type of message
 		RegisterServices registerServices;
 		registerServices.service.length = 1;
-		registerServices.service[0].name = "CartesianGeneticProgramming";
-		registerServices.service[0].version_ = 1;
+		registerServices.service[0].locator.name = "CartesianGeneticProgramming";
+		registerServices.service[0].locator.version_ = 1;
 		registerServices.service[0].capabilities.isSoftComputing = true;
 		registerServices.service[0].capabilities.stateful = EnumStateful.PARTIAL;
 		registerServices.service[0].contract.serviceRequestFrequency = EnumContractServiceRequestFrequency.NONE;

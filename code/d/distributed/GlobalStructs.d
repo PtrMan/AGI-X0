@@ -5,8 +5,12 @@ import std.stdint;
 enum EnumMessageType : uint16_t {
 	AGENTIDENTIFICATIONHANDSHAKE = 1,
 	REGISTERSERVICES,
+
 	AGENTCONNECTTOSERVICE,
-	AGENTCONNECTTOSERVICERESPONSE
+	AGENTCONNECTTOSERVICERESPONSE,
+
+	AGENTCREATECONTEXT,
+	AGENTCREATECONTEXTRESPONSE,
 }
 
 // Agent -> hub
@@ -46,9 +50,14 @@ struct ContractInformation {
 }
 
 // helper
-struct ServiceDescriptor {
+struct ServiceLocator {
 	string name;
 	uint32_t version_;
+}
+
+// helper
+struct ServiceDescriptor {
+	ServiceLocator locator;
 
 	ServiceCapabilities capabilities;
 	ContractInformation contract;
@@ -71,4 +80,26 @@ struct AgentConnectToServiceResponse {
 	string serviceName;
 	uint32_t[] providedVersions;
 	bool connectSuccess;
+}
+
+// agent->hub
+struct AgentCreateContext {
+	ServiceLocator locator;
+	uint32_t requestId; // should be random
+}
+
+// hub->agent
+struct AgentCreateContextResponse {
+	uint32_t requestId; // same as request to couple the response to the request
+	uint32_t agentServiceContextId; // unique id of the context-service-agent connection in case of success
+	EnumAgentCreateContextResponseType responseType;
+	string humanReadableError; // only filled if it didn't succeed
+}
+
+enum EnumAgentCreateContextResponseType {
+	SUCCESS = 0,
+	SERVICENOTFOUND,
+	SERVICEFOUNDBUTWRONGVERSION,
+	IGNORED_TOOMANYREQUESTS, // only if the Agent makes/made too many requests
+	IGNORED_BLOCKED, // client is blocked for some reason and the request is completly ignored
 }

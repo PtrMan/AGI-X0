@@ -239,6 +239,10 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 			hub.networkCallbackAgentConnectToService(client, structure);
 		}
 
+		void clientMessageAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
+			hub.networkCallbackAgentCreateContext(client, structure);
+		}
+
 
 		void deserializeMessage(BitstreamReader!BitstreamSource bitstreamReaderOfMessage) {
 			// compiletime
@@ -311,6 +315,7 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 				DispatchEntry("AGENTIDENTIFICATIONHANDSHAKE", "AgentIdentificationHandshake"),
 				DispatchEntry("REGISTERSERVICES", "RegisterServices"),
 				DispatchEntry("AGENTCONNECTTOSERVICE", "AgentConnectToService"),
+				DispatchEntry("AGENTCREATECONTEXT", "AgentCreateContext"),
 				]));
 
 
@@ -401,7 +406,11 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 //  TODO: AGENT CREATE CONTEXT   TODO: AGENT CREATE CONTEXT RESPONSE         TODO: CONTEXT DISPOSE              |                                                    
 //  agent->hub            --------->  hub->agent                                  hub->agent                    |                                         
 //                                       |                                        agent->hub                    |                                                  
-//                                       V                                           |                          |                              
+//                                       |                                           |                          |                              
+//                                       | AGENT CREATED CONTEXT                     |                          |                                                
+//                                       | hub->agent(who provides the service)      |                          |                                                                                    
+//                                       |                                           |                          |                                                
+//                                      \/                                           |                          |         
 // +-----------------------------------------------------------------------------------+                        |               
 // |  USABLE                                                                           |                        |                                   
 // +-----------------------------------------------------------------------------------+                        |                                   
@@ -415,6 +424,9 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 // +--------------------------------------------------------------------------------------------------------------+
 // |  RELOCATION PENDING                                                                                          |
 // +--------------------------------------------------------------------------------------------------------------+
+
+// 
+
 
 // TODO< implement this >
 // in the usable state a context can be used with
@@ -454,6 +466,8 @@ class RegisteredService {
 
 import misc.FiniteStateMachine;
 
+import std.stdint;
+
 // The state of the service used by an agent
 class AgentServiceContext {
 	enum EnumAgentServiceContextState {
@@ -466,7 +480,8 @@ class AgentServiceContext {
 		NOTCREATED_TO_USABLE // just for init
 	}
 
-	public final this() {
+	public final this(uint32_t agentServiceContextId) {
+		this.agentServiceContextId = agentServiceContextId;
 		initFsm();
 	}
 
@@ -479,6 +494,8 @@ class AgentServiceContext {
 	}
 
 	ServiceStateFsmType serviceStateFsm;
+
+	uint32_t agentServiceContextId; // unique id of the context-service-agent connection
 
 	//EnumAgentServiceContextState serviceState = EnumAgentServiceContextState.NOTCREATED;
 
@@ -502,6 +519,14 @@ class ServiceAgentContextRelation {
 
 // holds information about the Agent client which provides/owns the service and its user Agent clients
 class ServiceAgentRelation {
+	static class LookupException : Exception {
+    	public final this () {
+        	super("");
+    	}
+	}
+
+
+
 	protected final this() {
 	}
 
@@ -509,6 +534,16 @@ class ServiceAgentRelation {
 		this.owningClientOfAgent = owningClientOfAgent;
 		this.capabilities = capabilities;
 		this.contract = contract;
+	}
+
+	public final ServiceAgentContextRelation findServiceAgentContextRelationByClient(NetworkClient networkClient) {
+		foreach( iterationServiceAgentContextRelation; serviceAgentContextRelations ) {
+			if( iterationServiceAgentContextRelation.networkClient is networkClient ) {
+				return iterationServiceAgentContextRelation;
+			}
+		}
+
+		throw new LookupException();
 	}
 
 	NetworkClient owningClientOfAgent; // which client does hold the service
@@ -617,14 +652,14 @@ class Hub {
 		reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackRegisterService() called with ..."); // ~ format("servicename=%s, serviceVersion=%d", serviceName, serviceVersion));
 
 		foreach( iterationServiceDescriptor; registerServices.service ) {
-			reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackRegisterService() " ~ format("... name=%s, version=%s", iterationServiceDescriptor.name, iterationServiceDescriptor.version_));
+			reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackRegisterService() " ~ format("... locator.name=%s, locator.version=%s", iterationServiceDescriptor.locator.name, iterationServiceDescriptor.locator.version_));
 		}
 
 
 		foreach( iterationServiceDescriptor; registerServices.service ) {
 			serviceRegister.registerService(
-				iterationServiceDescriptor.name,
-				iterationServiceDescriptor.version_,
+				iterationServiceDescriptor.locator.name,
+				iterationServiceDescriptor.locator.version_,
 				networkClient,
 				iterationServiceDescriptor.capabilities,
 				iterationServiceDescriptor.contract
@@ -668,6 +703,7 @@ class Hub {
 				bool versionMatches = isVersionAccepted(iterationVersion);
 				if( versionMatches ) {
 					void connect(uint version_) {
+						// TODO< selection strategy / load balancing >
 						service.serviceAgentRelationsByVersion[version_][$].serviceAgentContextRelations ~= new ServiceAgentContextRelation(client);
 						connectSuccess = true;
 					}
@@ -707,6 +743,88 @@ class Hub {
 				}
 			}
 
+
+			networkServer.sendMessageToClient(client, bitstreamDestinationForPayload);
+		}
+	}
+
+	public final void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
+		reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentCreateContext() called with " ~ format("locator.name=%s, locator.version=%s, requestId=%s", structure.locator.name, structure.locator.version_, structure.requestId));
+
+		AgentCreateContextResponse agentCreateContextResponse;
+		agentCreateContextResponse.responseType = EnumAgentCreateContextResponseType.SERVICENOTFOUND;
+		agentCreateContextResponse.humanReadableError = "Service was not found";
+
+		agentCreateContextResponse.requestId = structure.requestId;
+
+		// TODO< checks for blocking >
+		// TODO< check for flooding >
+
+		bool serviceProvided = serviceRegister.isServiceProvided(structure.locator.name);
+		if( serviceProvided ) {
+			Service service = serviceRegister.lookup(structure.locator.name);
+
+			uint[] providedVersions = service.calcSortedProvidedVersions();
+
+			import std.algorithm: canFind;
+			bool versionFound = providedVersions.canFind(structure.locator.version_);
+			if( versionFound ) {
+				// TODO< selection strategy / load balancing >
+				ServiceAgentRelation serviceAgentRelation = service.serviceAgentRelationsByVersion[structure.locator.version_][$];
+
+				void locateServiceAgentContextRelationAndAddNewContextToIt(out bool success) {
+					success = false;
+
+					ServiceAgentContextRelation serviceAgentContextRelation;
+					try {
+						serviceAgentContextRelation = serviceAgentRelation.findServiceAgentContextRelationByClient(client);
+					}
+					catch( ServiceAgentRelation.LookupException exception ) {
+						// TODO< send event to eventstore or whatever  >
+						return;
+					}
+
+					import std.random : uniform, Random, unpredictableSeed;
+					Random gen = Random(unpredictableSeed);
+					agentCreateContextResponse.agentServiceContextId = uniform!"[)"(0, uint.max, gen);
+
+					serviceAgentContextRelation.openContexts ~= new AgentServiceContext(agentCreateContextResponse.agentServiceContextId);
+
+					success = true;
+
+
+					// TODO< send event to eventstore or whatever about adding the new context >
+				}
+
+				bool calleeSuccess;
+				locateServiceAgentContextRelationAndAddNewContextToIt(calleeSuccess);
+				if( calleeSuccess ) {
+					agentCreateContextResponse.responseType = EnumAgentCreateContextResponseType.SUCCESS;
+					agentCreateContextResponse.humanReadableError = "";
+				}
+			}
+			else {
+				agentCreateContextResponse.responseType = EnumAgentCreateContextResponseType.SERVICEFOUNDBUTWRONGVERSION;
+				agentCreateContextResponse.humanReadableError = "Service was found but version didn't match!";
+			}
+		}
+
+
+
+		// send response back
+		{
+			BitstreamDestination bitstreamDestinationForPayload = new BitstreamDestination();
+			BitstreamWriter!BitstreamDestination bitstreamWriterForPayload = new BitstreamWriter!BitstreamDestination(bitstreamDestinationForPayload);
+
+			bool successChained = true;
+
+			bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.AGENTCREATECONTEXTRESPONSE, 16, successChained); // type of message
+			
+			serialize(agentCreateContextResponse, successChained, bitstreamWriterForPayload);
+
+			if( !successChained ) {
+				reportError(EnumErrorType.NONCRITICAL, "-verbose Hub.networkCallbackAgentConnectToService() " ~ "serialisation failed!");
+			}
 
 			networkServer.sendMessageToClient(client, bitstreamDestinationForPayload);
 		}
