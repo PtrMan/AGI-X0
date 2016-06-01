@@ -93,38 +93,6 @@ abstract class AbstractNetworkHost(ClientType : AbstractNetworkClient) {
 		serverSocket.listen(backlog);
 	}
 
-	/*
-	private final void acceptNewClients() {
-		Socket clientSocket = serverSocket.accept();
-
-		if( clientSocket.isAlive ) {
-			ClientType createdClient = new ClientType(clientSocket);
-			createdClient.socket.blocking = true;
-			clients ~= createdClient;
-		}
-	}
-
-	private final void pollData() {
-		ubyte[4096] buffer;
-
-		for( uint clientI = 0; clientI < clients.length; clientI++ ) {
-			ClientType iterationClient = clients[clientI];
-
-			ptrdiff_t receiveResult = iterationClient.socket.receive(buffer);
-			if( receiveResult == -1 ) {
-				// client hasn't received new data
-				continue;
-			}
-
-			iterationClient.receivedQueue ~= buffer[0..receiveResult];
-
-			clientReceivedNewData(iterationClient);
-
-			import std.stdio;
-			writeln("AbstractNetworkServer.pollData(), ", receiveResult);
-		}
-	}*/
-
 	protected final void receiveDataOfClient(ClientType client) {
 		ubyte[4096] buffer;
 
@@ -462,23 +430,6 @@ class NetworkHost : AbstractNetworkHost!NetworkClient {
 
 // if the hub is in tracing mode for the context the agent must send a decorated decoded payload besides the usual payload.
 // the decoded payload then can be sent to an eventstore by the hub
-
-
-
-/*
-class RegisteredService {
-	public final this(NetworkClient owningClientOfAgent, string serviceName, uint serviceVersion) {
-		this.owningClientOfAgent = owningClientOfAgent;
-		this.serviceName = serviceName;
-		this.serviceVersion = serviceVersion;
-	}
-
-	public string serviceName; // used for identification
-	public uint serviceVersion;
-
-	
-}*/
-
 
 
 
