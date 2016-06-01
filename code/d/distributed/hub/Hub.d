@@ -18,15 +18,23 @@ abstract class AbstractNetworkClient {
 	public ubyte[] receivedQueue;
 }
 
-abstract class AbstractNetworkServer(ClientType : AbstractNetworkClient) {
-	
+abstract class AbstractNetworkHost(ClientType : AbstractNetworkClient) {
+	protected final this() {
+	}
+
+	public final this(EnumRole role) {
+		this.role = role;
+	}
+
 	public final void iteration() {
 		SocketSet checkReadSet = new SocketSet();
 		SocketSet checkWriteSet = new SocketSet();
 		SocketSet checkErrorSet = new SocketSet();
 
-		checkReadSet.add(serverSocket);
-
+		if( role == EnumRole.SERVER ) {
+			checkReadSet.add(serverSocket);
+		}
+		
 		foreach( iterationClient; clients ) {
 			checkReadSet.add(iterationClient.socket);
 		}
@@ -45,7 +53,7 @@ abstract class AbstractNetworkServer(ClientType : AbstractNetworkClient) {
 			int numberOfSocketsWithStatusChanges = selectResult;
 
 			foreach( iStatusChange; 0..numberOfSocketsWithStatusChanges ) {
-				if( checkReadSet.isSet(serverSocket) ) {
+				if( role == EnumRole.SERVER && checkReadSet.isSet(serverSocket) ) {
 					Socket clientSocket = serverSocket.accept();
 
 					assert(clientSocket.isAlive);
@@ -71,7 +79,7 @@ abstract class AbstractNetworkServer(ClientType : AbstractNetworkClient) {
 		//pollData();
 	}
 
-	public final void start(ushort port) {
+	public final void startServer(ushort port) {
 		uint backlog = 2;
 
 		sockaddr_in sa;
@@ -134,6 +142,13 @@ abstract class AbstractNetworkServer(ClientType : AbstractNetworkClient) {
 		writeln("AbstractNetworkServer.receiveDataOfClient(), received data from client=", receiveResult);
 	}
 
+	enum EnumRole {
+		SERVER,
+		CLIENT
+	}
+
+	protected EnumRole role;
+
 	// callback if a client has received new data
 	protected abstract void clientReceivedNewData(ClientType client);
 
@@ -162,12 +177,12 @@ import misc.GenericSerializer;
 
 import std.algorithm : min;
 
-class NetworkServer : AbstractNetworkServer!NetworkClient {
-	public final this(INetworkCallback networkCallback) {
+class NetworkHost : AbstractNetworkHost!NetworkClient {
+	public final this(INetworkCallback networkCallback, AbstractNetworkHost!NetworkClient.EnumRole role) {
+		super(role);
 		this.networkCallback = networkCallback;
 	}
 
-	// used by the hub
 	public final void sendMessageToClient(NetworkClient client, BitstreamDestination payloadBitstream) {
 		import distributed.DistributedHelpers : composeMessageWithLengthPrefix;
 
@@ -243,6 +258,10 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 			networkCallback.networkCallbackAgentCreateContext(client, structure);
 		}
 
+		void clientMessageAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure) {
+			networkCallback.networkCallbackAgentConnectToServiceResponse(client, structure);
+		}
+
 
 		void deserializeMessage(BitstreamReader!BitstreamSource bitstreamReaderOfMessage) {
 			// compiletime
@@ -315,6 +334,7 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 				DispatchEntry("AGENTIDENTIFICATIONHANDSHAKE", "AgentIdentificationHandshake"),
 				DispatchEntry("REGISTERSERVICES", "RegisterServices"),
 				DispatchEntry("AGENTCONNECTTOSERVICE", "AgentConnectToService"),
+				DispatchEntry("AGENTCONNECTTOSERVICERESPONSE", "AgentConnectToServiceResponse"),
 				DispatchEntry("AGENTCREATECONTEXT", "AgentCreateContext"),
 				]));
 
@@ -332,8 +352,6 @@ class NetworkServer : AbstractNetworkServer!NetworkClient {
 		BitstreamReader!BitstreamSource bitstreamReaderOfMessage = new BitstreamReader!BitstreamSource(bitstreamSourceOfMessage);
 
 		deserializeMessage(bitstreamReaderOfMessage);
-
-		writeln("NetworkServer.dispatchMessageFromClient()");
 
 		client.currentMessageWithBuffer.length = 0;
 	}
@@ -630,11 +648,12 @@ interface INetworkCallback {
 	void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure);
 	void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure);
 	void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure);
+	void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure);
 }
 
 class Hub : INetworkCallback {
 	public final this() {
-		networkServer = new NetworkServer(this);
+		networkHost = new NetworkHost(this, AbstractNetworkHost!NetworkClient.EnumRole.SERVER);
 	}
 	
 
@@ -646,12 +665,12 @@ class Hub : INetworkCallback {
 	}
 
 	public final void startServer(ushort port) {
-		networkServer.start(port);
+		networkHost.startServer(port);
 		reportHub("server started, waiting");
 	}
 
 	public final void networkMainloopIteration() {
-		networkServer.iteration();
+		networkHost.iteration();
 	}
 
 	// called by NetworkServer
@@ -754,7 +773,7 @@ class Hub : INetworkCallback {
 			}
 
 
-			networkServer.sendMessageToClient(client, bitstreamDestinationForPayload);
+			networkHost.sendMessageToClient(client, bitstreamDestinationForPayload);
 		}
 	}
 
@@ -780,7 +799,7 @@ class Hub : INetworkCallback {
 				internalEvent("serialisation failed!", structure, "UNKNOWN", 0, EnumVerbose.YES);
 			}
 
-			networkServer.sendMessageToClient(serviceAgentRelation.owningClientOfAgent, bitstreamDestinationForPayload);
+			networkHost.sendMessageToClient(serviceAgentRelation.owningClientOfAgent, bitstreamDestinationForPayload);
 		}
 
 		void sendResponseToClient() {
@@ -797,7 +816,7 @@ class Hub : INetworkCallback {
 				internalEvent("serialisation failed!", structure, "UNKNOWN", 0, EnumVerbose.YES);
 			}
 
-			networkServer.sendMessageToClient(client, bitstreamDestinationForPayload);
+			networkHost.sendMessageToClient(client, bitstreamDestinationForPayload);
 		}
 
 
@@ -869,6 +888,10 @@ class Hub : INetworkCallback {
 		sendResponseToClient();
 	}
 
+	final override void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure) {
+		internalEvent("called, ignored because in role \"Hub\"", structure, "UNKNOWN", 0);
+	}
+
 	enum EnumVerbose : bool {
 		NO,
 		YES,
@@ -886,8 +909,7 @@ class Hub : INetworkCallback {
 
 	protected ServiceRegister serviceRegister = new ServiceRegister();
 
-	protected NetworkServer networkServer;
-
+	protected NetworkHost networkHost;
 }
 
 
