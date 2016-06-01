@@ -12,9 +12,20 @@ class Tracer {
 
 		if( verbose == EnumVerbose.YES ) {
 			import std.format : format;
-			// TODO
-			//reportError(EnumErrorType.NONCRITICAL, format("-verbose %s line %s : %s", sourceFunction, sourceLine, humanreadableDescription));
+			reportError(EnumErrorType.NONCRITICAL, format("-verbose %s line %s : %s", sourceFunction, sourceLine, humanreadableDescription));
 		}
+	}
+
+
+
+
+	protected enum EnumErrorType {
+		NONCRITICAL
+	}
+
+	protected final void reportError(EnumErrorType errorType, string message) {
+		import std.stdio : writeln;
+		writeln("[ERROR] noncritical: ", message);
 	}
 }
 
