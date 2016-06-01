@@ -450,16 +450,39 @@ class RegisteredService {
 }*/
 
 
-enum EnumAgentServiceState {
-	NOTCREATED, // only for FSM
-	USABLE,
-	RELOCATIONPENDING,
-}
 
+
+import misc.FiniteStateMachine;
 
 // The state of the service used by an agent
 class AgentServiceContext {
-	EnumAgentServiceState serviceState = EnumAgentServiceState.NOTCREATED;
+	enum EnumAgentServiceContextState {
+		NOTCREATED = 0, // only for FSM, must be zero!
+		USABLE,
+		RELOCATIONPENDING,
+	}
+
+	enum EnumAgentServiceContextFsmSignal {
+		NOTCREATED_TO_USABLE // just for init
+	}
+
+	public final this() {
+		initFsm();
+	}
+
+	protected final void initFsm() {
+		ServiceStateFsmType.StateTransitions[EnumAgentServiceContextState] transitionTable;
+		transitionTable[EnumAgentServiceContextState.NOTCREATED].next[EnumAgentServiceContextFsmSignal.NOTCREATED_TO_USABLE] = EnumAgentServiceContextState.USABLE;
+
+		serviceStateFsm = ServiceStateFsmType.make(transitionTable);
+		serviceStateFsm.signal(EnumAgentServiceContextFsmSignal.NOTCREATED_TO_USABLE); // init to USABLE
+	}
+
+	ServiceStateFsmType serviceStateFsm;
+
+	//EnumAgentServiceContextState serviceState = EnumAgentServiceContextState.NOTCREATED;
+
+	alias FiniteStateMachine!(EnumAgentServiceContextState, EnumAgentServiceContextFsmSignal) ServiceStateFsmType;
 }
 
 // context of a client/Agent which uses a service
