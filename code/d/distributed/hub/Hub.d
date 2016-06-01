@@ -450,6 +450,33 @@ class RegisteredService {
 }*/
 
 
+enum EnumAgentServiceState {
+	NOTCREATED, // only for FSM
+	USABLE,
+	RELOCATIONPENDING,
+}
+
+
+// The state of the service used by an agent
+class AgentServiceContext {
+	EnumAgentServiceState serviceState = EnumAgentServiceState.NOTCREATED;
+}
+
+// context of a client/Agent which uses a service
+class ServiceAgentContextRelation {
+	protected final this() {
+	}
+
+	public final this(NetworkClient networkClient) {
+		this.networkClient = networkClient;
+	}
+
+	NetworkClient networkClient;
+
+	AgentServiceContext[] openContexts;
+}
+
+
 // holds information about the Agent client which provides/owns the service and its user Agent clients
 class ServiceAgentRelation {
 	protected final this() {
@@ -466,7 +493,7 @@ class ServiceAgentRelation {
 	ServiceCapabilities capabilities;
 	ContractInformation contract;
 
-	NetworkClient[] connectedAgents; // which agent clients are connected to the service?
+	ServiceAgentContextRelation[] serviceAgentContextRelations; // which contexts are open for the Agent and in which state are they?
 }
 
 
@@ -618,7 +645,7 @@ class Hub {
 				bool versionMatches = isVersionAccepted(iterationVersion);
 				if( versionMatches ) {
 					void connect(uint version_) {
-						service.serviceAgentRelationsByVersion[version_][$].connectedAgents ~= client;
+						service.serviceAgentRelationsByVersion[version_][$].serviceAgentContextRelations ~= new ServiceAgentContextRelation(client);
 						connectSuccess = true;
 					}
 
