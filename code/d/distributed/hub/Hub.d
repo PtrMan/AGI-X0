@@ -355,7 +355,7 @@ class Hub : INetworkCallback, IReport {
 				if( versionMatches ) {
 					void connect(uint version_) {
 						// TODO< selection strategy / load balancing >
-						service.serviceAgentRelationsByVersion[version_][$].serviceAgentContextRelations ~= new ServiceAgentContextRelation(client);
+						service.serviceAgentRelationsByVersion[version_][$-1].serviceAgentContextRelations ~= new ServiceAgentContextRelation(client);
 						connectSuccess = true;
 					}
 
@@ -459,7 +459,7 @@ class Hub : INetworkCallback, IReport {
 			bool versionFound = providedVersions.canFind(structure.locator.version_);
 			if( versionFound ) {
 				// TODO< selection strategy / load balancing >
-				ServiceAgentRelation serviceAgentRelation = service.serviceAgentRelationsByVersion[structure.locator.version_][$];
+				ServiceAgentRelation serviceAgentRelation = service.serviceAgentRelationsByVersion[structure.locator.version_][$-1];
 
 				void locateServiceAgentContextRelationAndAddNewContextToIt(out bool success) {
 					success = false;
