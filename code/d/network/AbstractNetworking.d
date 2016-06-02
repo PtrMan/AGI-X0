@@ -143,7 +143,7 @@ abstract class AbstractNetworkHost(ClientType : AbstractNetworkClient) {
 
 		ptrdiff_t receiveResult = client.socket.receive(buffer);
 		if( receiveResult == -1 ) {
-			if( Socket.ERROR == -1 ) {
+			if( Socket.ERROR == -1 /* on windows */ ) {
 				// socket was closed
 				socketClosed = true;
 				return;
