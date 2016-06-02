@@ -1,9 +1,23 @@
 module misc.TracingLogging;
 
+interface IReport {
+	enum EnumErrorType {
+		NONCRITICAL
+	}
+
+	void reportError(EnumErrorType errorType, string message);
+
+	void report(string prefix, string message);
+}
+
 class Tracer {
 	enum EnumVerbose : bool {
 		NO,
 		YES,
+	}
+
+	final this(IReport report) {
+		this.report = report;
 	}
 
 	// sends an internal event to an eventstore or logs it or whatever
@@ -12,20 +26,10 @@ class Tracer {
 
 		if( verbose == EnumVerbose.YES ) {
 			import std.format : format;
-			reportError(EnumErrorType.NONCRITICAL, format("-verbose %s line %s : %s", sourceFunction, sourceLine, humanreadableDescription));
+			report.reportError(IReport.EnumErrorType.NONCRITICAL, format("-verbose %s line %s : %s", sourceFunction, sourceLine, humanreadableDescription));
 		}
 	}
 
-
-
-
-	protected enum EnumErrorType {
-		NONCRITICAL
-	}
-
-	protected final void reportError(EnumErrorType errorType, string message) {
-		import std.stdio : writeln;
-		writeln("[ERROR] noncritical: ", message);
-	}
+	protected IReport report;
 }
 

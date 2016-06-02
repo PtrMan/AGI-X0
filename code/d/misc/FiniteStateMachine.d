@@ -2,6 +2,10 @@ module misc.FiniteStateMachine;
 
 class FiniteStateMachine(StateType, SignalType) {
 	static class StateTransitions {
+		final this(StateType[SignalType] next) {
+			this.next = next;
+		}
+
 		public StateType[SignalType] next;
 	}
 

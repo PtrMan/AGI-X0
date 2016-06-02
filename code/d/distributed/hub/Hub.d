@@ -150,7 +150,7 @@ class AgentServiceContext {
 
 	//EnumAgentServiceContextState serviceState = EnumAgentServiceContextState.NOTCREATED;
 
-	alias FiniteStateMachine!(EnumAgentServiceContextState, EnumAgentServiceContextFsmSignal) ServiceStateFsmType;
+	protected alias FiniteStateMachine!(EnumAgentServiceContextState, EnumAgentServiceContextFsmSignal) ServiceStateFsmType;
 }
 
 // context of a client/Agent which uses a service
@@ -263,30 +263,17 @@ class ServiceRegister {
 	protected Service[string] registeredServices;
 }
 
-/*
-enum EnumErrorType {
-	NONCRITICAL
-}
-
-void reportError(EnumErrorType errorType, string message) {
-	writeln("[ERROR] noncritical: ", message);
-}
-
-void report(string prefix, string message) {
-	writeln("[", prefix, "] ", message);
-}*/
 
 
 import misc.TracingLogging;
 
-class Hub : INetworkCallback {
+class Hub : INetworkCallback, IReport {
 	public final this() {
-		Tracer tracer = new Tracer();
+		tracer = new Tracer(this);
 		networkHost = new NetworkHost(this, AbstractNetworkHost!NetworkClient.EnumRole.SERVER, tracer);
 	}
 	
 
-	
 
 	protected final void reportHub(string message) {
 		
@@ -302,13 +289,17 @@ class Hub : INetworkCallback {
 		networkHost.iteration();
 	}
 
-	// called by NetworkServer
+	//////////////////////////////
+	// implement interface INetworkCallback
+	
 	public final override void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure) {
-		tracer.internalEvent("called with...", structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
+		tracer.internalEvent("called with...", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 
 		foreach( iterationServiceDescriptor; structure.service ) {
-			tracer.internalEvent(format("... locator.name=%s, locator.version=%s", iterationServiceDescriptor.locator.name, iterationServiceDescriptor.locator.version_), structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
+			tracer.internalEvent(format("... locator.name=%s, locator.version=%s", iterationServiceDescriptor.locator.name, iterationServiceDescriptor.locator.version_), structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 		}
+
+		scope(exit) tracer.internalEvent("exit", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 
 		// TODO< checks for blocking >
 		// TODO< check for flooding >
@@ -326,7 +317,7 @@ class Hub : INetworkCallback {
 	}
 
 	public final override void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
-		tracer.internalEvent(format("called with servicename=%s, acceptedVersions=%d, serviceVersionsAndUp=%s", structure.serviceName, structure.acceptedVersions, structure.serviceVersionsAndUp), structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
+		tracer.internalEvent(format("called with servicename=%s, acceptedVersions=%s, serviceVersionsAndUp=%s", structure.serviceName, structure.acceptedVersions, structure.serviceVersionsAndUp), structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 
 		// TODO< checks for blocking >
 		// TODO< check for flooding >
@@ -375,7 +366,7 @@ class Hub : INetworkCallback {
 			}
 		}
 
-		tracer.internalEvent(format("connectSuccess=%s, providedVersions=%s", connectSuccess, providedVersions), structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
+		tracer.internalEvent(format("connectSuccess=%s, providedVersions=%s", connectSuccess, providedVersions), structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 
 
 		// send response back
@@ -397,7 +388,7 @@ class Hub : INetworkCallback {
 				serialize(agentConnectToServiceResponse, successChained, bitstreamWriterForPayload);
 
 				if( !successChained ) {
-					tracer.internalEvent("serialisation failed!", structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
+					tracer.internalEvent("serialisation failed!", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 				}
 			}
 
@@ -407,7 +398,7 @@ class Hub : INetworkCallback {
 	}
 
 	public final override void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
-		tracer.internalEvent(format("called with locator.name=%s, locator.version=%s, requestId=%s", structure.locator.name, structure.locator.version_, structure.requestId), structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
+		tracer.internalEvent(format("called with locator.name=%s, locator.version=%s, requestId=%s", structure.locator.name, structure.locator.version_, structure.requestId), structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 
 		AgentCreateContextResponse agentCreateContextResponse;
 
@@ -425,7 +416,7 @@ class Hub : INetworkCallback {
 			serialize(message, successChained, bitstreamWriterForPayload);
 
 			if( !successChained ) {
-				tracer.internalEvent("serialisation failed!", structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
+				tracer.internalEvent("serialisation failed!", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 			}
 
 			networkHost.sendMessageToClient(serviceAgentRelation.owningClientOfAgent, bitstreamDestinationForPayload);
@@ -442,7 +433,7 @@ class Hub : INetworkCallback {
 			serialize(agentCreateContextResponse, successChained, bitstreamWriterForPayload);
 
 			if( !successChained ) {
-				tracer.internalEvent("serialisation failed!", structure, "UNKNOWN", 0, Tracer.EnumVerbose.YES);
+				tracer.internalEvent("serialisation failed!", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 			}
 
 			networkHost.sendMessageToClient(client, bitstreamDestinationForPayload);
@@ -478,7 +469,7 @@ class Hub : INetworkCallback {
 						serviceAgentContextRelation = serviceAgentRelation.findServiceAgentContextRelationByClient(client);
 					}
 					catch( ServiceAgentRelation.LookupException exception ) {
-						tracer.internalEvent("Service agent context creation failed, because client wasn't found", structure, "UNKNOWN", 0);
+						tracer.internalEvent("Service agent context creation failed, because client wasn't found", structure, __PRETTY_FUNCTION__, __LINE__);
 						return;
 					}
 
@@ -490,7 +481,7 @@ class Hub : INetworkCallback {
 
 					success = true;
 
-					tracer.internalEvent("Service agent context was successfully created", structure, "UNKNOWN", 0);
+					tracer.internalEvent("Service agent context was successfully created", structure, __PRETTY_FUNCTION__, __LINE__);
 				}
 
 				bool calleeSuccess;
@@ -508,7 +499,7 @@ class Hub : INetworkCallback {
 				agentCreateContextResponse.responseType = EnumAgentCreateContextResponseType.SERVICEFOUNDBUTWRONGVERSION;
 				agentCreateContextResponse.humanReadableError = "Service was found but version didn't match!";
 
-				tracer.internalEvent("Service was found but version didn't match!", structure, "UNKNOWN", 0);
+				tracer.internalEvent("Service was found but version didn't match!", structure, __PRETTY_FUNCTION__, __LINE__);
 			}
 		}
 
@@ -518,13 +509,25 @@ class Hub : INetworkCallback {
 	}
 
 	final override void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure) {
-		tracer.internalEvent("called, ignored because in role \"Hub\"", structure, "UNKNOWN", 0);
+		tracer.internalEvent("called, ignored because in role \"Hub\"", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
+	}
+
+
+	//////////////////////////////
+	// implement interface IReport
+	protected final override void reportError(EnumErrorType errorType, string message) {
+		report("noncritical", message);
+	}
+
+
+	protected final override void report(string prefix, string message) {
+		writeln("[", prefix, "] ", message);
 	}
 
 	
 
 	protected ServiceRegister serviceRegister = new ServiceRegister();
-	protected Tracer tracer = new Tracer();
+	protected Tracer tracer;
 
 	protected NetworkHost networkHost;
 }
