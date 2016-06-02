@@ -102,6 +102,12 @@ final class Agent : INetworkCallback {
 		agentCallbacks.agentConnectToServiceResponse(structure);
 	}
 
+	final override protected void networkClientDisconnected(NetworkClient client) {
+		tracer.internalEvent("called, finishing...", null, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
+
+		// TODO
+	}
+
 	protected NetworkHost networkHost;
 	protected IAgentCallbacks agentCallbacks;
 	protected Tracer tracer;

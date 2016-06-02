@@ -19,6 +19,8 @@ interface INetworkCallback {
 	protected void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure);
 	protected void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure);
 	protected void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure);
+
+	protected void networkClientDisconnected(NetworkClient client);
 }
 
 class NetworkClient : AbstractNetworkClient {
@@ -92,6 +94,10 @@ class NetworkHost : AbstractNetworkHost!NetworkClient {
 		}
 
 		writeln("NetworkServer.clientReceivedNewData() exit");
+	}
+
+	protected final override void clientDisconnected(NetworkClient client) {
+		networkCallback.networkClientDisconnected(client);
 	}
 
 	// gets called if a message is completed and is ready to get parsed

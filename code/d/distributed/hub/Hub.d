@@ -292,7 +292,7 @@ class Hub : INetworkCallback, IReport {
 	//////////////////////////////
 	// implement interface INetworkCallback
 	
-	public final override void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure) {
+	final override protected void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure) {
 		tracer.internalEvent("called with...", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 
 		foreach( iterationServiceDescriptor; structure.service ) {
@@ -316,7 +316,7 @@ class Hub : INetworkCallback, IReport {
 		}
 	}
 
-	public final override void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
+	final override protected void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
 		tracer.internalEvent(format("called with servicename=%s, acceptedVersions=%s, serviceVersionsAndUp=%s", structure.serviceName, structure.acceptedVersions, structure.serviceVersionsAndUp), structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 
 		// TODO< checks for blocking >
@@ -397,7 +397,7 @@ class Hub : INetworkCallback, IReport {
 		}
 	}
 
-	public final override void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
+	final override protected void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
 		tracer.internalEvent(format("called with locator.name=%s, locator.version=%s, requestId=%s", structure.locator.name, structure.locator.version_, structure.requestId), structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
 
 		AgentCreateContextResponse agentCreateContextResponse;
@@ -508,8 +508,15 @@ class Hub : INetworkCallback, IReport {
 		sendResponseToClient();
 	}
 
-	final override void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure) {
+	final override protected void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure) {
 		tracer.internalEvent("called, ignored because in role \"Hub\"", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
+	}
+
+	final override protected void networkClientDisconnected(NetworkClient client) {
+		tracer.internalEvent("called, updating...", null, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
+
+		// TODO
+
 	}
 
 

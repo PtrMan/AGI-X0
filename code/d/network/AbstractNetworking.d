@@ -53,6 +53,9 @@ abstract class AbstractNetworkHost(ClientType : AbstractNetworkClient) {
 		else {
 			int numberOfSocketsWithStatusChanges = selectResult;
 
+			import std.stdio : writeln;
+			writeln("AbstractNetworking interation(),  numberOfSocketsWithStatusChanges=", numberOfSocketsWithStatusChanges);
+
 			foreach( iStatusChange; 0..numberOfSocketsWithStatusChanges ) {
 				if( role == EnumRole.SERVER && checkReadSet.isSet(serverSocket) ) {
 					Socket clientSocket = serverSocket.accept();
@@ -65,12 +68,29 @@ abstract class AbstractNetworkHost(ClientType : AbstractNetworkClient) {
 					checkReadSet.remove(serverSocket);
 				}
 
-				foreach( iterationClient; clients ) {
+				for( uint clientI = 0; clientI < clients.length; clientI++ ) {
+					ClientType iterationClient = clients[clientI];
+
 					if( checkReadSet.isSet(iterationClient.socket) ) {
-						receiveDataOfClient(iterationClient);
+						bool socketClosed;
+						receiveDataOfClient(iterationClient, socketClosed);
 
 						checkReadSet.remove(iterationClient.socket);
+
+						if( socketClosed ) {
+							clientDisconnected(iterationClient);
+
+							import std.algorithm.mutation : remove;
+							clients = remove(clients, clientI);
+							
+							clientI--;
+							continue;
+						}
 					}
+				}
+
+				foreach( iterationClient; clients ) {
+					
 				}
 			}
 		}
@@ -116,14 +136,29 @@ abstract class AbstractNetworkHost(ClientType : AbstractNetworkClient) {
 		return clients[0];
 	}
 
-	protected final void receiveDataOfClient(ClientType client) {
+	protected final void receiveDataOfClient(ClientType client, out bool socketClosed) {
+		socketClosed = false;
+
 		ubyte[4096] buffer;
 
 		ptrdiff_t receiveResult = client.socket.receive(buffer);
 		if( receiveResult == -1 ) {
+			if( Socket.ERROR == -1 ) {
+				// socket was closed
+				socketClosed = true;
+				return;
+			}
+
 			// client hasn't received new data
 			return;
 		}
+		else if( receiveResult == 0 ) {
+			// if a read returns 0 bytes the socket closed
+			socketClosed = true;
+			return;
+		}
+
+
 
 		client.receivedQueue ~= buffer[0..receiveResult];
 
@@ -142,6 +177,8 @@ abstract class AbstractNetworkHost(ClientType : AbstractNetworkClient) {
 
 	// callback if a client has received new data
 	protected abstract void clientReceivedNewData(ClientType client);
+
+	protected abstract void clientDisconnected(ClientType client);
 
 	protected Socket serverSocket;
 	protected ClientType[] clients;
