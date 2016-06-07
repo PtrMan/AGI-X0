@@ -18,6 +18,7 @@ interface INetworkCallback {
 	protected void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure);
 	protected void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure);
 	protected void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure);
+	protected void networkCallbackAgentCreatedContext(NetworkClient client, ref AgentCreatedContext structure);
 	protected void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure);
 	protected void networkCallbackQueueMessageWithFlowControl(NetworkClient client, ref QueueMessageWithFlowControl structure);
 
@@ -122,6 +123,10 @@ class NetworkHost : AbstractNetworkHost!NetworkClient {
 			networkCallback.networkCallbackAgentCreateContext(client, structure);
 		}
 
+		void clientMessageAgentCreatedContext(NetworkClient client, ref AgentCreatedContext structure) {
+			networkCallback.networkCallbackAgentCreatedContext(client, structure);
+		}
+
 		void clientMessageAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure) {
 			networkCallback.networkCallbackAgentConnectToServiceResponse(client, structure);
 		}
@@ -204,6 +209,7 @@ class NetworkHost : AbstractNetworkHost!NetworkClient {
 				DispatchEntry("AGENTCONNECTTOSERVICE", "AgentConnectToService"),
 				DispatchEntry("AGENTCONNECTTOSERVICERESPONSE", "AgentConnectToServiceResponse"),
 				DispatchEntry("AGENTCREATECONTEXT", "AgentCreateContext"),
+				DispatchEntry("AGENTCREATEDCONTEXT", "AgentCreatedContext"),
 				DispatchEntry("QUEUEMESSAGEWITHFLOWCONTROL", "QueueMessageWithFlowControl"),
 				]));
 
