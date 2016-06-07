@@ -140,7 +140,7 @@ void deserialize(StructName, BitstreamSourceType)(ref StructName structParameter
 
    static if( isScalar ) {
       static if( traitsIsBoolean!StructName ) {
-         structParameter = bitstreamReader.getBoolean(successChained);
+         structParameter = cast(typeof(structParameter))bitstreamReader.getBoolean(successChained);
       }
       else {
          enum attributes = __traits(getAttributes, structParameter);

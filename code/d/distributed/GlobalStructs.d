@@ -13,6 +13,8 @@ enum EnumMessageType : uint16_t {
 	AGENTCREATECONTEXTRESPONSE,
 
 	AGENTCREATEDCONTEXT,
+
+	QUEUEMESSAGEWITHFLOWCONTROL
 }
 
 // Agent -> hub
@@ -22,19 +24,19 @@ struct AgentIdentificationHandshake {
 
 
 enum EnumContractServiceRequestFrequency : uint8_t {
-	NONE,
+	NONE = 1,
 	SPORADIC,
 	BULK
 }
 
 enum EnumStateful : uint8_t {
-	STATELESS,
+	STATELESS = 1,
 	PARTIAL,
 	STATEFUL
 }
 
 enum EnumLifecycle : uint8_t {
-	TESTING, // service is unstable in "alpha" under test
+	TESTING = 1, // service is unstable in "alpha" under test
 	// TODO< other ones >
 }
 
@@ -109,4 +111,26 @@ enum EnumAgentCreateContextResponseType {
 // hub->agent
 struct AgentCreatedContext {
 	uint32_t agentServiceContextId;
+}
+
+enum EnumQueueMessageType : uint8_t {
+	REQUEST = 1,
+	RESPONSE,
+	PUSH
+}
+
+enum EnumQueueAction : bool {
+	ENQUEUE = false,
+	ENQUEUERESPONSE
+}
+
+// hub->agent
+// agent->hub
+struct QueueMessageWithFlowControl {
+	uint32_t agentServiceContextId; // id of the context of the service of an agent
+	EnumQueueMessageType type;
+	EnumQueueAction queueAction;
+	bool wasEnqueued; // only valid for queueAction.ENQUEUERESPONSE
+
+	bool[] payload;
 }

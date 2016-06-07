@@ -1,122 +1,29 @@
 
-import network.Networking;
-import network.AbstractNetworking;
+//import network.Networking;
+//import network.AbstractNetworking;
 
 import misc.Guid;
 
 
 
-import distributed.GlobalStructs;
+import distributed.agent.Agent;
+
+
+/*
 import misc.Guid;
-import misc.TracingLogging;
-import misc.BitstreamDestination;
-import serialisation.BitstreamWriter;
-import misc.GenericSerializer;
-
-// TODO< move into own file >
-
-interface IAgentCallbacks {
-	protected void agentConnectToServiceResponse(AgentConnectToServiceResponse structure);
-}
-
-// common functionality of each agent
-// doesn't carry/control state >
-final class Agent : INetworkCallback {
-	final this(Tracer tracer, IAgentCallbacks agentCallbacks) {
-		networkHost = new NetworkHost(this, AbstractNetworkHost!NetworkClient.EnumRole.CLIENT, tracer);
-		this.tracer = tracer;
-		this.agentCallbacks = agentCallbacks;
-	}
-
-	final void connectAsClient(string host, ushort port) {
-		networkHost.connectAsClient(host, port);
-	}
-
-	final void update() {
-		networkHost.iteration();
-	}
-
-	public final void sendAgentIdenficationHandshake(ubyte[16] guid) {
-
-		BitstreamDestination bitstreamDestinationForPayload = new BitstreamDestination();
-		BitstreamWriter!BitstreamDestination bitstreamWriterForPayload = new BitstreamWriter!BitstreamDestination(bitstreamDestinationForPayload);
-
-		bool successChained = true;
 
 
-		bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.AGENTIDENTIFICATIONHANDSHAKE, 16, successChained); // type of message
-		
-		{
-			AgentIdentificationHandshake agentIdentificationHandshake;
-			agentIdentificationHandshake.guid = guid;
-			serialize(agentIdentificationHandshake, successChained, bitstreamWriterForPayload);
 
-			if( !successChained ) {
-				tracer.internalEvent("serialisation failed!", agentIdentificationHandshake, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
-			}
-		}
+*/
 
 
-		networkHost.sendMessageToClient(networkHost.getClientForRoleClient(), bitstreamDestinationForPayload);
-	}
-
-	public final void sendAgentConnectToService(AgentConnectToService structure) {
-		BitstreamDestination bitstreamDestinationForPayload = new BitstreamDestination();
-		BitstreamWriter!BitstreamDestination bitstreamWriterForPayload = new BitstreamWriter!BitstreamDestination(bitstreamDestinationForPayload);
-
-		bool successChained = true;
-
-
-		bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.AGENTCONNECTTOSERVICE, 16, successChained); // type of message
-		
-		{
-			serialize(structure, successChained, bitstreamWriterForPayload);
-
-			if( !successChained ) {
-				tracer.internalEvent("serialisation failed!", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
-			}
-		}
-
-
-		networkHost.sendMessageToClient(networkHost.getClientForRoleClient(), bitstreamDestinationForPayload);
-	}
-
-	/////////////////////////////
-	// implement INetworkCallback
-	protected final override void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure) {
-		tracer.internalEvent("called, ignored because in role \"Agent\"", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
-	}
-
-	protected final override void networkCallbackAgentConnectToService(NetworkClient client, ref AgentConnectToService structure) {
-		tracer.internalEvent("called, ignored because in role \"Agent\"", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
-	}
-
-	protected final override void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
-		tracer.internalEvent("called, ignored because in role \"Agent\"", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
-	}
-
-	protected final override void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure) {
-		tracer.internalEvent("called", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
-		scope(exit) tracer.internalEvent("exit", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
-
-		agentCallbacks.agentConnectToServiceResponse(structure);
-	}
-
-	final override protected void networkClientDisconnected(NetworkClient client) {
-		tracer.internalEvent("called, finishing...", null, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
-
-		// TODO
-	}
-
-	protected NetworkHost networkHost;
-	protected IAgentCallbacks agentCallbacks;
-	protected Tracer tracer;
-}
 
 
 import std.stdio : writeln;
 
 import misc.FiniteStateMachine;
+import misc.TracingLogging;
+import distributed.GlobalStructs;
 
 final class UsageTestAgent : IAgentCallbacks, IReport {
 	final this() {
@@ -210,7 +117,7 @@ final class UsageTestAgent : IAgentCallbacks, IReport {
 			// not handled here
 			// see agentConnectToServiceResponse()
 		}
-
+		
 		
 	}
 
@@ -229,13 +136,17 @@ final class UsageTestAgent : IAgentCallbacks, IReport {
 		writeln("[info]    connectSuccess  : ", structure.connectSuccess);
 		
 		if( structure.connectSuccess ) {
-			writeln("[succes]   connecting to service was successful");
+			writeln("[success]   connecting to service was successful");
 
 			// TODO< use service >
 		}
 		else {
 			writeln("[error]   failed -> keep in state");
 		}
+	}
+
+	protected override void queueMessageWithFlowControl(ref QueueMessageWithFlowControl structure) {
+		// TODO
 	}
 
 	//////////////////////////////
@@ -281,7 +192,7 @@ void main() {
 	
 
 
-	// TODO< create context >
+	// TODO< create context by using context and use service >
 
 
 	for(;;) {
