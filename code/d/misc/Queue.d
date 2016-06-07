@@ -31,9 +31,6 @@ mixin template QueueConcurrencyStrategy_Mutex() {
 	protected Mutex protectedMutex;
 }
 
-
-import Array;
-
 mixin template QueueStorageStrategy_GcArray(Type) {
 	protected final void storage_insert(Type data) {
 		protectedArray.length = protectedArray.length + 1;
@@ -41,15 +38,21 @@ mixin template QueueStorageStrategy_GcArray(Type) {
 	}
 
 	protected final void storage_peek(out bool success, out Type element) {
+		import std.algorithm.mutation : remove;
+
 		if( protectedArray.length == 0 ) {
 			success = false;
 			return;
 		}
 
 		element = protectedArray[0];
-		protectedArray = removeAt(protectedArray, 0);
+		protectedArray = remove(protectedArray, 0);
 
 		success = true;
+	}
+
+	protected final size_t storage_size() {
+		return protectedArray.length;
 	}
 
 	protected final bool storage_isEmpty() {
@@ -130,6 +133,13 @@ mixin template QueueBehavior(Type) {
 		concurrency_lock();
 		storage_peek(success, element);
 		concurrency_unlock();
+	}
+
+	public final @property size_t length() {
+		concurrency_lock();
+		size_t result = storage_size();
+		concurrency_unlock();
+		return result;
 	}
 }
 
