@@ -1,22 +1,6 @@
-
-//import network.Networking;
-//import network.AbstractNetworking;
-
 import misc.Guid;
-
-
 
 import distributed.agent.Agent;
-
-
-/*
-import misc.Guid;
-
-
-
-*/
-
-
 
 
 import std.stdio : writeln;
@@ -57,7 +41,7 @@ final class UsageTestAgent : IAgentCallbacks, IReport {
 
 
 
-	final void connectAsClient(string host, ushort port) {
+	protected final void connectAsClient(string host, ushort port) {
 		agent.connectAsClient(host, port);
 	}
 
@@ -117,7 +101,7 @@ final class UsageTestAgent : IAgentCallbacks, IReport {
 			// not handled here
 			// see agentConnectToServiceResponse()
 		}
-		
+
 		
 	}
 

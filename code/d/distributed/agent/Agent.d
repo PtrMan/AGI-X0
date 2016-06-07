@@ -11,6 +11,7 @@ import serialisation.BitstreamWriter;
 
 interface IAgentCallbacks {
 	protected void agentConnectToServiceResponse(AgentConnectToServiceResponse structure);
+	protected void agentCreatedContext(ref AgentCreatedContext structure);
 
 	protected void queueMessageWithFlowControl(ref QueueMessageWithFlowControl structure);
 }
@@ -77,6 +78,27 @@ final class Agent : INetworkCallback {
 		networkHost.sendMessageToClient(networkHost.getClientForRoleClient(), bitstreamDestinationForPayload);
 	}
 
+	public final void sendRegisterServices(RegisterServices structure) {
+		BitstreamDestination bitstreamDestinationForPayload = new BitstreamDestination();
+		BitstreamWriter!BitstreamDestination bitstreamWriterForPayload = new BitstreamWriter!BitstreamDestination(bitstreamDestinationForPayload);
+
+		bool successChained = true;
+
+
+		bitstreamWriterForPayload.addUint__n(cast(uint)EnumMessageType.REGISTERSERVICES, 16, successChained); // type of message
+		
+		{
+			serialize(structure, successChained, bitstreamWriterForPayload);
+
+			if( !successChained ) {
+				tracer.internalEvent("serialisation failed!", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
+			}
+		}
+
+
+		networkHost.sendMessageToClient(networkHost.getClientForRoleClient(), bitstreamDestinationForPayload);
+	}
+
 	/////////////////////////////
 	// implement INetworkCallback
 	protected final override void networkCallbackRegisterServices(NetworkClient networkClient, ref RegisterServices structure) {
@@ -89,6 +111,13 @@ final class Agent : INetworkCallback {
 
 	protected final override void networkCallbackAgentCreateContext(NetworkClient client, ref AgentCreateContext structure) {
 		tracer.internalEvent("called, ignored because in role \"Agent\"", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
+	}
+
+	protected final override void networkCallbackAgentCreatedContext(NetworkClient client, ref AgentCreatedContext structure) {
+		tracer.internalEvent("called", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
+		scope(exit) tracer.internalEvent("exit", structure, __PRETTY_FUNCTION__, __LINE__, Tracer.EnumVerbose.YES);
+
+		agentCallbacks.agentCreatedContext(structure);
 	}
 
 	protected final override void networkCallbackAgentConnectToServiceResponse(NetworkClient client, ref AgentConnectToServiceResponse structure) {
