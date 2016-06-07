@@ -8,6 +8,21 @@ class BitstreamSource {
 		mask = 1;
 	}
 
+	public final void resetToArray(bool[] boolArray) {
+		this.array.length = (boolArray.length / 8) + (((boolArray.length % 8) == 0) ? 0 : 1);
+		
+		// TODO< set to zero >
+
+		size_t i = 0;
+		foreach( iterationBool; boolArray ) {
+			if( iterationBool ) {
+				this.array[i/8] |= (1 << (i % 8));
+			}
+
+			i++;
+		}
+	}
+
 	public final bool readNextBit() {
 		bool result = (array[arrayByteIndex] & mask) != 0;
 		mask <<= 1;
