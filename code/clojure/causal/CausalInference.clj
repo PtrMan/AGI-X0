@@ -562,21 +562,11 @@
 					  indicesOfMarkedNodes (extractNodeIndicesOfNodesMarkedWith newNonoverlappingNodeMetadata 1)
 
 					  ; set mask to 4 for the indicesOfMarkedNodes to get the new mask
-					  ; TODO TODO TODO
+					  newNodeMetadata (update-in newNonoverlappingNodeMetadata indicesOfMarkedNodes 4)
 
-					  ])
-
-
-				)
-
-
-
-
-		; TODO< store remapping for tracing and returning, so we can reconstruct the nodes later >
-
-		)
-
-	)
+					  ; store remapping for tracing and returning, so we can reconstruct the nodes later
+					  newResultClusterInformation (conj resultclusterInformation {:nodeIndices indicesOfMarkedNodes})]
+					(recur currentFoldedDag newNodeMetadata newResultClusterInformation (inc clusterI))))))
 
 
 
@@ -603,8 +593,9 @@
 ; "noClusteringLimit" how many nodes does the network contain that clusterings are tried?  (set this to 0 to always cluster to test the clustering algorithm)
 ; "permutationMaxLoops" how many times should a permutation be tried for the nonclustering case (simple combinatorial algorithm)
 ; "maxNumberOfClusteringsToTry" how many maximal clusterings should be tried
+; "numberOfOverlappingTries" how many tries should be done for finding a nonoverlapping cluster
 
-(defn dagRecursivlyFindBestReordering [dag  noClusteringLimit  permutationMaxLoops  maxNumberOfClusteringsToTry]
+(defn dagRecursivlyFindBestReordering [dag  noClusteringLimit permutationMaxLoops maxNumberOfClusteringsToTry numberOfOverlappingTries]
 	(let [
 		numberOfElementsInDag (count dag)
 		numberOfElementsInDagBelowClusteringLimit (< numberOfElementsInDag noClusteringLimit)
@@ -636,7 +627,7 @@
 					numberOfClusteringsToTry maxNumberOfClusteringsToTry ; we set it to the maximal value because we don't have jet any heuristic to choose it based on the nodecount
 
 					; do the number of tries to create clusters
-					clusterInformation (dagTryToCreateNClusters dag numberOfClusteringsToTry)
+					clusterInformation (dagTryToCreateNClusters dag numberOfClusteringsToTry numberOfOverlappingTries)
 
 					]
 						; TODO< optimize each cluster by calling this function "dagRecursivlyFindBestReordering" recursivly >
