@@ -1,6 +1,24 @@
 (use 'clojure.set)
 
 
+; from http://stackoverflow.com/questions/8641305/find-index-of-an-element-matching-a-predicate-in-clojure
+(defn indices [pred coll]
+	(into [] (keep-indexed #(when (pred %2) %1) coll)))
+
+; nodemetadata
+; ============
+; is an array for the metadata of the dag
+; the values are integers where the information is bitwise stored
+; bit index 0 : marked
+; bit index 1 : is end
+; bit index 2 : special marking
+
+; nodes are folded until an isEnd node is hit
+; folding is just the grouping of nodes into one node and create another level with an entry node, the nodes which got folded and an exit node
+; this is possible and required to preserve invariants and accelerate the algorithm with an divide and conquer approach
+
+
+
 
 (defn appendIfNotInThere [list toAppending]
 	(into [] (union (into #{} list) (into #{} toAppending))))
@@ -11,6 +29,11 @@
 		outLinksOfDagEntry (get dagEntry :outLinks)
 		]
 			(into [] (map (fn [link] (get link :target)) outLinksOfDagEntry))))
+
+
+; modernized
+(defn dagGetOutIndices [dag nodeIndex]
+	(translateOutLinksToOutIndicesAsList (nth dag nodeIndex)))
 
 ; works
 ;(defn getSetOfAllFollowers [dag index]
@@ -33,9 +56,33 @@
 
 
 
+
+
+
+; works
 ; modernized
-(defn dagGetOutIndices [dag nodeIndex]
-	(translateOutLinksToOutIndicesAsList (nth dag nodeIndex)))
+; test
+; (markNodesIntern [{:outLinks #{ {:target 1 :strength 1}} :inWeight 1 :outWeight 1 }  {:outLinks #{} :inWeight 1 :outWeight 1 }] [0 0] [0])
+(defn markNodesIntern [dag nodemetadata openlist]
+	(if (== (count openlist) 0)
+		nodemetadata
+		(let [nodeindex (first openlist)
+					openlist1 (rest openlist)
+
+					typeOfNode (nth nodemetadata nodeindex)
+
+					typeOfNodeIsMarked (== (bit-and 1 typeOfNode) 1)
+					typeOfNodeIsEnd (== (bit-and 2 typeOfNode) 2)
+					endreached (or typeOfNodeIsMarked typeOfNodeIsEnd)
+					]
+			(if endreached
+				nodemetadata
+				(let
+					[newNodeMetadata (bit-or 1 typeOfNode)
+					 nodemetadata1 (assoc nodemetadata nodeindex newNodeMetadata)
+					 openlist2 (appendIfNotInThere openlist1 (dagGetOutIndices dag nodeindex))]
+					(recur dag nodemetadata1 openlist2))))))
+
 
 
 
@@ -47,9 +94,6 @@
 
 ; marks this and all following nodes with bit 1 until it reaches bit 2 or no follower is found
 
-; bit 2 : was marked as end
-
-
 (defn markNodes [dag nodemetadata entryIndex]
 	(markNodesIntern dag nodemetadata [entryIndex]))
 
@@ -57,30 +101,13 @@
 ;	(let [nodemetadata (get :nodemetadata nodemetadata)]
 ;		{:nodemetadata (markFirstInOpenlistIntern dag nodemetadata openlist)}))
 
-; works
-; modernized
-; test
-; (markNodesIntern [{:outLinks #{ {:target 1 :strength 1}} :inWeight 1 :outWeight 1 }  {:outLinks #{} :inWeight 1 :outWeight 1 }] [0 0] [0])
-(defn markNodesIntern [dag nodemetadata openlist]
-	(if (== (count openlist) 0)
-		nodemetadata
-		(let [nodeindex (first openlist)
-		      openlist1 (rest openlist)
 
-		      typeOfNode (nth nodemetadata nodeindex)
 
-		      typeOfNodeIsMarked (== (bit-and 1 typeOfNode) 1)
-		      typeOfNodeIsEnd (== (bit-and 2 typeOfNode) 2)
-			  endreached (or typeOfNodeIsMarked typeOfNodeIsEnd)
-			  ]
-			(if endreached
-				nodemetadata
-				(let
-					[newNodeMetadata (bit-or 1 typeOfNode)
-					 nodemetadata1 (assoc nodemetadata nodeindex newNodeMetadata)
-					 openlist2 (appendIfNotInThere openlist1 (dagGetOutIndices dag nodeindex))]
-					 	(recur dag nodemetadata1 openlist2))))))
 
+; getRandomFollower
+
+(defn dagGetRandomFollowerIndex [dag entryIndex]
+	(rand-nth (into [] (getSetOfAllFollowers dag entryIndex))))
 
 ; marks a random following node as 2 (marked as end)
 
@@ -92,10 +119,6 @@
 		]
 			{:nodemetadata (assoc nodemetadata followerIndexToMark newMetadataValue)}))
 
-; getRandomFollower
-
-(defn dagGetRandomFollowerIndex [dag entryIndex]
-	(rand-nth (into [] (getSetOfAllFollowers dag entryIndex))))
 
 ; seems to work
 ; (markNAsEnd [{:outIndices #{1}} {:outIndices #{}}] [0 0] 0 1)
@@ -227,9 +250,6 @@
 					outLinksOfNode (get dagEntry :outLinks)
 					outLinksOfNodeAsList (into [] outLinksOfNode)
 
-					inWeightOfNode (get dagEntry :inWeight)
-					outWeightOfNode (get dagEntry :outWeight)
-
 					renamedOutLinksOfNode (into #{} (accumulateStrengthsOfLinksList (dagHelperTranslateLinksAsList outLinksOfNodeAsList mapping newCreatedIndex)))
 					]
 						(assoc dagEntry :outLinks renamedOutLinksOfNode)))
@@ -281,26 +301,6 @@
 (defn dagCollapseByMapping [dag mapping]
 	(filterByCollapsed dag mapping (fn [collapsed] (not collapsed))))
 
-	;(let [
-	;	colapsedFn (fn)
-
-	;	predicateFn
-	;		(fn [dictWithDagElementAndIndex]
-	;			(let [
-	;				index1 (get dictWithDagElementAndIndex :index)
-	;				collapsed (dagHelperIsDagElementCollapsed mapping index1)
-	;				]
-	;					(not collapsed)))
-
-	;	extractDagElementFn
-	;		(fn [dict] (get dict :dagElement))
-
-	;	zipFn
-	;		(fn [dagElement index] {:index index :dagElement dagElement})
-
-	;	indices (take (count dag) (iterate inc 0))
-	;	]
-	;		(map extractDagElementFn (filter predicateFn (map zipFn dag indices)))))
 
 
 
@@ -314,12 +314,12 @@
 ; modernized
 ; works
 ; test
-;(dagCalcColapsedNode
+;(dagCalcCollapsedNode
 ;			[{:outLinks #{ {:target 1 :strength 1} {:target 2 :strength 1} } :inWeight 1 :outWeight 1 }  {:outLinks #{} :inWeight 1 :outWeight 1 } {:outLinks #{} :inWeight 1 :outWeight 1 } {:outLinks #{} :inWeight 1 :outWeight 1 } {:outLinks #{} :inWeight 1 :outWeight 1 }] 
 ;			{ 0 {:renaming :inGraph  :renamingIndex 0}    1 {:renaming :collapsed}     2 {:renaming :collapsed}    3 {:renaming :collapsed }     4 {:renaming :collapsed}   }
 ;			1
 ;     )
-(defn dagCalcColapsedNode [dag mapping newCreatedIndex]
+(defn dagCalcCollapsedNode [dag mapping newCreatedIndex]
 	(let [
 		rawNotTranslatedDagNodesWhichGotCollapsed (filterByCollapsed dag mapping (fn [collapsed] collapsed))
 
@@ -373,7 +373,7 @@
 		colapsedDag (dagCollapseByMapping dag mapping)
 		remappedColapsedDag (remappingDag colapsedDag mapping newCreatedIndex)
 
-		colapsedNodeWithRemapping (dagCalcColapsedNode dag mapping newCreatedIndex)
+		colapsedNodeWithRemapping (dagCalcCollapsedNode dag mapping newCreatedIndex)
 		]
 			(concat remappedColapsedDag [colapsedNodeWithRemapping])))
 
@@ -391,7 +391,6 @@
 (defn arrayExcept [array index]
 	(let [
 		lengthOfArray (count array)
-		lengthOfLastPart (- lengthOfArray index 1)
 
 		firstPart (subvec array 0 index)
 		lastPart (subvec array (+ index 1) lengthOfArray)
@@ -475,8 +474,6 @@
 								linkStrength (get link :strength)
 								]
 									(* linkStrength (- targetIndex dagIndex))))
-					
-					indices (take (count dag) (iterate inc 0))
 					]
 						(reduce + (map calcEnergyOfLinkFn (into [] (get dagEntry :outLinks))))))
 
@@ -496,16 +493,84 @@
 
 
 
+; helper
+(defn markRandomFollowerAsEndAndfill [dag nodemetadata entryIndex]
+	(let [
+		  endMarkedNodeMetadataAssoc (markRandomFollowerAsEnd dag nodemetadata entryIndex)
+		  endMarkedNodeMetadata (get endMarkedNodeMetadataAssoc :nodemetadata)
+		  result (markNodes dag endMarkedNodeMetadata entryIndex)
+		  ]
+		result))
+
+; helper
+(defn checkMarkingAndSpecialMarkingOverlap [nodemetadata]
+	(complement (not-any? #(== (bit-and 5 %) 5) nodemetadata)))
+
+
+; helper
+; tries to find a nonoverlapping marking of a group of nodes
+; a overlapping is the case if bit 2 is set and bit 0 is set for the same node
+
+; returns
+; {
+;  :foundNonoverlapping <bool>
+;  :nodemetadata
+; }
+(defn tryFindNonoverlappingMarking [dag nodemetadata numberOfTries]
+	(let [currentIteration 0]
+		(if (> currentIteration numberOfTries)
+			{:foundNonoverlapping false}
+			(let [entryIndex (rand-int (count dag))
+				  proposedNodeMetadata (markRandomFollowerAsEndAndfill dag nodemetadata entryIndex)
+				  overlapWithSpecialMarking (checkMarkingAndSpecialMarkingOverlap proposedNodeMetadata)]
+				(if overlapWithSpecialMarking
+					(recur (+ 1 currentIteration))
+					{:foundNonoverlapping true :nodemetadata proposedNodeMetadata})))))
+
+; helper for "dagTryToCreateNClusters"
+; returns list of indices of nodes where the nodemetadata is true with the mask (for all bits in the mask)
+(defn extractNodeIndicesOfNodesMarkedWith [nodemetadata mask]
+	(indices #(== (bit-and mask %) mask) nodemetadata))
+
+; helper for "dagTryToCreateNClusters"
+(defn createEmptyMetadataForDag [dag]
+	(repeat (count dag) 0))
 
 
 
 
 ; helper function for "dagRecursivlyFindBestReordering"
 
-(defn dagTryToCreateNClusters [dag numberOfClusteringsToTry]
-	(loop [currentFoldedDag dag  currentNodeMetadata (TODO create and call function "createEmptyMetadataForDag")]
+; returns cluster information in the form of a list of
+; { :nodeIndices <indices of input dag nodes which are in the cluster>
+; }
 
-		; TODO< try to find a mapping which doesn't fold the anready folded nodes >
+(defn dagTryToCreateNClusters [dag numberOfClusteringsToTry numberOfOverlappingTries]
+	(loop [currentFoldedDag dag
+		   currentNodeMetadata (createEmptyMetadataForDag dag)
+		   resultclusterInformation []
+		   clusterI 0
+		   ]
+
+		; try to find a mapping which doesn't fold the already folded nodes
+		(let [tryFindNonoverlappingMarkingAssoc (tryFindNonoverlappingMarking dag currentNodeMetadata numberOfOverlappingTries)
+			  tryFindNonoverlappingMarkingWasSuccessful (get tryFindNonoverlappingMarkingAssoc :foundNonoverlapping)]
+			(if (not tryFindNonoverlappingMarkingWasSuccessful)
+				resultclusterInformation; return
+
+				(let [newNonoverlappingNodeMetadata (get tryFindNonoverlappingMarkingAssoc :nodemetadata)
+					  indicesOfMarkedNodes (extractNodeIndicesOfNodesMarkedWith newNonoverlappingNodeMetadata 1)
+
+					  ; set mask to 4 for the indicesOfMarkedNodes to get the new mask
+					  ; TODO TODO TODO
+
+					  ])
+
+
+				)
+
+
+
 
 		; TODO< store remapping for tracing and returning, so we can reconstruct the nodes later >
 
@@ -539,7 +604,7 @@
 ; "permutationMaxLoops" how many times should a permutation be tried for the nonclustering case (simple combinatorial algorithm)
 ; "maxNumberOfClusteringsToTry" how many maximal clusterings should be tried
 
-(defn dagRecursivlyFindBestReordering [dag  noClusteringLimit  permutationMaxLoops]
+(defn dagRecursivlyFindBestReordering [dag  noClusteringLimit  permutationMaxLoops  maxNumberOfClusteringsToTry]
 	(let [
 		numberOfElementsInDag (count dag)
 		numberOfElementsInDagBelowClusteringLimit (< numberOfElementsInDag noClusteringLimit)
@@ -550,7 +615,7 @@
 				(loop [
 					currentIterationNumber 0
 					bestOrder nil
-					bestEnergy TODO inf
+					bestEnergy Double/POSITIVE_INFINITY
 					]
 					(if (>= currentIterationNumber permutationMaxLoops)
 						{:minEnergy bestEnergy :reordering bestOrder}
