@@ -1,5 +1,15 @@
 (use 'clojure.set)
+(use 'clojure.test)
 
+; tested, works
+(defn arrayExcept [array index]
+	(let [
+		  lengthOfArray (count array)
+
+		  firstPart (subvec array 0 index)
+		  lastPart (subvec array (+ index 1) lengthOfArray)
+		  ]
+		(vec (concat firstPart lastPart))))
 
 ; from http://stackoverflow.com/questions/8641305/find-index-of-an-element-matching-a-predicate-in-clojure
 (defn indices [pred coll]
@@ -109,15 +119,16 @@
 (defn dagGetRandomFollowerIndex [dag entryIndex]
 	(rand-nth (into [] (getSetOfAllFollowers dag entryIndex))))
 
-; marks a random following node as 2 (marked as end)
+; marks a node as 2 (marked as end)
+(defn markAsEnd [nodemetadata index]
+	 (let [oldMetadataValue (nth nodemetadata index)
+		   newMetadataValue (bit-or 2 oldMetadataValue)
+		   ]
+		 {:nodemetadata (assoc nodemetadata index newMetadataValue)}))
+; unittest
+(is (= (markAsEnd [0 1 0] 1) {:nodemetadata [0 3 0]})) ; bit or should be 3
+(is (= (markAsEnd [0 0 0] 1) {:nodemetadata [0 2 0]}))
 
-(defn markRandomFollowerAsEnd [dag nodemetadata entryIndex]
-	(let [
-		followerIndexToMark (dagGetRandomFollowerIndex dag entryIndex)
-		oldMetadataValue (nth nodemetadata followerIndexToMark)
-		newMetadataValue (bit-or 2 oldMetadataValue)
-		]
-			{:nodemetadata (assoc nodemetadata followerIndexToMark newMetadataValue)}))
 
 
 ; seems to work
@@ -387,15 +398,6 @@
 
 
 
-; tested, works
-(defn arrayExcept [array index]
-	(let [
-		lengthOfArray (count array)
-
-		firstPart (subvec array 0 index)
-		lastPart (subvec array (+ index 1) lengthOfArray)
-		]
-			(vec (concat firstPart lastPart))))
 
 
 ; classical old algorithm
@@ -492,20 +494,61 @@
 
 
 
-
 ; helper
-(defn markRandomFollowerAsEndAndfill [dag nodemetadata entryIndex]
+;  internal, doesn't use randomness
+(defn markRandomFollowerAsEndAndfillIntern [dag nodemetadata entryIndex markAsEndIndex]
 	(let [
-		  endMarkedNodeMetadataAssoc (markRandomFollowerAsEnd dag nodemetadata entryIndex)
+		  endMarkedNodeMetadataAssoc (markAsEnd nodemetadata markAsEndIndex)
 		  endMarkedNodeMetadata (get endMarkedNodeMetadataAssoc :nodemetadata)
 		  result (markNodes dag endMarkedNodeMetadata entryIndex)
 		  ]
 		result))
 
+(defn markRandomFollowerAsEndAndfill [dag nodemetadata entryIndex]
+	(let [
+		  markAsEndIndex (dagGetRandomFollowerIndex dag entryIndex)
+		  ]
+		(markRandomFollowerAsEndAndfillIntern dag nodemetadata entryIndex markAsEndIndex)))
+
+; UNITTEST
+;  case if the propagation is stopped
+(is (= (markRandomFollowerAsEndAndfillIntern
+		   [
+			{:outLinks #{ {:target 1 :strength 1} {:target 2 :strength 1} } :inWeight 1 :outWeight 1 }
+			{:outLinks #{ {:target 3 :strength 1} } :inWeight 1 :outWeight 1 }
+			{:outLinks #{} :inWeight 1 :outWeight 1 }
+			{:outLinks #{} :inWeight 1 :outWeight 1 }]
+		   [0 0 0 0]
+		   0
+		   1 ; markAsEndIndex
+		   )
+	   [1 2 0 0]))
+
+;  case if the propagation is not stopped
+(is (= (markRandomFollowerAsEndAndfillIntern
+		   [
+			{:outLinks #{ {:target 1 :strength 1} {:target 2 :strength 1} } :inWeight 1 :outWeight 1 }
+			{:outLinks #{ {:target 3 :strength 1} } :inWeight 1 :outWeight 1 }
+			{:outLinks #{} :inWeight 1 :outWeight 1 }
+			{:outLinks #{} :inWeight 1 :outWeight 1 }]
+		   [0 0 0 0]
+		   0
+		   2 ; markAsEndIndex
+		   )
+	   [1 1 2 1]))
+
+
+
+
+
+; TODO< write unittest >
+
 ; helper
 (defn checkMarkingAndSpecialMarkingOverlap [nodemetadata]
 	(complement (not-any? #(== (bit-and 5 %) 5) nodemetadata)))
 
+
+; TODO< extract the main algorithm without any randomness and unittest it >
 
 ; helper
 ; tries to find a nonoverlapping marking of a group of nodes
