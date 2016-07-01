@@ -196,8 +196,12 @@ namespace induction {
             public void reset() {
                 numberOfSymbols = 1;
 
-                emptyEnumerationMask = 1ul << ((int)numberOfBitsForSymbol * 1);
-                enumerationMask = 1ul << ((int)numberOfBitsForSymbol * 1);
+                setMasksForWidth(1);
+            }
+
+            private void setMasksForWidth(uint numberOfSymbols) {
+                emptyEnumerationMask = 1ul << ((int)numberOfBitsForSymbol * (int)numberOfSymbols);
+                enumerationMask = 1ul << ((int)numberOfBitsForSymbol * (int)numberOfSymbols);
                 checkEnumerationDoneMask = enumerationMask << 1;
             }
 
@@ -219,25 +223,22 @@ namespace induction {
                     // check for done mask, if true we increment the number of symbols and check for termination,
                     // if it doesn't terminate we continue the enumeration
                     if (enumerationMask == checkEnumerationDoneMask) {
-                        numberOfSymbols++;
-                        numberOfDecodedSymbols = numberOfSymbols;
-
-                        if (numberOfSymbols >= maxNumberOfSymbols) {
+                        if (numberOfSymbols > maxNumberOfSymbols) {
                             // enumeration is done
                             finished = true;
                             return;
                         }
+                        
+                        numberOfSymbols++;
+                        numberOfDecodedSymbols = numberOfSymbols;
+
 
                         //Console.WriteLine("before");
                         //Console.WriteLine("enumerationMask         ={0}", convertToBitString(enumerationMask));
                         //Console.WriteLine("emptyEnumerationMask    ={0}", convertToBitString(emptyEnumerationMask));
                         //Console.WriteLine("checkEnumerationDoneMask={0}", convertToBitString(checkEnumerationDoneMask));
 
-
-                        checkEnumerationDoneMask = checkEnumerationDoneMask << (int)numberOfBitsForSymbol;
-                        emptyEnumerationMask = emptyEnumerationMask << (int)numberOfBitsForSymbol;
-
-                        enumerationMask = emptyEnumerationMask;
+                        setMasksForWidth(numberOfSymbols);
 
                         //Console.WriteLine("after");
                         //Console.WriteLine("enumerationMask         ={0}", convertToBitString(enumerationMask));
@@ -246,6 +247,10 @@ namespace induction {
 
                         continue;
                     }
+
+                    //Console.WriteLine("numberOfDecodedSymbols  ={0}", numberOfDecodedSymbols);
+                    //Console.WriteLine("enumerationMask         ={0}", convertToBitString(enumerationMask));
+                    //Console.WriteLine("checkEnumerationDoneMask={0}", convertToBitString(checkEnumerationDoneMask));
 
                     decodeMask();
 
@@ -276,9 +281,9 @@ namespace induction {
             }
 
             private void decodeMask() {
-                ulong mask = (1ul << ((int)numberOfBitsForSymbol)) - 1;
+                ulong mask = (1ul << ((int)numberOfBitsForSymbol)) - 1ul;
                 //Console.WriteLine("mask={0}", convertToBitString(mask));
-
+                
                 for (int i = 0; i < numberOfSymbols; i++) {
                     ulong maskedOutSymbol = (enumerationMask >> (i * (int)numberOfBitsForSymbol)) & mask;
                     protectedDecodedSymbols[i] = (uint)maskedOutSymbol;
