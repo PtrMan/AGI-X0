@@ -5,9 +5,9 @@ using System.Linq;
 
 
 
-
-
-
+using execution.functional;
+using treeTransducer;
+using execution.translateFunctionalToLowlevel;
 
 
 
@@ -490,7 +490,6 @@ class TestInverseGraphicsCompressor {
 
 
 
-
 class Program {
     static void testCompactIntegerVector() {
         CompactIntegerVector compactIntegerVector = new CompactIntegerVector(4, 5);
@@ -579,6 +578,114 @@ class Program {
         int breakHere = 0;
     }
 
+    static private void testTreeTransducer() {
+        FunctionalProgramTransducerFacade transducerFacade = new FunctionalProgramTransducerFacade();
+
+        List<Rule<FunctionalProgramElement>> rules = new List<Rule<FunctionalProgramElement>>();
+        
+        {
+            FunctionalProgramElement matching = new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.BRACE));
+
+            matching.children = new List<FunctionalProgramElement>();
+            matching.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            matching.children[0].expression = "+";
+            matching.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.REWRITE_VARIABLE)));
+            matching.children[1].expression = "a";
+            matching.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.REWRITE_VARIABLE)));
+            matching.children[2].expression = "b";
+
+            FunctionalProgramElement target = new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.BRACE));
+
+            target.children = new List<FunctionalProgramElement>();
+            target.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[0].expression = "NODE";
+
+            target.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.BRACE)));
+            target.children[1].children = new List<FunctionalProgramElement>();
+            target.children[1].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[1].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[1].children[0].expression = "emit";
+            target.children[1].children[1].expression = "newinstruction";
+            
+            target.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.BRACE)));
+            target.children[2].children = new List<FunctionalProgramElement>();
+            target.children[2].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[2].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.REWRITE_VARIABLE)));
+            target.children[2].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[2].children[0].expression = "calc";
+            target.children[2].children[1].expression = "a";
+            target.children[2].children[2].expression = "aResult";
+
+            target.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.BRACE)));
+            target.children[3].children = new List<FunctionalProgramElement>();
+            target.children[3].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[3].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.REWRITE_VARIABLE)));
+            target.children[3].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[3].children[0].expression = "calc";
+            target.children[3].children[1].expression = "b";
+            target.children[3].children[2].expression = "bResult";
+
+            target.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.BRACE)));
+            target.children[4].children = new List<FunctionalProgramElement>();
+            target.children[4].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[4].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[4].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[4].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[4].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[4].children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+            target.children[4].children[0].expression = "emit";
+            target.children[4].children[1].expression = "slot1";
+            target.children[4].children[2].expression = "+";
+            target.children[4].children[2].expression = "aResult";
+            target.children[4].children[2].expression = "bResult";
+            target.children[4].children[2].expression = "RESULT";
+
+
+            rules.Add(new Rule<FunctionalProgramElement>(matching, target));
+
+
+            // TODO
+        }
+
+
+        FunctionalProgramElement apply = new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.BRACE));
+        apply.children = new List<FunctionalProgramElement>();
+        apply.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+        apply.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+        apply.children.Add(new FunctionalProgramElement(new FunctionalProgramElementType(FunctionalProgramElementType.EnumType.VARIABLE)));
+        apply.children[0].expression = "+";
+        apply.children[1].expression = "myA";
+        apply.children[2].expression = "myB";
+
+
+
+        FunctionalProgramElement translated = TreeTransducer<FunctionalProgramElement>.tryToApplyRulesRecursivly(rules, apply, transducerFacade);
+
+        /*
+        rules.Add(new Rule<TreePayload>());
+        rules[0].matching = new TreeElement<TreePayload>();
+        rules[0].matching.type = TreeElement<TreePayload>.EnumType.VALUE;
+        rules[0].matching.value = n
+
+
+        rules[0].matching.type = TreeElement<TreePayload>.EnumType.VARIABLE;
+        rules[0].matching.variable = "a";
+
+        rules[0].rewriteTarget = new TreeElement<TreePayload>();
+        rules[0].rewriteTarget.type = TreeElement<TreePayload>.EnumType.VALUE;
+        rules[0].rewriteTarget.value = new TreePayload();
+        rules[0].rewriteTarget.value.value = 5;
+
+
+        TreeElement<TreePayload> toTranslate = new TreeElement<TreePayload>();
+        toTranslate.value = new TreePayload();
+        toTranslate.value.value = 42;
+
+
+        TreeElement<TreePayload> translated = TreeTransducer<TreePayload>.tryToApplyRulesRecursivly(rules, toTranslate);
+        */
+        int debugHere = 1;
+    }
 
     
     static void Main(string[] args) {
@@ -590,11 +697,17 @@ class Program {
 
         //testCompactIntegerVector();
 
-        testInductionSymbolEnumerationContext();
+        //testInductionSymbolEnumerationContext();
 
         // induction tests
         //testBitvectorInduction(); // TODO< build unittest from this >
         //testBitvectorInductionSequence1();
+
+        testTreeTransducer();
+
+        execution.lowLevel.LowLevelCodegenTest.test();
+
+        neural.ConvolutionalTriggerNetwork.test();
     }
 }
 

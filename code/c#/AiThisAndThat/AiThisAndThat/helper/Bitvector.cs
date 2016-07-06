@@ -4,6 +4,7 @@ using System.Collections.Generic;
 class SlowBitvector {
     public List<bool> vector;
 
+    /*
     public static bool equals(SlowBitvector a, SlowBitvector b) {
         if (a.vector.Count != b.vector.Count) {
             return false;
@@ -17,6 +18,7 @@ class SlowBitvector {
 
         return true;
     }
+     */
 
     public SlowBitvector subvector(uint startIndex, uint endIndex) {
         Debug.Assert(endIndex >= startIndex, "Negative length is not valid!");

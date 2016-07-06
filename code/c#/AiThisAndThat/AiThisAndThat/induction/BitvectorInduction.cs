@@ -168,6 +168,81 @@ namespace induction {
             
         }
 
+
+
+
+        /**
+         * used to enumerte (valid) strings of symbols
+         */
+        // for testing public
+        abstract public class AbstractSymbolEnumerationContext {
+            public AbstractSymbolEnumerationContext(uint maxNumberOfSymbols) {
+                this.maxNumberOfSymbols = maxNumberOfSymbols;
+                this.numberOfSymbols = 1;
+            }
+
+            
+            public void increment(out uint numberOfDecodedSymbols, out bool finished) {
+                finished = false;
+                numberOfDecodedSymbols = numberOfSymbols;
+
+                for (;;) {
+                    // skip special strings of wildcard symbols
+                    if (shouldMaskGetSkipped()) {
+                        enumerationMask++;
+                        continue;
+                    }
+
+                    // check for done mask, if true we increment the number of symbols and check for termination,
+                    // if it doesn't terminate we continue the enumeration
+                    if (enumerationMask == checkEnumerationDoneMask) {
+                        if (numberOfSymbols > maxNumberOfSymbols) {
+                            // enumeration is done
+                            finished = true;
+                            return;
+                        }
+                        
+                        numberOfSymbols++;
+                        numberOfDecodedSymbols = numberOfSymbols;
+
+                        numberOfSymbolsChanged();
+
+                        continue;
+                    }
+
+                    decode();
+
+                    enumerationMask++;
+
+                    // check for invalid symbols and increment if this is the case
+                    if (isEnumerationMaskValid()) {
+                        continue;
+                    }
+
+
+                    return;
+                }
+            }
+
+            protected abstract void decode();
+            protected abstract bool isEnumerationMaskValid();
+            protected abstract bool shouldMaskGetSkipped();
+            protected abstract void numberOfSymbolsChanged();
+
+            protected uint maxNumberOfSymbols;
+            protected uint numberOfSymbols;
+
+            protected ulong
+                // is composed out of a bit which is on the outer left to delemit the symbol string to be matched
+                // the special value of each symbol in the symbol string is 0 (takes as many bits as "numberOfBitsForSymbol")
+                // it is called wildcard symbol
+                enumerationMask,
+
+                checkEnumerationDoneMask;
+        }
+
+
+
         /**
          * used to enumerte (valid) strings of symbols
          * zero (0) is the wildcard, which doesn't affect anything
@@ -175,7 +250,9 @@ namespace induction {
          * 
          */
         // for testing public
-        /*private*/public class SymbolEnumerationContext {
+        public class SymbolEnumerationContext : AbstractSymbolEnumerationContext {
+            private SymbolEnumerationContext(uint maxNumberOfSymbols) : base(maxNumberOfSymbols) {}
+
             public static SymbolEnumerationContext make(uint countOfSymbolsInAlphabet, uint maxNumberOfSymbols) {
                 // TODO< calc numberOfBitsForSymbol from countOfSymbols + 1
                 uint numberOfBitsForSymbol = 2;
@@ -183,9 +260,8 @@ namespace induction {
                 // if this case hits us, we have things to do to extend the algorithm to a fast bitvector
                 Debug.Assert(maxNumberOfSymbols * numberOfBitsForSymbol + 1 <= 64, "More bits are used that available in a 64-bit ulong value, aborting");
 
-                SymbolEnumerationContext result = new SymbolEnumerationContext();
+                SymbolEnumerationContext result = new SymbolEnumerationContext(maxNumberOfSymbols);
                 result.countOfSymbolsInAlphabet = countOfSymbolsInAlphabet;
-                result.maxNumberOfSymbols = maxNumberOfSymbols;
                 result.numberOfBitsForSymbol = numberOfBitsForSymbol;
                 result.protectedDecodedSymbols = new uint[maxNumberOfSymbols];
                 
@@ -205,70 +281,28 @@ namespace induction {
                 checkEnumerationDoneMask = enumerationMask << 1;
             }
 
-            public void increment(out uint numberOfDecodedSymbols, out bool finished) {
-                finished = false;
-                numberOfDecodedSymbols = numberOfSymbols;
-
-                for (;;) {
-                    //Console.WriteLine("enumerationMask         ={0}", convertToBitString(enumerationMask));
-                    //Console.WriteLine("emptyEnumerationMask    ={0}", convertToBitString(emptyEnumerationMask));
-                    //Console.WriteLine("checkEnumerationDoneMask={0}", convertToBitString(checkEnumerationDoneMask));
-                    
-                    // skip special strings of wildcard symbols
-                    if (enumerationMask == emptyEnumerationMask) {
-                        enumerationMask++;
-                        continue;
-                    }
-
-                    // check for done mask, if true we increment the number of symbols and check for termination,
-                    // if it doesn't terminate we continue the enumeration
-                    if (enumerationMask == checkEnumerationDoneMask) {
-                        if (numberOfSymbols > maxNumberOfSymbols) {
-                            // enumeration is done
-                            finished = true;
-                            return;
-                        }
-                        
-                        numberOfSymbols++;
-                        numberOfDecodedSymbols = numberOfSymbols;
-
-
-                        //Console.WriteLine("before");
-                        //Console.WriteLine("enumerationMask         ={0}", convertToBitString(enumerationMask));
-                        //Console.WriteLine("emptyEnumerationMask    ={0}", convertToBitString(emptyEnumerationMask));
-                        //Console.WriteLine("checkEnumerationDoneMask={0}", convertToBitString(checkEnumerationDoneMask));
-
-                        setMasksForWidth(numberOfSymbols);
-
-                        //Console.WriteLine("after");
-                        //Console.WriteLine("enumerationMask         ={0}", convertToBitString(enumerationMask));
-                        //Console.WriteLine("emptyEnumerationMask    ={0}", convertToBitString(emptyEnumerationMask));
-                        //Console.WriteLine("checkEnumerationDoneMask={0}", convertToBitString(checkEnumerationDoneMask));
-
-                        continue;
-                    }
-
-                    //Console.WriteLine("numberOfDecodedSymbols  ={0}", numberOfDecodedSymbols);
-                    //Console.WriteLine("enumerationMask         ={0}", convertToBitString(enumerationMask));
-                    //Console.WriteLine("checkEnumerationDoneMask={0}", convertToBitString(checkEnumerationDoneMask));
-
-                    decodeMask();
-
-                    enumerationMask++;
-
-                    // check for invalid symbols and increment if this is the case
-                    if (isInvalidSymbolPresent()) {
-                        continue;
-                    }
-
-
-                    return;
-                }
 
 
 
-                
+
+
+            protected override void decode() {
+                decodeMask();
             }
+
+            protected override bool isEnumerationMaskValid() {
+                return !isInvalidSymbolPresent();
+            }
+
+            protected override bool shouldMaskGetSkipped() {
+                return enumerationMask == emptyEnumerationMask;
+            }
+
+            protected override void numberOfSymbolsChanged() {
+                setMasksForWidth(numberOfSymbols);
+            }
+
+
 
             private bool isInvalidSymbolPresent() {
                 for (int i = 0; i < numberOfSymbols; i++) {
@@ -280,7 +314,7 @@ namespace induction {
                 return false;
             }
 
-            private void decodeMask() {
+            protected void decodeMask() {
                 ulong mask = (1ul << ((int)numberOfBitsForSymbol)) - 1ul;
                 //Console.WriteLine("mask={0}", convertToBitString(mask));
                 
@@ -298,20 +332,13 @@ namespace induction {
 
             private uint[] protectedDecodedSymbols;
 
-            private uint maxNumberOfSymbols;
+            
             private uint numberOfBitsForSymbol;
-            private uint numberOfSymbols;
+            
 
             private uint countOfSymbolsInAlphabet; // how many different symbols exist in the alphabet
 
-            private ulong
-                // is composed out of a bit which is on the outer left to delemit the symbol string to be matched
-                // the special value of each symbol in the symbol string is 0 (takes as many bits as "numberOfBitsForSymbol")
-                // it is called wildcard symbol
-                enumerationMask,
-
-                emptyEnumerationMask,
-                checkEnumerationDoneMask;
+            private ulong emptyEnumerationMask;
         }
 
         // helper for debugging

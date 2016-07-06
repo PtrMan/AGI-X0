@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using helper;
+
 // uses a propabilistic context free grammar (PCFG) for the creation of the most propable programs
 namespace Search.ProgramTree {
     class GrammarRule {
@@ -140,20 +142,6 @@ namespace Search.ProgramTree {
 
     }
 
-    // TODO< move to utilities >
-    abstract class Element<TypeType> {
-        protected Element(TypeType type) {
-            this.protectedType = type;
-        }
-        
-        public TypeType type {
-            get {
-                return protectedType;
-            }
-        }
-
-        protected TypeType protectedType;
-    }
 
     class ProgramTreeElementType {
         public ProgramTreeElementType(EnumType value) {
@@ -201,7 +189,7 @@ namespace Search.ProgramTree {
 
 
 
-    class ProgramTreeElement : Element<ProgramTreeElementType> {
+    class ProgramTreeElement : TreeElement<ProgramTreeElementType> {
         public ProgramTreeElement(ProgramTreeElementType.EnumType type) : base(new ProgramTreeElementType(type)) { }
     }
 
