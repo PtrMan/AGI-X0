@@ -31,40 +31,23 @@
  * kill("killUrgency")            [to self or other processor]
  *    kills an process, urgency rules same as for tryspawn
  * 
- * not existing:
- *  * link                           [to other processor]
- *    tries to accomplish a symbolic link to another process.
- *    the link stays until the other process gets removed or the link gets unlinked
- * * unlink                         [to other processor]
  *
  *
  * messages which get sent to the processes
  * ===
- * //linkEstablished
- * //linkHangup
  * received          is a message sent from another process
  */
 
-/** links
- * links are a way to hold symbolic information. They act like semantic pointers, which means that they represent something
- * mentally.
- * For example a "hasA" relationship in a more symbolic system can be represented as a link in this framework.
- * Links can have attributes attached, which can be read or modified by both sides (which are processes).
- */
 
 import std.variant : Variant;
 
 struct Message {
 	union {
-		//Link!LinkDecorationType linkHangup;
 		Variant receivedMessage;
 	}
 
 	enum EnumType {
 		RECEIVED,
-
-		//LINKHANGUP,
-		// LINKESTABLISHED,
 	}
 
 	EnumType type;
@@ -86,15 +69,6 @@ struct MessageBox {
 		newMessage.receivedMessage = message;
 		queueAdd.enqueue(newMessage);
 	}
-
-	/*
-	final void addLinkHangup(Link!LinkDecorationType link) {
-		Message!LinkDecorationType newMessage;
-		newMessage.linkHangup = link;
-		newMessage.type = Message!LinkDecorationType.EnumType.LINKHANGUP;
-		queue.enqueue(newMessage);
-	}
-	*/
 
 	// iterates with an delegate over all messages and deletes messages
 	final void iterateAndRemove(void delegate(Message message, out bool removeMessage) delegate_) {
@@ -170,14 +144,6 @@ struct Processor {
 
 alias size_t ProcessorIndex;
 
-/*
-struct Link(DecorationType) {
-	ProcessorIndex processors[2];
-
-	DecorationType decoration;
-}
-*/
-
 // context used by processes for the operations as described in the *.md file or comments
 struct OperationContext {
 	Hub hub;
@@ -221,50 +187,6 @@ class Hub {
 		}
 		return decayedProcessorIndices;
 	}
-
-	/*
-
-	private final Link!LinkDecorationType*[] findAndRemoveLinksToProcessor(ProcessorIndex processorIndex) {
-		Link!LinkDecorationType*[] removed;
-
-		foreach( i; 0..links.length ) {
-			if( links[i].processors[0] == processorIndex || links[i].processors[1] == processorIndex ) {
-				links = links.remove(i);
-				i--;
-
-				removed += links[i];
-
-				continue;
-			}
-		}
-
-		return removed;
-	}
-
-	// adds a message that the link got broken down to the process
-	private final void enqueueLinkHangupToCorespondingProcesses(Link!LinkDecorationType*[] hangupLinks) {
-		foreach( iterationHangupLink; hangupLinks ) {
-			if( !processors[iterationHangupLink.processors[0]].process.isNullProcess ) {
-				processors[iterationHangupLink.processors[0]].process.messageBox.addLinkHangup(iterationHangupLink);
-			}
-
-			if( !processors[iterationHangupLink.processors[1]].process.isNullProcess ) {
-				processors[iterationHangupLink.processors[1]].process.messageBox.addLinkHangup(iterationHangupLink);
-			}
-		}
-	}
-
-	private final void removeDecayedProcessesAndCorespondingLinks() {
-		ProcessorIndex[] decayedProcessors = findDecayedProcessors();
-		foreach( iterationDecayedProcessor; decayedProcessors ) {
-			enqueueLinkHangupToCorespondingProcesses(findAndRemoveLinksToProcessor(iterationDecayedProcessor));
-		}
-
-		// remove processes
-		foreach( iterationProcessorIndex; decayedProcessors ) {
-			processors[iterationProcessorIndex].reset();
-		}
-	}*/
 
 	private final void removeDecayedProcesses() {
 		ProcessorIndex[] decayedProcessors = findDecayedProcessors();
