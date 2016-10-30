@@ -1,4 +1,4 @@
-
+module slimRnn.SlimRnn;
 
 void applyCaRule(uint rule, uint[] inputArray, ref uint[] resultArray) {
 	assert(inputArray.length == resultArray.length);
@@ -8,12 +8,8 @@ void applyCaRule(uint rule, uint[] inputArray, ref uint[] resultArray) {
 		uint value2 = inputArray[i/* % inputArray.length*/];
 		uint value1 = inputArray[(i + 1) % inputArray.length];
 
-		import std.stdio;
-		writeln("", value4, " ", value2, " ", value1);
-
 		uint value = value4*4 + value2*2 + value1*1;
 		resultArray[i] = (rule >> value) & 1;
-		writeln("=", resultArray[i] );
 	}
 }
 
@@ -89,6 +85,12 @@ struct Piece {
 	CoordinateWithStrength output;
 
 	float nextOutput;
+
+	// returns the number of cells in the CA
+	final uint getCaWidth() {
+		assert(type == EnumType.CA);
+		return inputs.length; // number of cells is for now the size/width of the input
+	}
 }
 
 // TODO< make this 2d >
@@ -118,6 +120,8 @@ class SlimRnn {
 
 	final void loop(uint maxIterations, out uint iterations, out bool wasTerminated) {
 		foreach( i; 0..maxIterations ) {
+			debugState(i);
+
 			step();
 			wasTerminated = terminated();
 			if( wasTerminated ) {
@@ -127,6 +131,19 @@ class SlimRnn {
 		}
 
 		iterations = maxIterations;
+	}
+
+	private final void debugState(uint iteration) {
+		import std.stdio;
+
+		writeln("iteration=",iteration);
+
+		foreach(value;map.arr) {
+			write(value, " ");
+		}
+		writeln();
+		writeln("terminal.index=", terminal.coordinate.x);
+		writeln("---");
 	}
 
 	private final void step() {
@@ -177,6 +194,7 @@ class SlimRnn {
 	}
 }
 
+/+ just for testing the basic functionality
 void main() {
 	SlimRnnCtorParameters ctorParameters;
 	ctorParameters.mapSize[0] = 10;
@@ -217,3 +235,4 @@ void main() {
 
 
 }
++/
