@@ -151,6 +151,31 @@ class SlimRnn {
 		return result;
 	}
 
+	final void resetMap() {
+		foreach( ref iv; map.arr ) {
+			iv = 0.0f;
+		}
+	}
+
+	final void resetPiecesToCaCount(uint countOfPieces) {
+		pieces.length = 0;
+		pieces.length = countOfPieces;
+
+		foreach( ref iterationPiece; pieces ) {
+			iterationPiece.type = Piece.EnumType.CA;
+			iterationPiece.ca.rule = 0;
+			iterationPiece.inputs = 
+			[
+				CoordinateWithValue.make([0, 0, 0], 0.1f),
+				CoordinateWithValue.make([0, 0, 0], 0.1f),
+				CoordinateWithValue.make([0, 0, 0], 0.1f),
+			];
+
+			iterationPiece.output = CoordinateWithValue.make([3, 0, 0], 0.6f);
+			iterationPiece.enabled = false;
+		}
+	}
+
 	final void loop(uint maxIterations, out uint iterations, out bool wasTerminated) {
 		foreach( i; 0..maxIterations ) {
 			debugState(i);
@@ -168,6 +193,10 @@ class SlimRnn {
 
 	private final void debugState(uint iteration) {
 		import std.stdio;
+
+		if(true) {
+			return;
+		}
 
 		writeln("iteration=",iteration);
 
@@ -209,7 +238,7 @@ class SlimRnn {
 
 			applyCaRule(piece.ca.rule, inputArray, /*out*/ resultArray);
 
-			bool outputActivation = resultArray[piece.ca.readofIndex] != 0;
+			bool outputActivation = resultArray[piece.ca.readofIndex % resultArray.length] != 0;
 			piece.nextOutput = (outputActivation ? piece.output.strength : 0.0f);
 		}
 	}

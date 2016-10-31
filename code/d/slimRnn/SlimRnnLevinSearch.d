@@ -130,9 +130,6 @@ final class SlimRnnLevinProblem : LevinProblem {
 
 		InstructionInterpretationContext instructionInterpretationContext;
 
-		import std.stdio;
-		writeln("[debug]SlimRnnLevinProblem   :  program.instructions=", program.instructions, " maxNumberOfStepsToExecute=", maxNumberOfStepsToExecute);
-
 		foreach( iterationInstruction; program.instructions ) {
 			// TODO< exeute instruction on SlimRnn >
 
@@ -146,19 +143,95 @@ final class SlimRnnLevinProblem : LevinProblem {
 
 
 
+		// we check the network for the XOR example
 
-
-		// init start state
-		workingSlimRnn.map.arr[0] = 0.0f;
-		workingSlimRnn.map.arr[1] = 0.5f;
-		workingSlimRnn.map.arr[2] = 0.5f;
 
 		uint maxIterations = maxNumberOfStepsToExecute;
 		uint iterations;
 		bool wasTerminated;
+
+		// init start state
+		workingSlimRnn.resetMap();
+		workingSlimRnn.map.arr[0] = 0.0f;
+		workingSlimRnn.map.arr[1] = 0.0f;
+
 		workingSlimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
 
-		hasHalted = wasTerminated;
+		if( !wasTerminated ) {
+			// if the SLIM-RNN didn't terminate we just have to continue the search
+			return;
+		}
+		// read out result
+		bool networkResult = workingSlimRnn.map.arr[2] > 0.5f;
+		if( !!networkResult ) {
+			// result is wrong
+			return; // continue the search 
+		}
+
+
+		// init start state
+		workingSlimRnn.resetMap();
+		workingSlimRnn.map.arr[0] = 1.0f;
+		workingSlimRnn.map.arr[1] = 0.0f;
+
+		workingSlimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
+
+		if( !wasTerminated ) {
+			// if the SLIM-RNN didn't terminate we just have to continue the search
+			return;
+		}
+		// read out result
+		networkResult = workingSlimRnn.map.arr[2] > 0.5f;
+		if( !networkResult ) {
+			// result is wrong
+			return; // continue the search 
+		}
+
+
+
+		// init start state
+		workingSlimRnn.resetMap();
+		workingSlimRnn.map.arr[0] = 0.0f;
+		workingSlimRnn.map.arr[1] = 1.0f;
+
+		workingSlimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
+
+		if( !wasTerminated ) {
+			// if the SLIM-RNN didn't terminate we just have to continue the search
+			return;
+		}
+		// read out result
+		networkResult = workingSlimRnn.map.arr[2] > 0.5f;
+		if( !networkResult ) {
+			// result is wrong
+			return; // continue the search 
+		}
+
+
+
+
+		// init start state
+		workingSlimRnn.resetMap();
+		workingSlimRnn.map.arr[0] = 1.0f;
+		workingSlimRnn.map.arr[1] = 1.0f;
+
+		workingSlimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
+
+		if( !wasTerminated ) {
+			// if the SLIM-RNN didn't terminate we just have to continue the search
+			return;
+		}
+		// read out result
+		networkResult = workingSlimRnn.map.arr[2] > 0.5f;
+		if( !!networkResult ) {
+			// result is wrong
+			return; // continue the search 
+		}
+
+
+
+		// if we are here the network does what is requested
+		hasHalted = true;
 	}
 }
 
@@ -191,6 +264,24 @@ uint max(uint[] values) {
 void main() {
     LevinSearch levinSearch = new LevinSearch();
 
+
+    uint reportingTriedProgramCounter = 0; // used to measure how many programs get tried per second
+    uint reportingNoTimecheckSinceTriedPrograms = 0;
+    levinSearch.reportProgramExecution = (LevinProgram currentProgram) {
+    	import std.stdio : writeln;
+
+    	reportingTriedProgramCounter++;
+    	reportingNoTimecheckSinceTriedPrograms++;
+
+    	if( reportingNoTimecheckSinceTriedPrograms > 10000 ) {
+    		reportingNoTimecheckSinceTriedPrograms = 0;
+
+    		writeln("[debug]main : tried since last report ", reportingTriedProgramCounter, " programs");
+
+    		reportingTriedProgramCounter = 0;
+    	}
+    };
+
     levinSearch.numberOfInstructions = 1 << 8;
     levinSearch.c = 0.1;
     levinSearch.maxIterations = 5000;
@@ -221,11 +312,11 @@ void main() {
 	ctorParameters.mapSize[0] = 10;
 
 	SlimRnn slimRnn = new SlimRnn(ctorParameters);
+	slimRnn.resetPiecesToCaCount(1 << 6);
 
 	slimRnn.terminal.coordinate = 3;
 	slimRnn.terminal.value = 0.5f;
 
-	slimRnn.pieces ~= Piece();
 	slimRnn.pieces[0].type = Piece.EnumType.CA;
 	slimRnn.pieces[0].ca.rule = 0;
 	slimRnn.pieces[0].inputs = 
@@ -239,27 +330,16 @@ void main() {
 	slimRnn.pieces[0].enabled = false;
 
 
-	slimRnn.pieces ~= Piece();
-	slimRnn.pieces[1].type = Piece.EnumType.CA;
-	slimRnn.pieces[1].ca.rule = 0;
-	slimRnn.pieces[1].inputs = 
-	[
-		CoordinateWithValue.make([0, 0, 0], 0.1f),
-		CoordinateWithValue.make([0, 0, 0], 0.1f),
-		CoordinateWithValue.make([0, 0, 0], 0.1f),
-	];
-
-	slimRnn.pieces[1].output = CoordinateWithValue.make([4, 0, 0], 0.6f);
-	slimRnn.pieces[1].enabled = false;
-
 
 
 
 
     LevinProblem levinProblem = new SlimRnnLevinProblem(slimRnn);
 
-    uint numberOfIterations = 50000;
-    bool done;
+    uint numberOfIterations = 4;
+
+
+	bool done;
     Solution solution = levinSearch.iterate(levinProblem, numberOfIterations, /*out*/ done);
     if( done ) {
         import std.stdio;
@@ -270,7 +350,8 @@ void main() {
     		InstructionEncoding.debugInstructionToConsole(iterationInstruction);
     	}
     }
-
+    
+    
 
 
     import std.stdio;

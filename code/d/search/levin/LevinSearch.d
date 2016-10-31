@@ -98,6 +98,11 @@ class LevinSearch {
             uint maxNumberOfStepsToExecute = cast(uint)((calcSolomonoffLevinMeasure(iterationProgram) * cast(double)phase) / c);
 
             bool hasHalted;
+
+            if( reportProgramExecution !is null ) {
+                reportProgramExecution(iterationProgram);
+            }
+
             executeProgram(iterationProgram, problem, maxNumberOfStepsToExecute, /*out*/ hasHalted);
             if( hasHalted ) {
                 done = true;
@@ -158,4 +163,8 @@ class LevinSearch {
 
     // [position in program, op]
     public double[][] instructionPropabilityMatrix;
+
+
+    alias void delegate(LevinProgram currentProgram) ReportProgramExecutionDelegateType;
+    ReportProgramExecutionDelegateType reportProgramExecution = null; // is a delegate which gets called before the evaluation of each program
 }
