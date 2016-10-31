@@ -2,11 +2,32 @@ module slimRnn.SlimRnn;
 
 void applyCaRule(uint rule, uint[] inputArray, ref uint[] resultArray) {
 	assert(inputArray.length == resultArray.length);
+	assert(inputArray.length >= 2); // the optimization wasn't done for less elements
 
-	for( int i = 0; i < inputArray.length; i++ ) {
-		uint value4 = inputArray[(i + inputArray.length - 1) % inputArray.length];
-		uint value2 = inputArray[i/* % inputArray.length*/];
-		uint value1 = inputArray[(i + 1) % inputArray.length];
+	static uint calcResultFirst(uint rule, uint[] inputArray) {
+		uint value4 = inputArray[inputArray.length-1];
+		uint value2 = inputArray[0/* % inputArray.length*/];
+		uint value1 = inputArray[(0 + 1)];
+
+		uint value = value4*4 + value2*2 + value1*1;
+		return (rule >> value) & 1;
+	}
+
+	static uint calcResultLast(uint rule, uint[] inputArray) {
+		uint value4 = inputArray[inputArray.length-2];
+		uint value2 = inputArray[inputArray.length-1];
+		uint value1 = inputArray[0];
+
+		uint value = value4*4 + value2*2 + value1*1;
+		return (rule >> value) & 1;
+	}
+
+	resultArray[0] = calcResultFirst(rule, inputArray);
+	resultArray[$-1] = calcResultLast(rule, inputArray);
+	for( int i = 1; i < inputArray.length - 1; i++ ) {
+		uint value4 = inputArray[i - 1];
+		uint value2 = inputArray[i    ];
+		uint value1 = inputArray[i + 1];
 
 		uint value = value4*4 + value2*2 + value1*1;
 		resultArray[i] = (rule >> value) & 1;
@@ -70,6 +91,8 @@ struct Piece {
 		CA, // cellular automata
 	}
 
+	bool enabled = true;
+
 	EnumType type;
 
 	union {
@@ -118,6 +141,16 @@ class SlimRnn {
 		map.arr.length = parameters.mapSize[0];
 	}
 
+	final SlimRnn clone() {
+		SlimRnnCtorParameters parameters;
+		parameters.mapSize[0] = map.arr.length;
+		SlimRnn result = new SlimRnn(parameters);
+		result.pieces = pieces.dup;
+		result.map = map;
+		result.terminal = terminal;
+		return result;
+	}
+
 	final void loop(uint maxIterations, out uint iterations, out bool wasTerminated) {
 		foreach( i; 0..maxIterations ) {
 			debugState(i);
@@ -160,14 +193,14 @@ class SlimRnn {
 	}
 
 	private final void calcNextState(ref Piece piece) {
+		if( !piece.enabled ) {
+			return;
+		}
+
 		if( piece.type == Piece.EnumType.CA ) {
 			uint[] inputArray, resultArray;
 			inputArray.length = piece.inputs.length; // OPTIMIZATION< preallocate and check for need to resize >
 			resultArray.length = piece.inputs.length;
-			
-			import std.stdio;
-			writeln(piece.inputs.length);
-			writeln(resultArray.length);
 
 			foreach( inputIndex; 0..inputArray.length ) {
 				bool activated = readAtCoordinateAndCheckForThreshold(piece.inputs[inputIndex]);
@@ -189,50 +222,11 @@ class SlimRnn {
 
 	private final void applyOutputs() {
 		foreach( iterationPiece; pieces ) {
+			if( !iterationPiece.enabled ) {
+				continue;
+			}
+
 			map.arr[iterationPiece.output.coordinate.x] = iterationPiece.nextOutput;
 		}
 	}
 }
-
-/+ just for testing the basic functionality
-void main() {
-	SlimRnnCtorParameters ctorParameters;
-	ctorParameters.mapSize[0] = 10;
-
-	SlimRnn slimRnn = new SlimRnn(ctorParameters);
-
-	slimRnn.terminal.coordinate = 3;
-	slimRnn.terminal.value = 0.5f;
-
-	slimRnn.pieces ~= Piece();
-	slimRnn.pieces[0].type = Piece.EnumType.CA;
-	slimRnn.pieces[0].ca.rule = 30;
-	slimRnn.pieces[0].inputs = 
-	[
-		CoordinateWithValue.make([0, 0, 0], 0.1f),
-		CoordinateWithValue.make([1, 0, 0], 0.1f),
-		CoordinateWithValue.make([2, 0, 0], 0.1f),
-	];
-
-	slimRnn.pieces[0].output = CoordinateWithValue.make([3, 0, 0], 0.6f);
-
-
-	// init start state
-	slimRnn.map.arr[0] = 0.0f;
-	slimRnn.map.arr[1] = 0.5f;
-	slimRnn.map.arr[2] = 0.5f;
-
-	uint maxIterations = 1; // just one iteration for testing
-	uint iterations;
-	bool wasTerminated;
-	slimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
-
-	import std.stdio;
-	writeln("SLIM RNN iterations=", iterations, " wasTerminated=", wasTerminated);
-
-
-
-
-
-}
-+/

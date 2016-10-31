@@ -3,6 +3,115 @@ module slimRnn.SlimRnnLevinSearch;
 import slimRnn.SlimRnn;
 import search.levin.LevinSearch;
 
+struct InstructionInterpretationContext {
+	uint pieceIndex;
+	uint inputIndex;
+}
+
+struct InstructionEncoding {
+	// 8 bits
+
+	// 0 - set new inputIndex (2) and (conditionally, if 1111 then it's disabled) set CA rule index (5), dependent on [pieceIndex]
+
+	// 10 - set piece index (6)
+	///// 1100 - set CA rule index (4), dependent on [pieceIndex] and [inputIndex]
+	// 11010 - set CA readoff index (3), dependent on [pieceIndex]
+	// 1101100x - set enabled of piece to 'x' , dependent on [pieceIndex]
+	static void executeInstructionOnSlimRnn(ref InstructionInterpretationContext context, SlimRnn slimRnn, uint instruction, out bool unknownEncoding) {
+		unknownEncoding = true;
+
+		uint encoding[2];
+
+		encoding[0] = instruction & 1;
+		if( encoding[0] == 0 ) {
+			unknownEncoding = false;
+
+			context.inputIndex = (instruction >> 1) & 3;
+			uint caRuleIndex = (instruction >> 3) & 0x1f;
+			if( caRuleIndex != 0x1f-1 ) { // check if not disabled
+				slimRnn.pieces[context.pieceIndex].ca.rule = caRuleIndex;
+			}
+		}
+		else if( encoding[0] == 1 ) {
+			encoding[1] = (instruction >> 1) & 1;
+			if( encoding[1] == 0 ) {
+				unknownEncoding = false;
+
+				context.pieceIndex = (instruction >> 2) & 0x3f;
+			}
+			else {
+				uint prefix1 = (instruction >> 2) & 7;
+				if( prefix1 == 2 ) {
+					unknownEncoding = false;
+
+					slimRnn.pieces[context.pieceIndex].ca.readofIndex = (instruction >> (8-3)) & 7;
+				}
+				else if( prefix1 == 3 ) {
+					unknownEncoding = false;
+
+					slimRnn.pieces[context.pieceIndex].enabled = ((instruction >> 7) & 1) != 0;
+				}
+			}
+		}
+	}
+
+	static void debugInstructionToConsole(uint instruction) {
+		import std.stdio : writeln;
+		import std.format : format;
+
+		bool unknownEncoding;
+
+		uint encoding[2];
+
+		encoding[0] = instruction & 1;
+		if( encoding[0] == 0 ) {
+			unknownEncoding = false;
+
+			string caRuleIndexString = "<disabled>";
+
+			uint inputIndex = (instruction >> 1) & 3;
+			uint caRuleIndex = (instruction >> 3) & 0x1f;
+			if( caRuleIndex != 0x1f-1 ) { // check if not disabled
+				caRuleIndexString = "%s".format(caRuleIndex);
+			}
+
+			writeln("instruction - set inputIndex and (conditionally) set CA rule index : inputIndex=%s, caRuleIndex=%s".format(inputIndex, caRuleIndexString));
+		}
+		else if( encoding[0] == 1 ) {
+			unknownEncoding = false;
+
+			encoding[1] = (instruction >> 1) & 1;
+			if( encoding[1] == 0 ) {
+				uint pieceIndex = (instruction >> 2) & 0x3f;
+				writeln("instruction - set piece index                                     : pieceIndex=%s".format(pieceIndex));
+			}
+			else {
+				uint prefix1 = (instruction >> 2) & 7;
+				if( prefix1 == 2 ) {
+					unknownEncoding = false;
+
+					uint readofIndex = (instruction >> (8-3)) & 7;
+					writeln("instruction - set CA readoff index                                     : readoffIndex=%s".format(readofIndex));
+				}
+				else if( prefix1 == 3 ) {
+					unknownEncoding = false;
+
+					bool enabled = ((instruction >> 7) & 1) != 0;
+					writeln("instruction - enable piece                                     : enabled=%s".format(enabled));
+				}
+			}
+		}
+
+		if( unknownEncoding ) {
+			writeln("instruction - <unknown encoding>");
+		}
+	}
+}
+
+// converts a bitcount to the mask to mask these bits out
+uint bitsToMask(uint bits) {
+	return (1 << (bits+1))-1;
+}
 
 // we do search for configurations of some parameters of the SLIM RNN via levin search
 // as described in schmidhurs SLIM RNN paper
@@ -17,111 +126,57 @@ final class SlimRnnLevinProblem : LevinProblem {
 	final void executeProgram(LevinProgram program, uint maxNumberOfStepsToExecute, out bool hasHalted) {
 		hasHalted = false;
 
-		// skip over programs with too few instructions 
-		if( program.instructions.length < /* for termination index and threshold */2 + SlimRnnLevinProblem.NUMBEROFINSTRUCTIONSFORSINGLEELEMENT*2 ) {
-			import std.stdio;
-			writeln(program.instructions.length);
-			return;
-		}
+		SlimRnn workingSlimRnn = slimRnn.clone();
 
-		// check for redudant/invalid combinations
-		if( getTerminationIndex(program) >= slimRnn.map.arr.length ) {
-			return;
-		}
-		if( program.instructions[1] >= TRESHOLDQUANTISATION ) {
-			return;
-		}
+		InstructionInterpretationContext instructionInterpretationContext;
 
-		foreach( pieceIndex, iterationPiece ; slimRnn.pieces ) {
-			// if the caReadoff index is out of bouns we just return immediatly, because we save a lot of computation time this way and 
-			if( iterationPiece.ca.readofIndex >= iterationPiece.getCaWidth ) {
-				return;
+		import std.stdio;
+		writeln("[debug]SlimRnnLevinProblem   :  program.instructions=", program.instructions, " maxNumberOfStepsToExecute=", maxNumberOfStepsToExecute);
+
+		foreach( iterationInstruction; program.instructions ) {
+			// TODO< exeute instruction on SlimRnn >
+
+			bool unknownEncoding;
+			InstructionEncoding.executeInstructionOnSlimRnn(instructionInterpretationContext, workingSlimRnn, iterationInstruction, /*out*/ unknownEncoding);
+			if( unknownEncoding ) {
+				return; // we immediatly return because the encoding is invalid, this is not an hard error
 			}
 		}
 
 
-		// transcribe to SLIM RNN
-		slimRnn.terminal.coordinate.x = getTerminationIndex(program);
-
-		foreach( pieceIndex, iterationPiece ; slimRnn.pieces ) {
-			// this is just done for the CA, TODO< other types too >
-			iterationPiece.ca.rule = getCaRuleOfLevinProgram(program, pieceIndex);
-			iterationPiece.ca.readofIndex = getCaReadOffIndex(program, pieceIndex);
-
-			// we read of the positions from the (levin) program
-			foreach( inputIndex, ref iterationInput; iterationPiece.inputs ) {
-				iterationInput.coordinate.x = getInputIndex(program, pieceIndex, inputIndex);
-			}
-
-
-			// TODO< read of thresholds ? >
-		}
 
 
 
 
 		// init start state
-		slimRnn.map.arr[0] = 0.0f;
-		slimRnn.map.arr[1] = 0.5f;
-		slimRnn.map.arr[2] = 0.5f;
+		workingSlimRnn.map.arr[0] = 0.0f;
+		workingSlimRnn.map.arr[1] = 0.5f;
+		workingSlimRnn.map.arr[2] = 0.5f;
 
 		uint maxIterations = maxNumberOfStepsToExecute;
 		uint iterations;
 		bool wasTerminated;
-		slimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
+		workingSlimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
 
 		hasHalted = wasTerminated;
 	}
-
-	// returns the instruction of the levin program which encodes the Ca rule
-	private static uint getCaRuleOfLevinProgram(LevinProgram program, size_t elementIndex) {
-		return CARULES[program.instructions[2 + elementIndex*NUMBEROFINSTRUCTIONSFORSINGLEELEMENT+0]];
-	}
-
-	private static float getCaThresholdOfLevinProgram(LevinProgram program, size_t elementIndex) {
-		return convertFromFromInstructionToThreshold(program.instructions[2 + elementIndex*NUMBEROFINSTRUCTIONSFORSINGLEELEMENT+1]);
-	}
-
-	private static uint getCaReadOffIndex(LevinProgram program, size_t elementIndex) {
-		return program.instructions[2 + elementIndex*NUMBEROFINSTRUCTIONSFORSINGLEELEMENT+2];
-	}
-
-	private static uint getInputIndex(LevinProgram program, size_t elementIndex, size_t inputIndex) {
-		assert(inputIndex < MAXNUMBEROFINPUTS);
-		return program.instructions[2 + elementIndex*NUMBEROFINSTRUCTIONSFORSINGLEELEMENT+3+inputIndex];
-	}
-
-	private static uint getTerminationIndex(LevinProgram program) {
-		// index 0 is reserved for the termination index
-		return program.instructions[0];
-	}
-
-	private static float getTerminationThreshold(LevinProgram program) {
-		// index 0 is reserved for the termination threshold
-		return convertFromFromInstructionToThreshold(program.instructions[1]);
-	}
-
-
-	private static float convertFromFromInstructionToThreshold(uint value) {
-		assert(value < TRESHOLDQUANTISATION);
-		return cast(float)value * (1.0f/(cast(float)TRESHOLDQUANTISATION));
-	}
-
-
-	static const size_t MAXNUMBEROFINPUTS = 3;
-	static const size_t NUMBEROFINSTRUCTIONSFORSINGLEELEMENT = 3+MAXNUMBEROFINPUTS; // ca rule and threshold and careadoffindex    +  number of input(indices)
 }
 
+// some rules are not used because we don't have enough space for them
 static const uint[] CARULES = 
-[30, 60, 62, 90, 102, 110, 126, 150, 158, ] ~ // the usual extremly useful rules
-[2, 4, 6, 9, 14, 18, 20, 22, 24, 25, 26, 28, 37, 41, 45, 47, 57, 61, 86, 89, 107, 121, // followed by the more chaotic ones 
+[30, 62, 90, 102, 110, 126, 150, 158, ] ~ // the usual extremly useful rules
+[2, 4, 6, 9, /*14,*/ 18, 20, 22, 24, 25, 26, 28, 37, 41, 45, /*47,*/ 57, 61, 86, 89, 107, 121, // followed by the more chaotic ones 
 60, // see animation http://mathworld.wolfram.com/Rule60.html 
 90, // see animation http://mathworld.wolfram.com/Rule90.html
 102, // see animation http://mathworld.wolfram.com/Rule102.html
-105, // see animation http://mathworld.wolfram.com/Rule150.html
+150, // see animation http://mathworld.wolfram.com/Rule150.html
 
 ]; // rules for the celular automata
 static const uint TRESHOLDQUANTISATION = 8;
+
+static const uint BITSFORCARULES = 5;
+
+static assert((1 << BITSFORCARULES) >= CARULES.length);
 
 uint max(uint[] values) {
 	uint maxValue = values[0];
@@ -136,11 +191,11 @@ uint max(uint[] values) {
 void main() {
     LevinSearch levinSearch = new LevinSearch();
 
-    levinSearch.numberOfInstructions = max([CARULES.length/* number of selected CA rules */, TRESHOLDQUANTISATION]);
-    levinSearch.c = 0.3;
-    levinSearch.maxIterations = 50000;
+    levinSearch.numberOfInstructions = 1 << 8;
+    levinSearch.c = 0.1;
+    levinSearch.maxIterations = 5000;
 
-    uint programLength = /* for termination index and threshold */2 + SlimRnnLevinProblem.NUMBEROFINSTRUCTIONSFORSINGLEELEMENT*2;
+    uint programLength = 3; // equivalent to 24 bit
 
     levinSearch.instructionPropabilityMatrix.length = programLength;
     foreach( ref iterationArray; levinSearch.instructionPropabilityMatrix ) {
@@ -181,6 +236,7 @@ void main() {
 	];
 
 	slimRnn.pieces[0].output = CoordinateWithValue.make([3, 0, 0], 0.6f);
+	slimRnn.pieces[0].enabled = false;
 
 
 	slimRnn.pieces ~= Piece();
@@ -194,6 +250,7 @@ void main() {
 	];
 
 	slimRnn.pieces[1].output = CoordinateWithValue.make([4, 0, 0], 0.6f);
+	slimRnn.pieces[1].enabled = false;
 
 
 
@@ -203,10 +260,18 @@ void main() {
 
     uint numberOfIterations = 50000;
     bool done;
-    levinSearch.iterate(levinProblem, numberOfIterations, /*out*/ done);
+    Solution solution = levinSearch.iterate(levinProblem, numberOfIterations, /*out*/ done);
     if( done ) {
-        // TODO
+        import std.stdio;
+    	writeln("done=", done);
+
+    	// debug program
+    	foreach( iterationInstruction; solution.program.instructions ) {
+    		InstructionEncoding.debugInstructionToConsole(iterationInstruction);
+    	}
     }
+
+
 
     import std.stdio;
     writeln("done=", done);

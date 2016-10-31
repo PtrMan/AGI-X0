@@ -1,5 +1,7 @@
 module search.levin.LevinSearch;
 
+// TODO< use bigint for enumeration >
+
 import std.array : insertInPlace;
 
 abstract class LevinProblem {
@@ -20,6 +22,15 @@ class LevinProgram {
     }
 }
 
+
+final class Solution {
+    final this(LevinProgram program) {
+        this.program = program;
+    }
+
+    LevinProgram program;
+}
+
 // translated from the C# version
 
 // see paper "Shifting inductive bias with success-story algorithm, adaptive levin search and incremental self improvement"
@@ -37,13 +48,6 @@ class LevinSearch {
         previousLevinPrograms = [];
     }
 
-    final static class Solution {
-        final this(LevinProgram program) {
-            this.program = program;
-        }
-
-        LevinProgram program;
-    }
 
     final Solution iterate(LevinProblem problem, uint numberOfIterations, out bool done) {
         done = false;
