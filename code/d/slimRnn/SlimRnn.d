@@ -34,16 +34,29 @@ void applyCaRule(uint rule, uint[] inputArray, ref uint[] resultArray) {
 	}
 }
 
-alias uint[3] CoordinateType;
+struct Coordinate {
+	private size_t[1] values;
 
-@property uint x(CoordinateType coordinate) {
-	return coordinate[0];
+	final @property size_t x() {
+		return values[0];
+	}
+
+	final @property size_t x(size_t newValue) {
+		values[0] = newValue;
+		return newValue;
+	}
+
+	static Coordinate make(size_t value) {
+		Coordinate result;
+		result.values[0] = value;
+		return result;
+	}
 }
 
-@property uint x(ref CoordinateType coordinate, uint newValue) {
-	return coordinate[0] = newValue;
-}
 
+alias Coordinate CoordinateType;
+
+/*
 @property uint y(CoordinateType coordinate) {
 	return coordinate[1];
 }
@@ -58,7 +71,7 @@ alias uint[3] CoordinateType;
 
 @property uint layer(ref CoordinateType coordinate, uint newValue) {
 	return coordinate[2] = newValue;
-}
+}*/
 
 
 // implementation of an basic 
@@ -84,33 +97,46 @@ struct CoordinateWithValue {
 }
 
 alias CoordinateWithValue CoordinateWithThreshold;
+alias CoordinateWithValue CoordinateWithAttribute;
 alias CoordinateWithValue CoordinateWithStrength;
 
 struct Piece {
 	enum EnumType {
 		CA, // cellular automata
+		CLASSICNEURON, // can be a function with multiple inputs and an output function
 	}
 
 	bool enabled = true;
 
 	EnumType type;
 
-	union {
-		static struct Ca {
-			uint rule;
-			uint readofIndex; // from which index in the CA should the result be read
-		}
 
-		Ca ca;
+	static struct Ca {
+		uint rule;
+		uint readofIndex; // from which index in the CA should the result be read
 	}
 
-	CoordinateWithThreshold[] inputs; 
+	static struct ClassicalNeuron {
+		enum EnumType {
+			MULTIPLICATIVE,
+			//ADDITIVE,
+		}
+
+		EnumType type;
+	}
+
+	// can't be an (D)union because it produces wrong values when an algorithm switches the type	
+	Ca ca;
+	ClassicalNeuron classicalNeuron; // if it is an classical neuron the input attributes are interpreted as factors for the activation
+
+
+	CoordinateWithAttribute[] inputs; 
 	CoordinateWithStrength output;
 
 	float nextOutput;
 
 	// returns the number of cells in the CA
-	final uint getCaWidth() {
+	final size_t getCaWidth() {
 		assert(type == EnumType.CA);
 		return inputs.length; // number of cells is for now the size/width of the input
 	}
@@ -124,7 +150,7 @@ struct Map1d {
 }
 
 struct SlimRnnCtorParameters {
-	uint[1] mapSize;
+	size_t[1] mapSize;
 }
 
 // inspired by paper
@@ -166,12 +192,12 @@ class SlimRnn {
 			iterationPiece.ca.rule = 0;
 			iterationPiece.inputs = 
 			[
-				CoordinateWithValue.make([0, 0, 0], 0.1f),
-				CoordinateWithValue.make([0, 0, 0], 0.1f),
-				CoordinateWithValue.make([0, 0, 0], 0.1f),
+				CoordinateWithValue.make(Coordinate.make(0), 0.1f),
+				CoordinateWithValue.make(Coordinate.make(0), 0.1f),
+				CoordinateWithValue.make(Coordinate.make(0), 0.1f),
 			];
 
-			iterationPiece.output = CoordinateWithValue.make([3, 0, 0], 0.6f);
+			iterationPiece.output = CoordinateWithValue.make(Coordinate.make(3), 0.6f);
 			iterationPiece.enabled = false;
 		}
 	}
@@ -194,7 +220,7 @@ class SlimRnn {
 	private final void debugState(uint iteration) {
 		import std.stdio;
 
-		if(true) {
+		if(!false) {
 			return;
 		}
 
@@ -240,6 +266,26 @@ class SlimRnn {
 
 			bool outputActivation = resultArray[piece.ca.readofIndex % resultArray.length] != 0;
 			piece.nextOutput = (outputActivation ? piece.output.strength : 0.0f);
+		}
+		else if( piece.type == Piece.EnumType.CLASSICNEURON ) {
+			float inputActivation = 1.0f;
+
+			if( piece.classicalNeuron.type == Piece.ClassicalNeuron.EnumType.MULTIPLICATIVE ) {
+				inputActivation = 1.0f;
+
+				foreach( iterationInput; piece.inputs ) {
+					float iterationInputActivation = (map.arr[iterationInput.coordinate.x] * iterationInput.value); // we just do a multiplication with an factor for simplicity
+					inputActivation *= iterationInputActivation;
+				}
+			}
+			else {
+				throw new Exception("Internal Error");
+			}
+
+			// TODO< add activation function
+
+			// note< check for equivalence is important, because it allows us to activate a Neuron if the input is zero for neurons which have to be all the time on >
+			piece.nextOutput = (inputActivation >= piece.output.value ? piece.output.value : 0.0f);
 		}
 	}
 

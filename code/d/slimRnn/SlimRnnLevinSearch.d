@@ -264,29 +264,49 @@ uint max(uint[] values) {
 void main() {
     LevinSearch levinSearch = new LevinSearch();
 
+    import core.time;
+
+    MonoTime before = MonoTime.currTime;
+// do stuff
+MonoTime after = MonoTime.currTime;
+
+// How long it took.
+Duration timeElapsed = after - before;
+
 
     uint reportingTriedProgramCounter = 0; // used to measure how many programs get tried per second
     uint reportingNoTimecheckSinceTriedPrograms = 0;
+    uint reportingNumberOfTriedPrograms = 0;
+    MonoTime timeOfLastReport = MonoTime.currTime;
     levinSearch.reportProgramExecution = (LevinProgram currentProgram) {
     	import std.stdio : writeln;
 
     	reportingTriedProgramCounter++;
     	reportingNoTimecheckSinceTriedPrograms++;
+    	reportingNumberOfTriedPrograms++;
 
-    	if( reportingNoTimecheckSinceTriedPrograms > 10000 ) {
+    	if( reportingNoTimecheckSinceTriedPrograms >= 10000 ) {
+    		
+    		import std.conv : to;
+    		TickDuration durationSinceLastReport = (MonoTime.currTime - timeOfLastReport).to!TickDuration; // TickDuration is deprecated but we don't care
+    		if( durationSinceLastReport.msecs >= 5000 ) {
+    			double programsTriedPerSec = cast(double)reportingTriedProgramCounter / (cast(double)durationSinceLastReport.usecs / 1000000.0);
+    			writeln("[debug]main : programs/sec = ",  programsTriedPerSec, " tried since last report ", reportingTriedProgramCounter, " programs, ##=", reportingNumberOfTriedPrograms);
+
+    			reportingTriedProgramCounter = 0;
+    			timeOfLastReport = MonoTime.currTime;
+    		}
+
     		reportingNoTimecheckSinceTriedPrograms = 0;
-
-    		writeln("[debug]main : tried since last report ", reportingTriedProgramCounter, " programs");
-
-    		reportingTriedProgramCounter = 0;
     	}
     };
 
+    // not correct number just for testing
     levinSearch.numberOfInstructions = 1 << 8;
     levinSearch.c = 0.1;
-    levinSearch.maxIterations = 5000;
+    levinSearch.maxIterations = 50; // not a lot because the function is simple
 
-    uint programLength = 3; // equivalent to 24 bit
+    uint programLength = 4; // equivalent to 32 bit
 
     levinSearch.instructionPropabilityMatrix.length = programLength;
     foreach( ref iterationArray; levinSearch.instructionPropabilityMatrix ) {
@@ -314,20 +334,20 @@ void main() {
 	SlimRnn slimRnn = new SlimRnn(ctorParameters);
 	slimRnn.resetPiecesToCaCount(1 << 6);
 
-	slimRnn.terminal.coordinate = 3;
+	slimRnn.terminal.coordinate.x = ctorParameters.mapSize[0]-cast(size_t)1; // last map element is the terminal
 	slimRnn.terminal.value = 0.5f;
 
-	slimRnn.pieces[0].type = Piece.EnumType.CA;
-	slimRnn.pieces[0].ca.rule = 0;
-	slimRnn.pieces[0].inputs = 
+	// add an neuron which sends the termination
+
+	slimRnn.pieces[64-1].type = Piece.EnumType.CLASSICNEURON;
+	slimRnn.pieces[64-1].classicalNeuron.type = Piece.classicalNeuron.EnumType.MULTIPLICATIVE;
+
+	slimRnn.pieces[64-1].inputs = 
 	[
-		CoordinateWithValue.make([0, 0, 0], 0.1f),
-		CoordinateWithValue.make([0, 0, 0], 0.1f),
-		CoordinateWithValue.make([0, 0, 0], 0.1f),
 	];
 
-	slimRnn.pieces[0].output = CoordinateWithValue.make([3, 0, 0], 0.6f);
-	slimRnn.pieces[0].enabled = false;
+	slimRnn.pieces[64-1].output = CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-1), 0.6f);
+	slimRnn.pieces[64-1].enabled = true; 
 
 
 
@@ -336,7 +356,7 @@ void main() {
 
     LevinProblem levinProblem = new SlimRnnLevinProblem(slimRnn);
 
-    uint numberOfIterations = 4;
+    uint numberOfIterations = programLength;
 
 
 	bool done;

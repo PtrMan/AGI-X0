@@ -76,7 +76,7 @@ class LevinSearch {
 
         uint innerFnGetInstruction(size_t instructionIndex) {
             Bigint!1 masked;
-            Bigint!1.booleanAnd(currentProgramEnumerator.shiftRight(cachedBitsOfInstruction * instructionIndex), programEnumeratorInstructionMask, /*out*/masked);
+            Bigint!1.booleanAnd(currentProgramEnumerator.shiftRight(cachedBitsOfInstruction * cast(uint)instructionIndex), programEnumeratorInstructionMask, /*out*/masked);
             uint instruction = masked.accessor32(0); // ASSUMTION< we assume that an instruction can't be bigger than 32 bits >
             
             //import std.stdio;
@@ -93,8 +93,8 @@ class LevinSearch {
             return currentProgramEnumerator.getBit(cachedBitsOfInstruction * currentNumberOfInstructions);
         }
 
-        void innerFnResetFirstBitOfInstruction(size_t insutrctionIndex) {
-            currentProgramEnumerator.setBit(cachedBitsOfInstruction * insutrctionIndex, false);
+        void innerFnResetFirstBitOfInstruction(size_t instructionIndex) {
+            currentProgramEnumerator.setBit(cachedBitsOfInstruction * instructionIndex, false);
         }
 
         uint[] innerFnTranslateCurrentProgramEnumeratorToInstructions() {
@@ -114,6 +114,9 @@ class LevinSearch {
             return null;
         }
 
+        // we need this because we don't have to test this later in the calcSolomonoffLevinMeasure() function everytime
+        assert(currentIteration < sizeOfProgram);
+
         LevinProgram levinProgram = new LevinProgram();
 
         for(;;) {
@@ -130,7 +133,6 @@ class LevinSearch {
             // TODO< we can do multiple iterations and execute multiple programs in parallel >
 
             levinProgram.instructions = innerFnTranslateCurrentProgramEnumeratorToInstructions();
-
             uint maxNumberOfStepsToExecute = cast(uint)((calcSolomonoffLevinMeasure(levinProgram.instructions) * cast(double)phase) / c);
 
             bool hasHalted;
@@ -238,7 +240,7 @@ class LevinSearch {
     // [position in program, op]
     public double[][] instructionPropabilityMatrix;
 
-    final @property uint sizeOfProgram() pure const {
+    final @property size_t sizeOfProgram() pure const {
         assert(instructionPropabilityMatrix.length != 0);
         return instructionPropabilityMatrix.length;
     }
