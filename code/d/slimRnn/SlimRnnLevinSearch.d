@@ -298,6 +298,20 @@ struct InstructionEncoding {
 // as described in schmidhurs SLIM RNN paper
 
 final class SlimRnnLevinProblem : LevinProblem {
+	static struct TestSetElement {
+		bool input[2];
+		bool expectedResult;
+
+		static TestSetElement make(bool input[2], bool expectedResult) {
+			TestSetElement result;
+			result.input = input;
+			result.expectedResult = expectedResult;
+			return result;
+		}
+	}
+
+	TestSetElement[] testset;
+
 	final this(SlimRnn slimRnn) {
 		this.slimRnn = slimRnn;
 	}
@@ -309,11 +323,13 @@ final class SlimRnnLevinProblem : LevinProblem {
 
 		SlimRnn workingSlimRnn = slimRnn.clone();
 
+		uint[] levinProgram = program.instructions;
+
 		// (1) decode levin program instructions to SlimRnn instructions
 		// (2) execute/interpret instructions on SLIM-RNN
-		{
+		if(true){
 			bool invalidEncoding;
-			SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions = translateLevinProgramInstructionsToStackBasedInstructions(program.instructions, /*out*/ invalidEncoding);
+			SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions = translateLevinProgramInstructionsToStackBasedInstructions(levinProgram, /*out*/ invalidEncoding);
 
 			// overwrite stack based instruction with our program which solves the problem
 			if( invalidEncoding ) {
@@ -325,124 +341,92 @@ final class SlimRnnLevinProblem : LevinProblem {
 			if( !interpretationSuccess ) {
 				return; // it is an hard error if we can't interpret the instructions
 			}
-
-
-			// just for debugging
-			// uncommented because it produces too much output
-			//import std.stdio;
-			//writeln(workingSlimRnn.humanReadableDescriptionOfPieces());
 		}
+
+		// for debugging
+		if(false) {
+		import std.stdio;
+		writeln("levinProgram=", levinProgram);
+		writeln(workingSlimRnn.humanReadableDescriptionOfPieces());
+		}
+
+		/*
+		{
+			workingSlimRnn.pieces[0].type = Piece.EnumType.XOR;
+
+	workingSlimRnn.pieces[0].inputs = 
+	[
+		CoordinateWithValue.make(CoordinateType.make(0), 0.5f),
+		CoordinateWithValue.make(CoordinateType.make(1), 0.5f)
+	];
+
+	workingSlimRnn.pieces[0].output = CoordinateWithValue.make(CoordinateType.make(2), 0.5f);
+	workingSlimRnn.pieces[0].enabled = true;
+		}
+		*/
+		
+		
 
 		// (3) execute SLIM-RNN
 
 
 
-		// we check the network for the XOR example
+		// we check the network for the testset
+		foreach( testsetElement; testset ) {
+			// called before returning in case of failiure
+			void innerFnReportFailure() {
+				return;
 
+				import std.stdio;
+				writeln("DEBUG innerFnReportFailure()");
+				throw new Exception("X");
+			}
 
-		uint maxIterations = maxNumberOfStepsToExecute;
-		uint iterations;
-		bool wasTerminated, executionError;
+			uint maxIterations = maxNumberOfStepsToExecute;
+			uint iterations;
+			bool wasTerminated, executionError;
 
-		// init start state
-		workingSlimRnn.resetMap();
-		workingSlimRnn.map.arr[0] = 0.0f;
-		workingSlimRnn.map.arr[1] = 0.0f;
+			// init start state
+			workingSlimRnn.resetMap();
+			workingSlimRnn.map.arr[0] = testsetElement.input[0] ? 1.0f : 0.0f;
+			workingSlimRnn.map.arr[1] = testsetElement.input[1] ? 1.0f : 0.0f;
 
-		workingSlimRnn.loop(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
+			workingSlimRnn.loop(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
 
-		if( executionError ) {
-			// is an hard error if an execution error happend
-			return;
-		}
+			
 
-		if( !wasTerminated ) {
-			// if the SLIM-RNN didn't terminate we just have to continue the search
-			return;
-		}
-		// read out result
-		bool networkResult = workingSlimRnn.map.arr[2] > 0.5f;
-		if( !!networkResult ) {
-			// result is wrong
-			return; // continue the search 
-		}
+			if( executionError ) {
+				// is an hard error if an execution error happend
+				innerFnReportFailure();
+				return;
+			}
 
-
-		// init start state
-		workingSlimRnn.resetMap();
-		workingSlimRnn.map.arr[0] = 1.0f;
-		workingSlimRnn.map.arr[1] = 0.0f;
-
-		workingSlimRnn.loop(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
-
-		if( executionError ) {
-			// is an hard error if an execution error happend
-			return;
-		}
-
-		if( !wasTerminated ) {
-			// if the SLIM-RNN didn't terminate we just have to continue the search
-			return;
-		}
-		// read out result
-		networkResult = workingSlimRnn.map.arr[2] > 0.5f;
-		if( !networkResult ) {
-			// result is wrong
-			return; // continue the search 
-		}
-
-
-
-		// init start state
-		workingSlimRnn.resetMap();
-		workingSlimRnn.map.arr[0] = 0.0f;
-		workingSlimRnn.map.arr[1] = 1.0f;
-
-		workingSlimRnn.loop(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
-
-		if( executionError ) {
-			// is an hard error if an execution error happend
-			return;
-		}
-
-		if( !wasTerminated ) {
-			// if the SLIM-RNN didn't terminate we just have to continue the search
-			return;
-		}
-		// read out result
-		networkResult = workingSlimRnn.map.arr[2] > 0.5f;
-		if( !networkResult ) {
-			// result is wrong
-			return; // continue the search 
-		}
-
-
-
-
-		// init start state
-		workingSlimRnn.resetMap();
-		workingSlimRnn.map.arr[0] = 1.0f;
-		workingSlimRnn.map.arr[1] = 1.0f;
-
-		workingSlimRnn.loop(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
-
-		if( executionError ) {
-			// is an hard error if an execution error happend
-			return;
-		}
-
-		if( !wasTerminated ) {
-			// if the SLIM-RNN didn't terminate we just have to continue the search
-			return;
-		}
-		// read out result
-		networkResult = workingSlimRnn.map.arr[2] > 0.5f;
-		if( !!networkResult ) {
-			// result is wrong
-			return; // continue the search 
+			if( !wasTerminated ) {
+				// if the SLIM-RNN didn't terminate we just have to continue the search
+				innerFnReportFailure();
+				return;
+			}
+			// read out result
+			bool networkResult = workingSlimRnn.map.arr[2] > 0.5f;
+			if( networkResult != testsetElement.expectedResult ) {
+				// result is wrong
+				innerFnReportFailure();
+				return; // continue the search 
+			}
 		}
 
 		// if we are here the network does what is requested
+		
+		// debug found program
+		import std.stdio;
+		bool invalidEncoding;
+    	SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions = translateLevinProgramInstructionsToStackBasedInstructions(levinProgram, /*out*/ invalidEncoding);
+
+    	writeln("levin program=", levinProgram, ", translated to VLIW1 instruction-set:");
+    	foreach( SlimRnnStackBasedManipulationInstruction iterationInstruction; stackBasedInstructions ) {
+    		writeln("\t" ~ iterationInstruction.humanReadableDescription());
+    	}
+
 		hasHalted = true;
 	}
 }
@@ -507,15 +491,14 @@ void main() {
 
 
     	// report program
-    	/+ uncommented because it results in too much output
-    	bool invalidEncoding;
-    	SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions = translateLevinProgramInstructionsToStackBasedInstructions(currentProgram.instructions, /*out*/ invalidEncoding);
+    	/// uncommented because it results in too much output
+    	///bool invalidEncoding;
+    	///SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions = translateLevinProgramInstructionsToStackBasedInstructions(currentProgram.instructions, /*out*/ invalidEncoding);
 
-    	writeln("levin program=", currentProgram.instructions, ", translated to VLIW1 instruction-set:");
-    	foreach( SlimRnnStackBasedManipulationInstruction iterationInstruction; stackBasedInstructions ) {
-    		writeln("\t" ~ iterationInstruction.humanReadableDescription());
-    	}
-    	+/
+    	///writeln("levin program=", currentProgram.instructions, ", translated to VLIW1 instruction-set:");
+    	///foreach( SlimRnnStackBasedManipulationInstruction iterationInstruction; stackBasedInstructions ) {
+    	///	writeln("\t" ~ iterationInstruction.humanReadableDescription());
+    	///}
     };
 
     // not correct number just for testing
@@ -550,30 +533,54 @@ void main() {
 
 	SlimRnn slimRnn = new SlimRnn(ctorParameters);
 	uint countOfPieces = 1 << 5;
-	slimRnn.resetPiecesToCaCount(countOfPieces);
+	slimRnn.resetPiecesToTypeByCount(countOfPieces, Piece.EnumType.CLASSICNEURON);
 
 	slimRnn.terminal.coordinate.x = ctorParameters.mapSize[0]-cast(size_t)1; // last map element is the terminal
+	slimRnn.terminal.value = 0.1f;
 	slimRnn.defaultInputSwitchboardIndex = ctorParameters.mapSize[0]-cast(size_t)2; // switchboard element before the last elements which is the terminal, is not zero because the programs should generalize better
-	slimRnn.terminal.value = 0.5f;
+	// position length-3 is used as a delay for the termination signal
 
-	// add an neuron which sends the termination
+	
+
+	// add an neuron which sends the termination after an delay
+
+	
+	slimRnn.pieces[countOfPieces-2].type = Piece.EnumType.CLASSICNEURON;
+	slimRnn.pieces[countOfPieces-2].functionType = cast(uint32_t)Piece.classicalNeuron.EnumType.MULTIPLICATIVE;
+
+	slimRnn.pieces[countOfPieces-2].inputs = 
+	[
+	];
+
+	slimRnn.pieces[countOfPieces-2].output = CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-3), 0.5f);
+	slimRnn.pieces[countOfPieces-2].enabled = true;
+	
 
 	slimRnn.pieces[countOfPieces-1].type = Piece.EnumType.CLASSICNEURON;
 	slimRnn.pieces[countOfPieces-1].functionType = cast(uint32_t)Piece.classicalNeuron.EnumType.MULTIPLICATIVE;
 
 	slimRnn.pieces[countOfPieces-1].inputs = 
 	[
+		CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-cast(size_t)3), 0.3f)
 	];
 
-	slimRnn.pieces[countOfPieces-1].output = CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-1), 0.6f);
+	slimRnn.pieces[countOfPieces-1].output = CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-1), 0.2f);
 	slimRnn.pieces[countOfPieces-1].enabled = true; 
 
 
 
 
 
+	SlimRnnLevinProblem slimRnnLevinProblem = new SlimRnnLevinProblem(slimRnn);
+	slimRnnLevinProblem.testset = [
+		SlimRnnLevinProblem.TestSetElement.make([false, false], false),
+		SlimRnnLevinProblem.TestSetElement.make([false, true], true),
+		SlimRnnLevinProblem.TestSetElement.make([true, false], true),
+		SlimRnnLevinProblem.TestSetElement.make([true, true], false),
+	];
 
-    LevinProblem levinProblem = new SlimRnnLevinProblem(slimRnn);
+
+    LevinProblem levinProblem = slimRnnLevinProblem;
 
     uint numberOfIterations = programLength;
 

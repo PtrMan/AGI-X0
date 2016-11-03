@@ -58,24 +58,6 @@ struct Coordinate {
 
 alias Coordinate CoordinateType;
 
-/*
-@property uint y(CoordinateType coordinate) {
-	return coordinate[1];
-}
-
-@property uint y(ref CoordinateType coordinate, uint newValue) {
-	return coordinate[1] = newValue;
-}
-
-@property uint layer(CoordinateType coordinate) {
-	return coordinate[2];
-}
-
-@property uint layer(ref CoordinateType coordinate, uint newValue) {
-	return coordinate[2] = newValue;
-}*/
-
-
 // implementation of an basic 
 
 struct CoordinateWithValue {
@@ -115,15 +97,18 @@ struct Piece {
 
 	uint32_t functionType;
 
+	final @property uint caRule() pure {
+		return functionType;
+	}
+
+	final @property ClassicalNeuron.EnumType classicalNeuronType() pure {
+		uint32_t value = functionType >= ClassicalNeuron.ENUMSIZE ? ClassicalNeuron.ENUMSIZE-1 : functionType;
+		return cast(ClassicalNeuron.EnumType)value;
+	}
+
 
 	static struct Ca {
-		final @property uint rule() pure {
-			return *functionTypePtr;
-		}
-
 		uint readofIndex; // from which index in the CA should the result be read
-
-		uint32_t *functionTypePtr;
 	}
 
 	static struct ClassicalNeuron {
@@ -132,13 +117,6 @@ struct Piece {
 			//ADDITIVE,
 		}
 		private static const uint ENUMSIZE = 1;
-
-		final @property EnumType type() pure {
-			uint32_t value = *functionTypePtr >= ENUMSIZE ? ENUMSIZE-1 : *functionTypePtr;
-			return cast(EnumType)value;
-		}
-
-		uint32_t *functionTypePtr;
 	}
 
 	// can't be an (D)union because it produces wrong values when an algorithm switches the type	
@@ -157,11 +135,6 @@ struct Piece {
 		return inputs.length; // number of cells is for now the size/width of the input
 	}
 
-	final void initInternalValues() {
-		ca.functionTypePtr = &functionType;
-		classicalNeuron.functionTypePtr = &functionType;
-	}
-
 	final @property string humanReadableDescription() {
 		import std.conv : to;
 		import std.format : format;
@@ -174,6 +147,27 @@ struct Piece {
 		// TODO< other >
 
 		return resultString;
+	}
+
+	final Piece clone() {
+		Piece cloned;
+		cloned.enabled = enabled;
+		cloned.type = type;
+		cloned.functionType = functionType;
+		cloned.ca = ca;
+		cloned.classicalNeuron = classicalNeuron;
+		cloned.inputs.length = inputs.length;
+
+		foreach( i; 0..inputs.length) {
+			cloned.inputs[i].coordinate.x = inputs[i].coordinate.x;
+			cloned.inputs[i].value = inputs[i].value;
+		}
+
+		cloned.output.coordinate.x = output.coordinate.x;
+		cloned.output.value = output.value;
+
+		cloned.nextOutput = nextOutput;
+		return cloned;
 	}
 }
 
@@ -208,18 +202,18 @@ class SlimRnn {
 		SlimRnnCtorParameters parameters;
 		parameters.mapSize[0] = map.arr.length;
 		SlimRnn result = new SlimRnn(parameters);
-		result.pieces = pieces.dup;
-		result.initInternalValuesOfPieces(); // rewire pointers
+
+		import std.stdio;
+
+		// we do this instead of dup because dup leads to bugs
+		result.pieces.length = pieces.length;
+		foreach( i; 0..pieces.length ) {
+			result.pieces[i] = pieces[i].clone();
+		}
+
 		result.map = map;
 		result.terminal = terminal;
 		return result;
-	}
-
-	// sets the internal pointers of all pieces to the right values
-	final void initInternalValuesOfPieces() {
-		foreach( ref iterationPiece; pieces ) {
-			iterationPiece.initInternalValues();
-		}
 	}
 
 	final void resetMap() {
@@ -228,40 +222,41 @@ class SlimRnn {
 		}
 	}
 
-	final void resetPiecesToCaCount(uint countOfPieces) {
+	final void resetPiecesToTypeByCount(uint countOfPieces, Piece.EnumType type) {
 		pieces.length = 0;
 		pieces.length = countOfPieces;
 
-		initInternalValuesOfPieces();
-
 		foreach( ref iterationPiece; pieces ) {
-			iterationPiece.type = Piece.EnumType.CA;
+			iterationPiece.type = type;
 			iterationPiece.functionType = 0;
 			iterationPiece.inputs = 
 			[
-				CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.1f),
-				CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.1f),
+				CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.8f),
+				CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.8f),
 				//CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.1f),  uncomemnting this has an effect on how the network will be structured for the XOR example/test
 			];
 
-			iterationPiece.output = CoordinateWithValue.make(Coordinate.make(3), 0.6f);
+			iterationPiece.output = CoordinateWithValue.make(Coordinate.make(2), 0.6f);
 			iterationPiece.enabled = false;
 		}
 	}
 
-	final void loop(uint maxIterations, out uint iterations, out bool wasTerminated, out bool executionError) {
+	final void loop(uint maxIterations, out uint iterations, out bool wasTerminated_, out bool executionError) {
+		///import std.stdio;
+		///writeln(humanReadableDescriptionOfPieces());
+
 		executionError = false;
 
 		foreach( i; 0..maxIterations ) {
-			debugState(i);
+			debugSwitchboardState(i);
 
 			step(/*out*/executionError);
 			if( executionError ) {
 				return;
 			}
 
-			wasTerminated = terminated();
-			if( wasTerminated ) {
+			wasTerminated_ = wasTerminated();
+			if( wasTerminated_ ) {
 				iterations = i;
 				return;
 			}
@@ -270,10 +265,12 @@ class SlimRnn {
 		iterations = maxIterations;
 	}
 
-	private final void debugState(uint iteration) {
+	private final void debugSwitchboardState(uint iteration) {
 		import std.stdio;
 
-		if(!false) {
+		bool debug_ = false;
+
+		if(!debug_) {
 			return;
 		}
 
@@ -287,13 +284,17 @@ class SlimRnn {
 		writeln("---");
 	}
 
-	final string humanReadableDescriptionOfPieces() {
+	final string humanReadableDescriptionOfPieces(bool filterForEnabled = true) {
 		import std.format;
 
 		string result;
 		foreach( i, iterationPiece; pieces ) {
+			if( filterForEnabled && !iterationPiece.enabled ) {
+				continue;
+			}
+
 			result ~= "piece #=%s\n".format(i);
-			result ~= "\t" ~ iterationPiece.humanReadableDescription;
+			result ~= iterationPiece.humanReadableDescription;
 		}
 		return result;
 	}
@@ -307,8 +308,11 @@ class SlimRnn {
 		return map.arr[coordinateWithValue.coordinate.x] >= coordinateWithValue.threshold;
 	}
 
-	private final bool terminated() {
-		return map.arr[terminal.coordinate.x] >= terminal.threshold;
+	private final bool wasTerminated() {
+		///import std.stdio;
+		///writeln("slimRnn wasTerminated = ", map.arr[terminal.coordinate.x], " >= ", terminal.threshold );
+
+		return readAtCoordinateAndCheckForThreshold(terminal);
 	}
 
 	private final void calcNextState(ref Piece piece) {
@@ -326,16 +330,16 @@ class SlimRnn {
 				inputArray[inputIndex] = activated ? 1 : 0;
 			}
 
-			applyCaRule(piece.ca.rule, inputArray, /*out*/ resultArray);
+			applyCaRule(piece.caRule, inputArray, /*out*/ resultArray);
 
 			bool outputActivation = resultArray[piece.ca.readofIndex % resultArray.length] != 0;
-			piece.nextOutput = (outputActivation ? piece.output.strength : 0.0f);
+			piece.nextOutput = (outputActivation ? /*piece.output.strength*/ 1.0f/* TODO< set this with an SLIM parameter >*/ : 0.0f);
 		}
 		else if( piece.type == Piece.EnumType.CLASSICNEURON ) {
 			float inputActivation = 1.0f;
 
-			if( piece.classicalNeuron.type == Piece.ClassicalNeuron.EnumType.MULTIPLICATIVE ||
-				piece.classicalNeuron.type > Piece.ClassicalNeuron.ENUMSIZE // to handle values out of range, we default to the most useful, which is multiplicative
+			if( piece.classicalNeuronType == Piece.ClassicalNeuron.EnumType.MULTIPLICATIVE ||
+				piece.classicalNeuronType > Piece.ClassicalNeuron.ENUMSIZE // to handle values out of range, we default to the most useful, which is multiplicative
 			) {
 				inputActivation = 1.0f;
 
@@ -351,9 +355,25 @@ class SlimRnn {
 			// TODO< add activation function
 
 			// note< check for equivalence is important, because it allows us to activate a Neuron if the input is zero for neurons which have to be all the time on >
-			piece.nextOutput = (inputActivation >= piece.output.value ? piece.output.value : 0.0f);
+			piece.nextOutput = (inputActivation >= piece.output.threshold ? /*piece.output.value*/ 1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f);
+
+
+			// debug
+			if( false ) {
+				import std.stdio;
+				writeln("Piece.EnumType.CLASSICNEURON");
+				write("input= ");
+				foreach( iterationInput; piece.inputs ) {
+					write("[", iterationInput.coordinate.x, "]*", iterationInput.value, "=", (map.arr[iterationInput.coordinate.x] * iterationInput.value), ", ");
+				}
+				writeln();
+
+				writeln("inputActivation=", inputActivation, " threshold=", piece.output.threshold);
+			}
 		}
 		else if( piece.type == Piece.EnumType.XOR ) {
+			
+
 			bool inputActivation = false;
 
 			foreach( iterationInput; piece.inputs ) {
@@ -361,7 +381,19 @@ class SlimRnn {
 				inputActivation ^= iterationInputActivation;
 			}
 
-			piece.nextOutput = inputActivation ? piece.output.value : 0.0f;
+			if( false ) {
+				import std.stdio;
+				writeln("Piece.EnumType.XOR");
+				write("input= ");
+				foreach( iterationInput; piece.inputs ) {
+					write("[", iterationInput.coordinate.x, "] t=", iterationInput.value, "=", (map.arr[iterationInput.coordinate.x] >= iterationInput.value), ", ");
+				}
+				writeln();
+
+				writeln("inputActivation=", inputActivation);
+			}
+
+			piece.nextOutput = inputActivation ? /*piece.output.value*/1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f;
 		}
 	}
 
