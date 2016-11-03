@@ -205,7 +205,7 @@ struct SlimRnnStackBasedInterpreter {
 		}
 	}
 
-	private static void commitPieceExecution(ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, uint pieceIndex) {
+	private static void commitPieceExecution(ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, size_t pieceIndex) {
 		if( context.pieceExecutions[pieceIndex].flagEnableNeuron ) {
 			slimRnn.pieces[pieceIndex].enabled = context.pieceExecutions[pieceIndex].enableNeuronValue;
 		}

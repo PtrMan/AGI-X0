@@ -169,6 +169,28 @@ struct Piece {
 		cloned.nextOutput = nextOutput;
 		return cloned;
 	}
+
+	final void cloneInto(ref Piece target) {
+		target.enabled = enabled;
+		target.type = type;
+		target.functionType = functionType;
+		target.ca = ca;
+		target.classicalNeuron = classicalNeuron;
+		
+		if( target.inputs.length != inputs.length ) {
+			target.inputs.length = inputs.length;
+		}
+
+		foreach( i; 0..inputs.length) {
+			target.inputs[i].coordinate.x = inputs[i].coordinate.x;
+			target.inputs[i].value = inputs[i].value;
+		}
+
+		target.output.coordinate.x = output.coordinate.x;
+		target.output.value = output.value;
+
+		target.nextOutput = nextOutput;
+	}
 }
 
 // TODO< make this 2d >
@@ -214,6 +236,23 @@ class SlimRnn {
 		result.map = map;
 		result.terminal = terminal;
 		return result;
+	}
+
+	final void copyInto(SlimRnn target) {
+		assert(target.pieces.length == pieces.length);
+		foreach( i; 0..pieces.length ) {
+			pieces[i].cloneInto(target.pieces[i]);
+		}
+
+		assert(target.map.arr.length == map.arr.length);
+		foreach( i; 0..map.arr.length ) {
+			target.map.arr[i] = map.arr[i];
+		}
+
+		target.terminal.coordinate.x = terminal.coordinate.x;
+		target.terminal.value = terminal.value;
+
+		target.defaultInputSwitchboardIndex = defaultInputSwitchboardIndex;
 	}
 
 	final void resetMap() {

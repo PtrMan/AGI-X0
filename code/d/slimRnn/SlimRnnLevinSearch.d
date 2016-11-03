@@ -314,14 +314,17 @@ final class SlimRnnLevinProblem : LevinProblem {
 
 	final this(SlimRnn slimRnn) {
 		this.slimRnn = slimRnn;
+
+		workingSlimRnn = slimRnn.clone();
 	}
 
-	private SlimRnn slimRnn;
+	private SlimRnn slimRnn, workingSlimRnn;
 
 	final void executeProgram(LevinProgram program, uint maxNumberOfStepsToExecute, out bool hasHalted) {
 		hasHalted = false;
 
-		SlimRnn workingSlimRnn = slimRnn.clone();
+		// "fast" copy, we don't allocate the class, we don't allocate all arrays
+		slimRnn.copyInto(workingSlimRnn);
 
 		uint[] levinProgram = program.instructions;
 
@@ -576,7 +579,7 @@ void main() {
 		SlimRnnLevinProblem.TestSetElement.make([false, false], false),
 		SlimRnnLevinProblem.TestSetElement.make([false, true], true),
 		SlimRnnLevinProblem.TestSetElement.make([true, false], true),
-		SlimRnnLevinProblem.TestSetElement.make([true, true], false),
+		SlimRnnLevinProblem.TestSetElement.make([true, true], true),
 	];
 
 
