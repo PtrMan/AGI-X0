@@ -1,5 +1,7 @@
 module slimRnn.SlimRnn;
 
+import std.stdint;
+
 void applyCaRule(uint rule, uint[] inputArray, ref uint[] resultArray) {
 	assert(inputArray.length == resultArray.length);
 	assert(inputArray.length >= 2); // the optimization wasn't done for less elements
@@ -104,25 +106,39 @@ struct Piece {
 	enum EnumType {
 		CA, // cellular automata
 		CLASSICNEURON, // can be a function with multiple inputs and an output function
+		XOR, // TODO< encoding >
 	}
 
 	bool enabled = true;
 
 	EnumType type;
 
+	uint32_t functionType;
+
 
 	static struct Ca {
-		uint rule;
+		final @property uint rule() pure {
+			return *functionTypePtr;
+		}
+
 		uint readofIndex; // from which index in the CA should the result be read
+
+		uint32_t *functionTypePtr;
 	}
 
 	static struct ClassicalNeuron {
-		enum EnumType {
+		enum EnumType : uint32_t {
 			MULTIPLICATIVE,
 			//ADDITIVE,
 		}
+		private static const uint ENUMSIZE = 1;
 
-		EnumType type;
+		final @property EnumType type() pure {
+			uint32_t value = *functionTypePtr >= ENUMSIZE ? ENUMSIZE-1 : *functionTypePtr;
+			return cast(EnumType)value;
+		}
+
+		uint32_t *functionTypePtr;
 	}
 
 	// can't be an (D)union because it produces wrong values when an algorithm switches the type	
@@ -139,6 +155,25 @@ struct Piece {
 	final size_t getCaWidth() {
 		assert(type == EnumType.CA);
 		return inputs.length; // number of cells is for now the size/width of the input
+	}
+
+	final void initInternalValues() {
+		ca.functionTypePtr = &functionType;
+		classicalNeuron.functionTypePtr = &functionType;
+	}
+
+	final @property string humanReadableDescription() {
+		import std.conv : to;
+		import std.format : format;
+		import std.algorithm.iteration : map;
+
+		string resultString;
+		resultString ~= "\ttype=%s\n".format(type.to!string);
+		resultString ~= "\tinputs=%s\n".format(inputs.map!(v => "(idx=%s,t=%s)".format(v.coordinate.x, v.threshold)));
+		resultString ~= "\toutput=(idx=%s,s=%s)\n".format(output.coordinate.x, output.strength);
+		// TODO< other >
+
+		return resultString;
 	}
 }
 
@@ -163,6 +198,8 @@ class SlimRnn {
 
 	CoordinateWithThreshold terminal;
 
+	size_t defaultInputSwitchboardIndex = 0; // index of the switchboard to which created inputs are automatically set to
+
 	final this(SlimRnnCtorParameters parameters) {
 		map.arr.length = parameters.mapSize[0];
 	}
@@ -172,9 +209,17 @@ class SlimRnn {
 		parameters.mapSize[0] = map.arr.length;
 		SlimRnn result = new SlimRnn(parameters);
 		result.pieces = pieces.dup;
+		result.initInternalValuesOfPieces(); // rewire pointers
 		result.map = map;
 		result.terminal = terminal;
 		return result;
+	}
+
+	// sets the internal pointers of all pieces to the right values
+	final void initInternalValuesOfPieces() {
+		foreach( ref iterationPiece; pieces ) {
+			iterationPiece.initInternalValues();
+		}
 	}
 
 	final void resetMap() {
@@ -187,14 +232,16 @@ class SlimRnn {
 		pieces.length = 0;
 		pieces.length = countOfPieces;
 
+		initInternalValuesOfPieces();
+
 		foreach( ref iterationPiece; pieces ) {
 			iterationPiece.type = Piece.EnumType.CA;
-			iterationPiece.ca.rule = 0;
+			iterationPiece.functionType = 0;
 			iterationPiece.inputs = 
 			[
-				CoordinateWithValue.make(Coordinate.make(0), 0.1f),
-				CoordinateWithValue.make(Coordinate.make(0), 0.1f),
-				CoordinateWithValue.make(Coordinate.make(0), 0.1f),
+				CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.1f),
+				CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.1f),
+				//CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.1f),  uncomemnting this has an effect on how the network will be structured for the XOR example/test
 			];
 
 			iterationPiece.output = CoordinateWithValue.make(Coordinate.make(3), 0.6f);
@@ -202,11 +249,17 @@ class SlimRnn {
 		}
 	}
 
-	final void loop(uint maxIterations, out uint iterations, out bool wasTerminated) {
+	final void loop(uint maxIterations, out uint iterations, out bool wasTerminated, out bool executionError) {
+		executionError = false;
+
 		foreach( i; 0..maxIterations ) {
 			debugState(i);
 
-			step();
+			step(/*out*/executionError);
+			if( executionError ) {
+				return;
+			}
+
 			wasTerminated = terminated();
 			if( wasTerminated ) {
 				iterations = i;
@@ -234,9 +287,20 @@ class SlimRnn {
 		writeln("---");
 	}
 
-	private final void step() {
+	final string humanReadableDescriptionOfPieces() {
+		import std.format;
+
+		string result;
+		foreach( i, iterationPiece; pieces ) {
+			result ~= "piece #=%s\n".format(i);
+			result ~= "\t" ~ iterationPiece.humanReadableDescription;
+		}
+		return result;
+	}
+
+	private final void step(out bool executionError) {
 		calcNextStates();
-		applyOutputs();
+		applyOutputs(/*out*/executionError);
 	}
 
 	private final bool readAtCoordinateAndCheckForThreshold(ref CoordinateWithValue coordinateWithValue) {
@@ -270,7 +334,9 @@ class SlimRnn {
 		else if( piece.type == Piece.EnumType.CLASSICNEURON ) {
 			float inputActivation = 1.0f;
 
-			if( piece.classicalNeuron.type == Piece.ClassicalNeuron.EnumType.MULTIPLICATIVE ) {
+			if( piece.classicalNeuron.type == Piece.ClassicalNeuron.EnumType.MULTIPLICATIVE ||
+				piece.classicalNeuron.type > Piece.ClassicalNeuron.ENUMSIZE // to handle values out of range, we default to the most useful, which is multiplicative
+			) {
 				inputActivation = 1.0f;
 
 				foreach( iterationInput; piece.inputs ) {
@@ -287,6 +353,16 @@ class SlimRnn {
 			// note< check for equivalence is important, because it allows us to activate a Neuron if the input is zero for neurons which have to be all the time on >
 			piece.nextOutput = (inputActivation >= piece.output.value ? piece.output.value : 0.0f);
 		}
+		else if( piece.type == Piece.EnumType.XOR ) {
+			bool inputActivation = false;
+
+			foreach( iterationInput; piece.inputs ) {
+				bool iterationInputActivation = map.arr[iterationInput.coordinate.x] >= iterationInput.value;
+				inputActivation ^= iterationInputActivation;
+			}
+
+			piece.nextOutput = inputActivation ? piece.output.value : 0.0f;
+		}
 	}
 
 	private final void calcNextStates() {
@@ -295,13 +371,19 @@ class SlimRnn {
 		}
 	}
 
-	private final void applyOutputs() {
+	private final void applyOutputs(out bool executionError) {
+		executionError = true;
 		foreach( iterationPiece; pieces ) {
 			if( !iterationPiece.enabled ) {
 				continue;
 			}
 
+			if( iterationPiece.output.coordinate.x >= map.arr.length ) {
+				return; // we return with an execution error
+			}
+
 			map.arr[iterationPiece.output.coordinate.x] = iterationPiece.nextOutput;
 		}
+		executionError = false;
 	}
 }

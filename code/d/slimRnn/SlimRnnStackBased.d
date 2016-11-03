@@ -1,0 +1,4 @@
+module slimRnn.SlimRnnStackBasedInterpreter;
+
+import slimRnn.SlimRnnStackBasedManipulationInstruction;
+

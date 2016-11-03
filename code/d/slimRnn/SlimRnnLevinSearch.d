@@ -1,12 +1,197 @@
 module slimRnn.SlimRnnLevinSearch;
 
+import std.stdint;
+
 import slimRnn.SlimRnn;
 import search.levin.LevinSearch;
 
-struct InstructionInterpretationContext {
-	uint pieceIndex;
-	uint inputIndex;
+import slimRnn.SlimRnnStackBasedManipulationInstruction;
+static import slimRnn.programEncoding.Vliw1;                    // stack based "very large instruction word"-style instructions on which levin search can operate
+import slimRnn.SlimRnnStackBasedInterpreter;
+
+/*
+struct StackBasedInstructionInterpretationContext {
+	int pieceIndex;
+
+	uint[] stack;
+
+	final void reset() {
+		pieceIndex = -1;
+		stack.length = 0;
+	}
 }
+*/
+
+
+
+
+
+struct Stack6BitInstructionEncodingStack1 {
+
+
+
+	/+ uncommented because its outdate, but the encoding is still useful in the future
+	static void decodeAndExecute(ref InstructionInterpretationContext context, SlimRnn slimRnn, uint instruction, out bool unknownEncoding, out bool executionSuccess) {
+		Instruction instructionDecoded = decode(instruction, /*out*/unknownEncoding);
+		interpret(context, slimRnn, instructionDecoded, /*out*/executionSuccess);
+	}
+
+
+/*
+this instruction set works with 5 bits for the neuron id's and other values
+it operates on a context with an stack and the current pieceIndex
+
+- push working value (1xxxxx)
+- set neuron index to #top, [optionally] activate neuron #top, set type of neuron to either CA or XOR(0-10-aa-t)
+   - aa : 10 : disable neuron
+   - aa : 11 : enable neuron
+   - aa : 00 : don't touch
+   - aa : 01 : NOT USED ENCODING
+
+   - t : 0 : set type to CA
+   - t : 1 : set type to XOR
+
+- set neuron index to #top, [optionally] activate neuron #top, set type of neuron to either CLASSICAL or CA(0-11-aa-t)
+   - aa : 10 : disable neuron
+   - aa : 11 : enable neuron
+   - aa : 00 : don't touch
+   - aa : 01 : NOT USED ENCODING
+
+   - t : 0 : set type to CLASSIC
+   - t : 1 : set type to <NOT USED ENCODING, do not use this >
+- set threshold of input index 'a' to #top (0-00-00-a)
+- set threshold of input index 'aa' to #top (0-00-1-aa)
+- set output strength to #top (0-01-100)
+                               # ## ###
+
+*/
+
+	// decodes an instruction to a "Instruction" structure
+	static private Instruction decode(uint instruction, out bool unknownEncoding) {
+		unknownEncoding = true;
+
+		if( ((instruction >> 5) & 1) == 1 ) {
+			uint valueToPush = instruction & 0x1f;
+			unknownEncoding = false;
+			return Instruction.makePush(valueToPush);
+		}
+		else {
+			uint followingEncoding = (instruction >> 3) & 3;
+			if( followingEncoding == 2 ) { // set neuron index to #top, [optionally] activate neuron #top, set type of neuron to either CA or XOR
+				bool activateFlagActive = (instruction & (1 << 2)) != 0;
+				bool activateFlag = (instruction & (1 << 1)) != 0;
+				
+				if( !activateFlagActive & activateFlag ) {
+					return Instruction.init;
+				}
+
+				bool typeFlag = (instruction & 1) != 0;
+
+				if( typeFlag == true ) {
+					// not valid encoding because its not used
+					return Instruction.init;
+				}
+
+				Piece.EnumType setNeuronTypeToType = typeFlag ? Piece.EnumType.CLASSICNEURON : Piece.EnumType.CLASSICNEURON;
+
+				unknownEncoding = false;
+				return  Instruction.makeSetNeuronIndexToTopActivateNeuronSetTypeOfNeuron(activateFlagActive, activateFlag, setNeuronTypeToType);
+			}
+			else if( followingEncoding == 3 ) {
+				bool activateFlagActive = (instruction & (1 << 2)) != 0;
+				bool activateFlag = (instruction & (1 << 1)) != 0;
+				
+				if( !activateFlagActive & activateFlag ) {
+					return Instruction.init;
+				}
+
+				bool typeFlag = (instruction & 1) != 0;
+				Piece.EnumType setNeuronTypeToType = typeFlag ? Piece.EnumType.CA : Piece.EnumType.XOR;
+
+				unknownEncoding = false;
+				return Instruction.makeSetNeuronIndexToTopActivateNeuronSetTypeOfNeuron(activateFlagActive, activateFlag, setNeuronTypeToType);
+			}
+			else if( followingEncoding == 0 ) {
+				bool followingEncoding = (instruction & (1 << 2)) != 0;
+				if( followingEncoding ) {
+					// the size of the input index is two bits
+					uint inputIndex = instruction & 3;
+					unknownEncoding = false;
+					return Instruction.makeSetInputThreshold(inputIndex);
+				}
+				else {
+					// TODO< there is an unused encoding possibility here >
+
+					// the size of the input index is one bit
+					uint inputIndex = instruction & 1;
+					unknownEncoding = false;
+					return Instruction.makeSetInputThreshold(inputIndex);
+				}
+			}
+			else {
+				if( instruction == 0xC ) {
+					unknownEncoding = false;
+					return Instruction.makeSetOutputStrengthToTop();
+				}
+				// else we are here
+
+				// not used/valid encoding
+				return Instruction.init;
+			}
+		}
+	}
+
+	static private void interpret(ref InstructionInterpretationContext context, SlimRnn slimRnn, Instruction instruction, out bool executionSuccess) {
+		executionSuccess = false;
+
+		if( instruction.type == Instruction.EnumType.PUSHVALUE ) {
+			context.stack.push(instruction.value);
+
+			executionSuccess = true;
+		}
+		else if( instruction.type == Instruction.EnumType.SETNEURONINDEXTOTOPACTIVATENEURONSETTYPEOFNEURON ) {
+			if( context.stack.isEmpty ) { // not valid to execute this instruction with an empty stack
+				return;
+			}
+
+			// set the pieceIndex
+			context.pieceIndex = context.stack.top();
+
+			// enable
+			if( instruction.activateFlagActive ) {
+				slimRnn.pieces[context.pieceIndex].enabled = instruction.activateFlag;
+			}
+
+			// set type
+			slimRnn.pieces[context.pieceIndex].type = instruction.setNeuronTypeToType;
+
+			executionSuccess = true;
+		}
+		else if( instruction.type == Instruction.EnumType.SETINPUTTHRESHOLD ) {
+			if( context.pieceIndex == -1 ) { // can't execute this instruction of the pieceIndex is not set
+				return;
+			}
+
+			if( context.stack.isEmpty ) { // can't execute this instruction on an empty stack
+				return;
+			}
+
+			if( slimRnn.pieces[context.pieceIndex].inputs.length >= instruction.inputIndex ) { // can't execute of input index doesn't match up
+				return;
+			}
+
+			slimRnn.pieces[context.pieceIndex].inputs[instruction.inputIndex].value = (1.0f/cast(float)(1 << 5)) * cast(float)context.stack.top;
+
+			executionSuccess = true;
+		}
+	}+/
+}
+	
+
+
+
+/+
+uncommented because encoding can still be useful in the future
 
 struct InstructionEncoding {
 	// 8 bits
@@ -107,11 +292,7 @@ struct InstructionEncoding {
 		}
 	}
 }
-
-// converts a bitcount to the mask to mask these bits out
-uint bitsToMask(uint bits) {
-	return (1 << (bits+1))-1;
-}
++/
 
 // we do search for configurations of some parameters of the SLIM RNN via levin search
 // as described in schmidhurs SLIM RNN paper
@@ -128,18 +309,31 @@ final class SlimRnnLevinProblem : LevinProblem {
 
 		SlimRnn workingSlimRnn = slimRnn.clone();
 
-		InstructionInterpretationContext instructionInterpretationContext;
+		// (1) decode levin program instructions to SlimRnn instructions
+		// (2) execute/interpret instructions on SLIM-RNN
+		{
+			bool invalidEncoding;
+			SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions = translateLevinProgramInstructionsToStackBasedInstructions(program.instructions, /*out*/ invalidEncoding);
 
-		foreach( iterationInstruction; program.instructions ) {
-			// TODO< exeute instruction on SlimRnn >
-
-			bool unknownEncoding;
-			InstructionEncoding.executeInstructionOnSlimRnn(instructionInterpretationContext, workingSlimRnn, iterationInstruction, /*out*/ unknownEncoding);
-			if( unknownEncoding ) {
+			// overwrite stack based instruction with our program which solves the problem
+			if( invalidEncoding ) {
 				return; // we immediatly return because the encoding is invalid, this is not an hard error
 			}
+
+			bool interpretationSuccess;
+			SlimRnnStackBasedInterpreter.interpret(stackBasedInstructions, workingSlimRnn, /*out*/ interpretationSuccess);
+			if( !interpretationSuccess ) {
+				return; // it is an hard error if we can't interpret the instructions
+			}
+
+
+			// just for debugging
+			// uncommented because it produces too much output
+			//import std.stdio;
+			//writeln(workingSlimRnn.humanReadableDescriptionOfPieces());
 		}
 
+		// (3) execute SLIM-RNN
 
 
 
@@ -148,14 +342,19 @@ final class SlimRnnLevinProblem : LevinProblem {
 
 		uint maxIterations = maxNumberOfStepsToExecute;
 		uint iterations;
-		bool wasTerminated;
+		bool wasTerminated, executionError;
 
 		// init start state
 		workingSlimRnn.resetMap();
 		workingSlimRnn.map.arr[0] = 0.0f;
 		workingSlimRnn.map.arr[1] = 0.0f;
 
-		workingSlimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
+		workingSlimRnn.loop(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
+
+		if( executionError ) {
+			// is an hard error if an execution error happend
+			return;
+		}
 
 		if( !wasTerminated ) {
 			// if the SLIM-RNN didn't terminate we just have to continue the search
@@ -174,7 +373,12 @@ final class SlimRnnLevinProblem : LevinProblem {
 		workingSlimRnn.map.arr[0] = 1.0f;
 		workingSlimRnn.map.arr[1] = 0.0f;
 
-		workingSlimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
+		workingSlimRnn.loop(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
+
+		if( executionError ) {
+			// is an hard error if an execution error happend
+			return;
+		}
 
 		if( !wasTerminated ) {
 			// if the SLIM-RNN didn't terminate we just have to continue the search
@@ -194,7 +398,12 @@ final class SlimRnnLevinProblem : LevinProblem {
 		workingSlimRnn.map.arr[0] = 0.0f;
 		workingSlimRnn.map.arr[1] = 1.0f;
 
-		workingSlimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
+		workingSlimRnn.loop(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
+
+		if( executionError ) {
+			// is an hard error if an execution error happend
+			return;
+		}
 
 		if( !wasTerminated ) {
 			// if the SLIM-RNN didn't terminate we just have to continue the search
@@ -215,7 +424,12 @@ final class SlimRnnLevinProblem : LevinProblem {
 		workingSlimRnn.map.arr[0] = 1.0f;
 		workingSlimRnn.map.arr[1] = 1.0f;
 
-		workingSlimRnn.loop(maxIterations, /*out*/ iterations, /*out*/ wasTerminated);
+		workingSlimRnn.loop(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
+
+		if( executionError ) {
+			// is an hard error if an execution error happend
+			return;
+		}
 
 		if( !wasTerminated ) {
 			// if the SLIM-RNN didn't terminate we just have to continue the search
@@ -227,8 +441,6 @@ final class SlimRnnLevinProblem : LevinProblem {
 			// result is wrong
 			return; // continue the search 
 		}
-
-
 
 		// if we are here the network does what is requested
 		hasHalted = true;
@@ -266,14 +478,6 @@ void main() {
 
     import core.time;
 
-    MonoTime before = MonoTime.currTime;
-// do stuff
-MonoTime after = MonoTime.currTime;
-
-// How long it took.
-Duration timeElapsed = after - before;
-
-
     uint reportingTriedProgramCounter = 0; // used to measure how many programs get tried per second
     uint reportingNoTimecheckSinceTriedPrograms = 0;
     uint reportingNumberOfTriedPrograms = 0;
@@ -299,14 +503,27 @@ Duration timeElapsed = after - before;
 
     		reportingNoTimecheckSinceTriedPrograms = 0;
     	}
+
+
+
+    	// report program
+    	/+ uncommented because it results in too much output
+    	bool invalidEncoding;
+    	SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions = translateLevinProgramInstructionsToStackBasedInstructions(currentProgram.instructions, /*out*/ invalidEncoding);
+
+    	writeln("levin program=", currentProgram.instructions, ", translated to VLIW1 instruction-set:");
+    	foreach( SlimRnnStackBasedManipulationInstruction iterationInstruction; stackBasedInstructions ) {
+    		writeln("\t" ~ iterationInstruction.humanReadableDescription());
+    	}
+    	+/
     };
 
     // not correct number just for testing
-    levinSearch.numberOfInstructions = 1 << 8;
+    levinSearch.numberOfInstructions = 1 << 12; // 12 bit because we use LVIW1 levin-instruction encoding
     levinSearch.c = 0.1;
     levinSearch.maxIterations = 50; // not a lot because the function is simple
 
-    uint programLength = 4; // equivalent to 32 bit
+    uint programLength = 2; // equivalent to 24 bit,  is enougth to find the program to acomplish the XOR problem
 
     levinSearch.instructionPropabilityMatrix.length = programLength;
     foreach( ref iterationArray; levinSearch.instructionPropabilityMatrix ) {
@@ -332,22 +549,24 @@ Duration timeElapsed = after - before;
 	ctorParameters.mapSize[0] = 10;
 
 	SlimRnn slimRnn = new SlimRnn(ctorParameters);
-	slimRnn.resetPiecesToCaCount(1 << 6);
+	uint countOfPieces = 1 << 5;
+	slimRnn.resetPiecesToCaCount(countOfPieces);
 
 	slimRnn.terminal.coordinate.x = ctorParameters.mapSize[0]-cast(size_t)1; // last map element is the terminal
+	slimRnn.defaultInputSwitchboardIndex = ctorParameters.mapSize[0]-cast(size_t)2; // switchboard element before the last elements which is the terminal, is not zero because the programs should generalize better
 	slimRnn.terminal.value = 0.5f;
 
 	// add an neuron which sends the termination
 
-	slimRnn.pieces[64-1].type = Piece.EnumType.CLASSICNEURON;
-	slimRnn.pieces[64-1].classicalNeuron.type = Piece.classicalNeuron.EnumType.MULTIPLICATIVE;
+	slimRnn.pieces[countOfPieces-1].type = Piece.EnumType.CLASSICNEURON;
+	slimRnn.pieces[countOfPieces-1].functionType = cast(uint32_t)Piece.classicalNeuron.EnumType.MULTIPLICATIVE;
 
-	slimRnn.pieces[64-1].inputs = 
+	slimRnn.pieces[countOfPieces-1].inputs = 
 	[
 	];
 
-	slimRnn.pieces[64-1].output = CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-1), 0.6f);
-	slimRnn.pieces[64-1].enabled = true; 
+	slimRnn.pieces[countOfPieces-1].output = CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-1), 0.6f);
+	slimRnn.pieces[countOfPieces-1].enabled = true; 
 
 
 
@@ -367,7 +586,8 @@ Duration timeElapsed = after - before;
 
     	// debug program
     	foreach( iterationInstruction; solution.program.instructions ) {
-    		InstructionEncoding.debugInstructionToConsole(iterationInstruction);
+    		// TODO< >
+    		// uncommented because its the old code InstructionEncoding.debugInstructionToConsole(iterationInstruction);
     	}
     }
     
@@ -376,4 +596,22 @@ Duration timeElapsed = after - before;
 
     import std.stdio;
     writeln("done=", done);
+    writeln("##=", reportingNumberOfTriedPrograms);
+}
+
+
+
+// uses the VLIW1 encoding scheme for decoding
+private SlimRnnStackBasedManipulationInstruction[] translateLevinProgramInstructionsToStackBasedInstructions(uint[] instructions, out bool invalidEncoding) {
+	invalidEncoding = false;
+
+	SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions;
+	foreach( uint iterationInstruction; instructions ) {
+		stackBasedInstructions ~= .slimRnn.programEncoding.Vliw1.decodeInstruction(iterationInstruction, /*out*/ invalidEncoding);
+		if( invalidEncoding ) {
+			return [];
+		}
+	}
+
+	return stackBasedInstructions;
 }
