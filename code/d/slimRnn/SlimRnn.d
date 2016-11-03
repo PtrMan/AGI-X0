@@ -220,6 +220,47 @@ class SlimRnn {
 		map.arr.length = parameters.mapSize[0];
 	}
 
+
+	// array of piece indices which are ready to be executed
+	// is updated by the user with compile()
+	private size_t[] entryReadySet;
+
+	private size_t[] readySet;
+
+
+	// sets up acceleration datastructures
+	final void compile() {
+		// compile entry ready set
+
+		size_t readyElements = 0;
+
+		foreach( i, ref iterationPiece; pieces ) {
+			if( iterationPiece.enabled ) {
+				readyElements++;
+			}
+		}
+
+		entryReadySet.length = readyElements;
+
+		size_t entryReadySetI = 0;
+
+		// for our purposes we just take all activated pieces into it
+		// even if we can add "false friends"
+		foreach( i, ref iterationPiece; pieces ) {
+			if( iterationPiece.enabled ) {
+				entryReadySet[entryReadySetI++] = i;
+			}
+		}
+	}
+
+
+
+
+
+
+
+
+
 	final SlimRnn clone() {
 		SlimRnnCtorParameters parameters;
 		parameters.mapSize[0] = map.arr.length;
@@ -285,6 +326,8 @@ class SlimRnn {
 		///writeln(humanReadableDescriptionOfPieces());
 
 		executionError = false;
+
+		readySet = entryReadySet.dup;
 
 		foreach( i; 0..maxIterations ) {
 			debugSwitchboardState(i);
@@ -354,10 +397,8 @@ class SlimRnn {
 		return readAtCoordinateAndCheckForThreshold(terminal);
 	}
 
-	private final void calcNextState(ref Piece piece) {
-		if( !piece.enabled ) {
-			return;
-		}
+	private final void calcNextState(Piece *piece) {
+		assert( piece.enabled ); // must be the case because we are working with the ready set, and the ready set has to have by definition only enabled elements in it
 
 		if( piece.type == Piece.EnumType.CA ) {
 			uint[] inputArray, resultArray;
@@ -437,7 +478,8 @@ class SlimRnn {
 	}
 
 	private final void calcNextStates() {
-		foreach( ref iterationPiece; pieces ) {
+		foreach( iterationReadySetPieceIndex; readySet ) {
+			Piece *iterationPiece = &pieces[iterationReadySetPieceIndex];
 			calcNextState(iterationPiece);
 		}
 	}

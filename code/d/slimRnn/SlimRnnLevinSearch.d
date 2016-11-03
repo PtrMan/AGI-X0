@@ -2,6 +2,8 @@ module slimRnn.SlimRnnLevinSearch;
 
 import std.stdint;
 
+import memoryLowlevel.StackAllocator;
+
 import slimRnn.SlimRnn;
 import search.levin.LevinSearch;
 
@@ -320,6 +322,8 @@ final class SlimRnnLevinProblem : LevinProblem {
 
 	private SlimRnn slimRnn, workingSlimRnn;
 
+	private SlimRnnStackBasedInterpretationContext slimRnnStackBasedInterpretationContext;
+
 	final void executeProgram(LevinProgram program, uint maxNumberOfStepsToExecute, out bool hasHalted) {
 		hasHalted = false;
 
@@ -332,7 +336,8 @@ final class SlimRnnLevinProblem : LevinProblem {
 		// (2) execute/interpret instructions on SLIM-RNN
 		if(true){
 			bool invalidEncoding;
-			SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions = translateLevinProgramInstructionsToStackBasedInstructions(levinProgram, /*out*/ invalidEncoding);
+			StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) stackBasedInstructionsStack;
+			translateLevinProgramInstructionsToStackBasedInstructions(levinProgram, stackBasedInstructionsStack, /*out*/ invalidEncoding);
 
 			// overwrite stack based instruction with our program which solves the problem
 			if( invalidEncoding ) {
@@ -340,7 +345,7 @@ final class SlimRnnLevinProblem : LevinProblem {
 			}
 
 			bool interpretationSuccess;
-			SlimRnnStackBasedInterpreter.interpret(stackBasedInstructions, workingSlimRnn, /*out*/ interpretationSuccess);
+			SlimRnnStackBasedInterpreter.interpret(slimRnnStackBasedInterpretationContext, stackBasedInstructionsStack, workingSlimRnn, /*out*/ interpretationSuccess);
 			if( !interpretationSuccess ) {
 				return; // it is an hard error if we can't interpret the instructions
 			}
@@ -369,8 +374,10 @@ final class SlimRnnLevinProblem : LevinProblem {
 		*/
 		
 		
+		// (3) prepare SLIM-RNN
+		workingSlimRnn.compile();
 
-		// (3) execute SLIM-RNN
+		// (4) execute SLIM-RNN
 
 
 
@@ -423,10 +430,13 @@ final class SlimRnnLevinProblem : LevinProblem {
 		// debug found program
 		import std.stdio;
 		bool invalidEncoding;
-    	SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions = translateLevinProgramInstructionsToStackBasedInstructions(levinProgram, /*out*/ invalidEncoding);
+		StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) stackBasedInstructionsStack;
+    	translateLevinProgramInstructionsToStackBasedInstructions(levinProgram, stackBasedInstructionsStack, /*out*/ invalidEncoding);
 
     	writeln("levin program=", levinProgram, ", translated to VLIW1 instruction-set:");
-    	foreach( SlimRnnStackBasedManipulationInstruction iterationInstruction; stackBasedInstructions ) {
+    	foreach( instructionIndex; 0..stackBasedInstructionsStack.length ) {
+    		auto iterationInstruction = stackBasedInstructionsStack.getAtIndex(instructionIndex);
+
     		writeln("\t" ~ iterationInstruction.humanReadableDescription());
     	}
 
@@ -612,16 +622,15 @@ void main() {
 
 
 // uses the VLIW1 encoding scheme for decoding
-private SlimRnnStackBasedManipulationInstruction[] translateLevinProgramInstructionsToStackBasedInstructions(uint[] instructions, out bool invalidEncoding) {
+private void translateLevinProgramInstructionsToStackBasedInstructions(uint[] instructions, ref StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) resultInstructionStack, out bool invalidEncoding) {
 	invalidEncoding = false;
 
-	SlimRnnStackBasedManipulationInstruction[] stackBasedInstructions;
 	foreach( uint iterationInstruction; instructions ) {
-		stackBasedInstructions ~= .slimRnn.programEncoding.Vliw1.decodeInstruction(iterationInstruction, /*out*/ invalidEncoding);
+		.slimRnn.programEncoding.Vliw1.decodeInstruction(iterationInstruction, resultInstructionStack, /*out*/ invalidEncoding);
 		if( invalidEncoding ) {
-			return [];
+			return;
 		}
 	}
 
-	return stackBasedInstructions;
+	return;
 }

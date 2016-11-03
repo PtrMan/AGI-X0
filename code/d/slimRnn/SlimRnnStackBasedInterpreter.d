@@ -1,5 +1,7 @@
 module slimRnn.SlimRnnStackBasedInterpreter;
 
+import memoryLowlevel.StackAllocator;
+
 import slimRnn.SlimRnnStackBasedManipulationInstruction;
 import slimRnn.SlimRnn;
 
@@ -26,7 +28,9 @@ struct SlimRnnStackBasedInterpretationContext {
 		pieceIndex = -1;
 		stack.length = 0;
 		
-		pieceExecutions.length = numberOfPieces;
+		if( pieceExecutions.length != numberOfPieces ) {
+			pieceExecutions.length = numberOfPieces;
+		}
 		foreach( ref iterationPiece; pieceExecutions ) {
 			iterationPiece = PieceExecution.init;
 		}
@@ -34,13 +38,15 @@ struct SlimRnnStackBasedInterpretationContext {
 }
 
 struct SlimRnnStackBasedInterpreter {
-	static void interpret(SlimRnnStackBasedManipulationInstruction[] instructions, SlimRnn slimRnn, out bool success) {
+	// context is carried around as an optimization, should be externally carried around too, but it is not necessary
+	static void interpret(ref SlimRnnStackBasedInterpretationContext context, ref StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) instructions, SlimRnn slimRnn, out bool success) {
 		success = false;
 
-		SlimRnnStackBasedInterpretationContext context;
 		context.reset(slimRnn.pieces.length);
 
-		foreach( iterationInstruction; instructions ) {
+		foreach( instructionIndex; 0..instructions.length ) {
+			auto iterationInstruction = instructions.getAtIndex(instructionIndex);
+			
 			final switch( iterationInstruction.type ) with (SlimRnnStackBasedManipulationInstruction.EnumType) {
 				case PUSHVALUE: interpretInstructionPushValue(iterationInstruction, context, slimRnn, success); break;
 				case POP: interpretInstructionPop(iterationInstruction, context, slimRnn, success); break;
