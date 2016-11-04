@@ -161,69 +161,6 @@ struct PieceCowFacade {
 	mixin(ctfeSetGetAccessors("CoordinateWithStrength", "output"));
 	mixin(ctfeSetGetAccessors("CoordinateWithAttribute[]", "inputs", false));
 
-
-	/* uncommented because the code is generated with mixins
-
-	final @property bool enabled() {
-		if( opaque ) {
-			return front.enabled;
-		}
-		return shadowed.enabled;
-	}
-
-	final @property bool enabled(bool newValue) {
-		if( opaque ) {
-			front.enabled = newValue;
-		}
-		else {
-			copyShadowedToFront();
-			opaque = true;
-			return .enabled(newValue);
-		}
-		return newValue;
-	}
-
-	final @property Piece.EnumType type() {
-		if( opaque ) {
-			return front.type;
-		}
-		return shadowed.type;
-	}
-
-	final @property Piece.EnumType type(Piece.EnumType newValue) {
-		if( opaque ) {
-			front.type = newValue;
-		}
-		else {
-			copyShadowedToFront();
-			opaque = true;
-			return .type(newValue);
-		}
-		return newValue;
-	}
-
-	final @property uint32_t functionType() {
-		if( opaque ) {
-			return front.functionType;
-		}
-		return shadowed.functionType;
-	}
-
-	final @property uint32_t functionType(uint32_t newValue) {
-		if( opaque ) {
-			front.functionType = newValue;
-		}
-		else {
-			copyShadowedToFront();
-			opaque = true;
-			return .functionType(newValue);
-		}
-		return newValue;
-	}
-
-
-	*/
-
 	final @property uint caRule() {
 		if( opaque ) {
 			return front.caRule;
@@ -258,47 +195,6 @@ struct PieceCowFacade {
 			setInputAt(index, value);
 		}
 	}
-
-	/* commented because we do already have the input accessor 
-	// doesn't resize array
-	final ref CoordinateWithAttribute refInputAt(size_t index) {
-		if( opaque ) {
-			return front.inputs[index];
-		}
-		return shadowed.inputs[index];
-	}
-	*/
-
-	/*final @property ref CoordinateWithAttribute refOutput() {
-		if( opaque ) {
-			return front.output;
-		}
-		return shadowed.output;
-	}*/
-
-
-
-
-	/* has no next output because only the SlimRnn needs this state, and because it's not under COW
-
-	final @property float nextOutput() {
-		if( opaque ) {
-			return front.nextOutput;
-		}
-		return shadowed.nextOutput;
-	}
-
-	final @property float nextOutput(float newValue) {
-		if( opaque ) {
-			front.nextOutput = newValue;
-		}
-		else {
-			copyShadowedToFront();
-			opaque = true;
-			return nextOutput(newValue);
-		}
-		return newValue;
-	}*/
 
 	// returns the number of cells in the CA
 	final size_t getCaWidth() {
@@ -389,51 +285,6 @@ struct Piece {
 
 		return resultString;
 	}
-
-	/*
-	final Piece clone() {
-		Piece cloned;
-		cloned.enabled = enabled;
-		cloned.type = type;
-		cloned.functionType = functionType;
-		cloned.ca = ca;
-		cloned.classicalNeuron = classicalNeuron;
-		cloned.inputs.length = inputs.length;
-
-		foreach( i; 0..inputs.length) {
-			cloned.inputs[i].coordinate.x = inputs[i].coordinate.x;
-			cloned.inputs[i].value = inputs[i].value;
-		}
-
-		cloned.output.coordinate.x = output.coordinate.x;
-		cloned.output.value = output.value;
-
-		cloned.nextOutput = nextOutput;
-		return cloned;
-	}
-	/*
-	final void cloneInto(ref Piece target) {
-		target.enabled = enabled;
-		target.type = type;
-		target.functionType = functionType;
-		target.ca = ca;
-		target.classicalNeuron = classicalNeuron;
-		
-		if( target.inputs.length != inputs.length ) {
-			target.inputs.length = inputs.length;
-		}
-
-		foreach( i; 0..inputs.length) {
-			target.inputs[i].coordinate.x = inputs[i].coordinate.x;
-			target.inputs[i].value = inputs[i].value;
-		}
-
-		target.output.coordinate.x = output.coordinate.x;
-		target.output.value = output.value;
-
-		target.nextOutput = nextOutput;
-	}
-	*/
 }
 
 // TODO< make this 2d >
