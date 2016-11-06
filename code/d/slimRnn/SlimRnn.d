@@ -18,7 +18,7 @@ unittest {
 	assert(applyCaRule(254, [true, true, true]));
 }
 
-
+/+
 void applyCaRuleOnUintArray(uint rule, uint[] inputArray, uint *resultArray) {
 	assert(inputArray.length >= 2); // the optimization wasn't done for less elements
 
@@ -47,7 +47,54 @@ void applyCaRuleOnUintArray(uint rule, uint[] inputArray, uint *resultArray) {
 		values[0] = inputArray[i + 1] != 0;
 		resultArray[i] = applyCaRule(rule, values);
 	}
+}+/
+
+// TODO< unittest >
+bool applyCaRuleOnBoolArraySingle(uint rule, bool[] inputArray, size_t readoffIndex) {
+	assert(inputArray.length >= 2); // the optimization wasn't done for less elements
+
+	if( inputArray.length == 2 ) {
+		assert(readoffIndex < 2);
+
+		if( readoffIndex == 0 ) {
+			return applyCaRule(rule, [inputArray[1], inputArray[0], inputArray[1]]);
+		}
+		else {
+			return applyCaRule(rule, [inputArray[0], inputArray[1], inputArray[0]]);
+		}
+	}
+	else {
+		if( readoffIndex == 0 ) {
+			return applyCaRule(rule, 
+				[
+					inputArray[(0 + 1)],
+					inputArray[0],
+					inputArray[inputArray.length-1],
+				]
+			);
+		}
+		else if( readoffIndex == inputArray.length-1 ) {
+			return applyCaRule(rule, 
+				[
+					inputArray[0],
+					inputArray[inputArray.length-1],
+					inputArray[inputArray.length-2],
+				]
+			);
+		}
+		else {
+			bool[3] staticInputArray;
+			staticInputArray[0] = inputArray[readoffIndex-1];
+			staticInputArray[1] = inputArray[readoffIndex];
+			staticInputArray[2] = inputArray[readoffIndex+1];
+			return applyCaRule(rule, staticInputArray);
+		}
+	}
 }
+
+// TODO< unittest with rule 110 >
+
+
 
 
 struct Coordinate {
@@ -349,6 +396,9 @@ class SlimRnn {
 	private float[] nextOutputs; // next outputs of pieces
 	                             // not under COW
 
+	// precalculated ca-readoff-index % inputs.length for each piece
+	private size_t[] compiledPieceCaReadoffIndices;
+
 	Map1d map; // not under COW
 
 	CoordinateWithThreshold terminal; // not under COW
@@ -383,13 +433,18 @@ class SlimRnn {
 
 
 	// sets up acceleration datastructures
-	final void compile() {
+	final void compile(out bool valid) {
 		// some checks
 		assert(opaquePieces.length == pieceAccessors.length);
 		assert(opaquePieces.length == nextOutputs.length);
 
-		// compile entry ready set
+		valid = true;
 
+		compileEntryReadySet();
+		compileCa(valid);
+	}
+
+	final private void compileEntryReadySet() {
 		size_t readyElements = 0;
 
 		foreach( i, ref iterationPieceAccessor; pieceAccessors ) {
@@ -407,6 +462,20 @@ class SlimRnn {
 		foreach( i, ref iterationPieceAccessor; pieceAccessors ) {
 			if( iterationPieceAccessor.enabled ) {
 				entryReadySet[entryReadySetI++] = i;
+			}
+		}
+	}
+
+	// compiles all CA related variables to faster preprocessed variables
+	final private void compileCa(ref bool valid) {
+		compiledPieceCaReadoffIndices.length = pieceAccessors.length;
+		foreach( i, ref iterationPieceAccessor; pieceAccessors ) {
+			if( iterationPieceAccessor.isCa ) {
+				if( iterationPieceAccessor.inputs.length == 0 ) {
+					valid = false;
+				}
+
+				compiledPieceCaReadoffIndices[i] = iterationPieceAccessor.caReadofIndex % iterationPieceAccessor.inputs.length;
 			}
 		}
 	}
@@ -535,6 +604,13 @@ class SlimRnn {
 		return readAtCoordinateAndCheckForThreshold(terminal);
 	}
 
+	private final void calcNextStates() {
+		foreach( iterationReadySetPieceIndex; readySet ) {
+			PieceCowFacade *iterationPieceFacade = &pieceAccessors[iterationReadySetPieceIndex];
+			calcNextState(iterationPieceFacade, iterationReadySetPieceIndex);
+		}
+	}
+
 	private final void calcNextState(PieceCowFacade *piece, size_t pieceIndex) {
 		assert( piece.enabled ); // must be the case because we are working with the ready set, and the ready set has to have by definition only enabled elements in it
 
@@ -542,17 +618,15 @@ class SlimRnn {
 			static const size_t CASTATICSIZE = 16;
 			enforce(piece.inputs.length <= CASTATICSIZE); // we don't have currently a logic for dynamic resizing of an dynamic array implemented
 
-			uint[CASTATICSIZE] staticInputArray, staticResultArray;
+			bool[CASTATICSIZE] staticInputArray;
 
 			foreach( inputIndex; 0..piece.inputs.length ) {
-				bool activated = readAtCoordinateAndCheckForThreshold(piece.inputs[inputIndex]);
-				staticInputArray[inputIndex] = activated ? 1 : 0;
+				staticInputArray[inputIndex] = readAtCoordinateAndCheckForThreshold(piece.inputs[inputIndex]);
 			}
 
 			assert(piece.caRule <= 255);
-			applyCaRuleOnUintArray(piece.caRule, staticInputArray[0..piece.inputs.length], /*out*/ &staticResultArray[0]);
-
-			bool outputActivation = staticResultArray[piece.caReadofIndex % piece.inputs.length] != 0;
+			size_t compiledPieceCaReadoffIndex = compiledPieceCaReadoffIndices[pieceIndex];
+			bool outputActivation = applyCaRuleOnBoolArraySingle(piece.caRule, staticInputArray[0..piece.inputs.length], compiledPieceCaReadoffIndex);
 			nextOutputs[pieceIndex] = (outputActivation ? /*piece.output.strength*/ 1.0f/* TODO< set this with an SLIM parameter >*/ : 0.0f);
 		}
 		else if( piece.type == Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE ) {
@@ -625,30 +699,27 @@ class SlimRnn {
 		}
 	}
 
-	private final void calcNextStates() {
+	private final void applyOutputs(out bool executionError) {
+		executionError = false;
+
 		foreach( iterationReadySetPieceIndex; readySet ) {
 			PieceCowFacade *iterationPieceFacade = &pieceAccessors[iterationReadySetPieceIndex];
-			calcNextState(iterationPieceFacade, iterationReadySetPieceIndex);
+			applyOutput(iterationPieceFacade, iterationReadySetPieceIndex, executionError);
 		}
 	}
 
-	private final void applyOutputs(out bool executionError) {
-		executionError = true;
-		foreach( iterationPieceIndex, iterationPieceFacade; pieceAccessors ) {
-			if( !iterationPieceFacade.enabled ) {
-				continue;
-			}
+	private final void applyOutput(PieceCowFacade *piece, size_t pieceIndex, ref bool executionError) {
+		assert(piece.enabled); // only enabled pieces/neurons can be in the ready set
 
-			if( iterationPieceFacade.output.coordinate.x >= map.arr.length ) {
-				return; // we return with an execution error
-			}
-
-			///import std.stdio;
-			///writeln("applyOutputs() write map.arr[", iterationPieceFacade.output.coordinate.x, "] = ", nextOutputs[iterationPieceIndex]);
-
-			map.arr[iterationPieceFacade.output.coordinate.x] = nextOutputs[iterationPieceIndex];
+		if( piece.output.coordinate.x >= map.arr.length ) {
+			executionError = true;
+			return; // we return with an execution error
 		}
-		executionError = false;
+
+		///import std.stdio;
+		///writeln("applyOutputs() write map.arr[", piece.output.coordinate.x, "] = ", nextOutputs[iterationPieceIndex]);
+
+		map.arr[piece.output.coordinate.x] = nextOutputs[pieceIndex];
 	}
 
 
@@ -738,7 +809,9 @@ unittest { // one neuron  in root
 	root.pieceAccessors[1].enabled = true;
 
 
-	root.compile();
+	bool isValidNetwork;
+	root.compile(/*out*/ isValidNetwork);
+	assert(isValidNetwork);
 
 	uint maxIterations = 2;
 	uint iterations;
@@ -796,7 +869,9 @@ unittest { // one neuron  overwritten
 	// overwrite with COW
 	usedSlimRnn.pieceAccessors[0].type = Piece.EnumType.XOR;
 
-	usedSlimRnn.compile();
+	bool isValidNetwork;
+	usedSlimRnn.compile(/*out*/ isValidNetwork);
+	assert(isValidNetwork);
 
 	uint maxIterations = 2;
 	uint iterations;

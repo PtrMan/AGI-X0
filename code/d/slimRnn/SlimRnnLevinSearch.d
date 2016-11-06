@@ -400,7 +400,11 @@ final class SlimRnnLevinProblem : LevinProblem {
 		
 		
 		// (3) prepare SLIM-RNN
-		workingSlimRnn.compile();
+		bool isValidNetwork;
+		workingSlimRnn.compile(/*out*/ isValidNetwork);
+		if( !isValidNetwork ) { // check for compilation error because of an invalid network structure
+			return;
+		}
 
 		// (4) execute SLIM-RNN
 
@@ -567,7 +571,7 @@ void main() {
     levinSearch.c = 0.1;
     levinSearch.maxIterations = 50; // not a lot because the function is simple
 
-    uint programLength = 1;//DEBUG 2; // equivalent to 24 bit,  is enougth to find the program to acomplish the XOR problem
+    uint programLength = 2;//DEBUG 2; // equivalent to 24 bit,  is enougth to find the program to acomplish the XOR problem
 
     levinSearch.instructionPropabilityMatrix.length = programLength;
     foreach( ref iterationArray; levinSearch.instructionPropabilityMatrix ) {
@@ -631,7 +635,7 @@ void main() {
 	SlimRnnLevinProblem slimRnnLevinProblem = new SlimRnnLevinProblem(slimRnn);
 	slimRnnLevinProblem.testset = [
 		SlimRnnLevinProblem.TestSetElement.make([false, false], false),
-		SlimRnnLevinProblem.TestSetElement.make([false, true], true),
+		SlimRnnLevinProblem.TestSetElement.make([false, true], false),
 		SlimRnnLevinProblem.TestSetElement.make([true, false], true),
 		SlimRnnLevinProblem.TestSetElement.make([true, true], true),
 	];
