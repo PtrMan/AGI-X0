@@ -97,6 +97,10 @@ private const bool[12][] PRIMARYINSTRUCTIONENCODING = [
 [  /*x*/true,      false,     false, /*x*/true,                                                                       /*x*/true,                                                             false,                                                            false,                                    false,                                    false,                               /*x*/true,                                /*x*/ true,                                                                               false,                     ],
 ];
 
+// TODO instructions
+//      - // TODO : set input#data[4..3] to data[0..2]                this works just for up to 8 switchboard elements!   TODO< find better solution to this >
+//      -           
+// 0010 | set type of neuron to data1  and activate
 
 
 //table 2: interpretation for data2
@@ -105,6 +109,7 @@ private const bool[12][] PRIMARYINSTRUCTIONENCODING = [
 // 0010 | set type of neuron to data1
 // 0011 | set output index of piece stack(top) to data1
 
+// TODO : set input#data[4..3] to data[0..2]                this works just for up to 8 switchboard elements!   TODO< find better solution to this >
 // TODO : put neuron stack(top) into WTA-group data1
 
 // --- TODO: other instruction

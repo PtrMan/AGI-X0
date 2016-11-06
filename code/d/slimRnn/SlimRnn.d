@@ -399,6 +399,9 @@ class SlimRnn {
 	// precalculated ca-readoff-index % inputs.length for each piece
 	private size_t[] compiledPieceCaReadoffIndices;
 
+	// precalculated flag if an piece/neuron is an CA
+	private bool[] compiledIsCa;
+
 	Map1d map; // not under COW
 
 	CoordinateWithThreshold terminal; // not under COW
@@ -469,7 +472,10 @@ class SlimRnn {
 	// compiles all CA related variables to faster preprocessed variables
 	final private void compileCa(ref bool valid) {
 		compiledPieceCaReadoffIndices.length = pieceAccessors.length;
+		compiledIsCa.length = pieceAccessors.length;
 		foreach( i, ref iterationPieceAccessor; pieceAccessors ) {
+			compiledIsCa[i] = iterationPieceAccessor.isCa;
+
 			if( iterationPieceAccessor.isCa ) {
 				if( iterationPieceAccessor.inputs.length == 0 ) {
 					valid = false;
@@ -614,7 +620,9 @@ class SlimRnn {
 	private final void calcNextState(PieceCowFacade *piece, size_t pieceIndex) {
 		assert( piece.enabled ); // must be the case because we are working with the ready set, and the ready set has to have by definition only enabled elements in it
 
-		if( piece.isCa ) {
+		if( compiledIsCa[pieceIndex] ) {
+			assert(piece.isCa);
+
 			static const size_t CASTATICSIZE = 16;
 			enforce(piece.inputs.length <= CASTATICSIZE); // we don't have currently a logic for dynamic resizing of an dynamic array implemented
 

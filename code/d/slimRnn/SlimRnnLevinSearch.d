@@ -481,12 +481,13 @@ final class SlimRnnLevinProblem : LevinProblem {
 // some rules are not used because we don't have enough space for them
 static const uint[] CARULES = [
 254, // implements the OR function
+204, // identity
 
 // the usual extremly useful rules
 30, 62, 90, 102, 110, 126, 150, 158,
 
 
-//2,   not used because it can be used for memory, but the implementation will use sateless CA's
+//2,   not used because it can be used for memory, but the implementation will use stateless CA's
 //4,   the same as above
 //6,   the same as above
 //9,   the same as above
@@ -498,6 +499,8 @@ static const uint[] CARULES = [
 18, 22, 25, 26, 28, 37, 41, 
 45,
 57, 61, 86, 89, 107, 121,
+
+
 
 // followed by the more chaotic ones 
 60, // see animation http://mathworld.wolfram.com/Rule60.html 
@@ -635,9 +638,9 @@ void main() {
 	SlimRnnLevinProblem slimRnnLevinProblem = new SlimRnnLevinProblem(slimRnn);
 	slimRnnLevinProblem.testset = [
 		SlimRnnLevinProblem.TestSetElement.make([false, false], false),
-		SlimRnnLevinProblem.TestSetElement.make([false, true], false),
-		SlimRnnLevinProblem.TestSetElement.make([true, false], true),
-		SlimRnnLevinProblem.TestSetElement.make([true, true], true),
+		SlimRnnLevinProblem.TestSetElement.make([false, true], true),
+		SlimRnnLevinProblem.TestSetElement.make([true, false], false),
+		SlimRnnLevinProblem.TestSetElement.make([true, true], false),
 	];
 
 
