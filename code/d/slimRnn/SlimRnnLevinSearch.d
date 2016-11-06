@@ -352,7 +352,7 @@ final class SlimRnnLevinProblem : LevinProblem {
 		}
 
 		// debugging : print levin program, instructions and resulting SLIM-RNN
-		if(false) {
+		if(true) {
 			import std.stdio;
 			writeln("levinProgram=", levinProgram);
 
@@ -567,7 +567,7 @@ void main() {
     levinSearch.c = 0.1;
     levinSearch.maxIterations = 50; // not a lot because the function is simple
 
-    uint programLength = 1;// for DEBUGGING  ////2; // equivalent to 24 bit,  is enougth to find the program to acomplish the XOR problem
+    uint programLength = 1;//DEBUG 2; // equivalent to 24 bit,  is enougth to find the program to acomplish the XOR problem
 
     levinSearch.instructionPropabilityMatrix.length = programLength;
     foreach( ref iterationArray; levinSearch.instructionPropabilityMatrix ) {
@@ -633,7 +633,7 @@ void main() {
 		SlimRnnLevinProblem.TestSetElement.make([false, false], false),
 		SlimRnnLevinProblem.TestSetElement.make([false, true], true),
 		SlimRnnLevinProblem.TestSetElement.make([true, false], true),
-		SlimRnnLevinProblem.TestSetElement.make([true, true], false),
+		SlimRnnLevinProblem.TestSetElement.make([true, true], true),
 	];
 
 
@@ -662,14 +662,34 @@ void main() {
     writeln("##=", reportingNumberOfTriedPrograms);
 }
 
-
+import std.exception : enforce;
 
 // uses the VLIW1 encoding scheme for decoding
 private void translateLevinProgramInstructionsToStackBasedInstructions(uint[] instructions, ref StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) resultInstructionStack, out bool invalidEncoding) {
 	invalidEncoding = false;
 
+
+	uint translateCellularAutomataIndexToCellularAutomataRule(uint index) {
+		if(index < CARULES.length) {
+			return CARULES[index];
+		}
+		else { // else we default to the rule 110 because its the most useful
+			return 110;
+		}
+	}
+
+	// this converts from the index of the type (to be set for the neuron/piece) to the value which gets emitted as the instruction
+	uint translateTypeIndexOfPieceToType(uint type) {
+		if( type < Piece.EnumType._CASTART ) { // if it is not an CA type then we just take the raw value
+			return type;
+		}
+		else {
+			return translateCellularAutomataIndexToCellularAutomataRule(type - Piece.EnumType._CASTART);
+		}
+	}
+
 	foreach( uint iterationInstruction; instructions ) {
-		.slimRnn.programEncoding.Vliw1.decodeInstruction(iterationInstruction, resultInstructionStack, /*out*/ invalidEncoding);
+		.slimRnn.programEncoding.Vliw1.decodeInstruction(iterationInstruction, &translateTypeIndexOfPieceToType, resultInstructionStack, /*out*/ invalidEncoding);
 		if( invalidEncoding ) {
 			return;
 		}

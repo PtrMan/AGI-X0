@@ -17,7 +17,7 @@ import slimRnn.SlimRnnStackBasedManipulationInstruction;
 // followed by 3 bits for the instruction (lowest)
 
 // gets as argument the instruction (usually from levin search), which is 12 bits wide and converts it to zero or more instruction which operate on the SLIM-RNN and manipulate the network
-void decodeInstruction(uint instruction, ref StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) resultInstructionStack, out bool invalidEncoding) {
+void decodeInstruction(uint instruction, uint delegate(uint index) translateTypeIndexOfPieceToType, ref StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) resultInstructionStack, out bool invalidEncoding) {
 	invalidEncoding = true;
 
 	uint data1 = (instruction >> 3) & 0x1f;
@@ -27,10 +27,10 @@ void decodeInstruction(uint instruction, ref StackAllocator!(8, SlimRnnStackBase
 		return;
 	}
 
-	return convertPrimaryEncodingToInstructions(PRIMARYINSTRUCTIONENCODING[encodingIndex], data1, data2, resultInstructionStack, /*out*/ invalidEncoding);
+	return convertPrimaryEncodingToInstructions(PRIMARYINSTRUCTIONENCODING[encodingIndex], data1, data2, translateTypeIndexOfPieceToType, resultInstructionStack, /*out*/ invalidEncoding);
 }
 
-private void convertPrimaryEncodingToInstructions(bool[12] encoding, uint data1, uint data2, ref StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) resultInstructionStack, out bool invalidEncoding) {
+private void convertPrimaryEncodingToInstructions(bool[12] encoding, uint data1, uint data2, uint delegate(uint index) translateTypeIndexOfPieceToType, ref StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) resultInstructionStack, out bool invalidEncoding) {
 	bool appendSuccess; // returned by the stack allocator, we throw it away
 
 	if( encoding[0] ) {
@@ -57,16 +57,16 @@ private void convertPrimaryEncodingToInstructions(bool[12] encoding, uint data1,
 	}
 
 	if( encoding[6] ) {
-		resultInstructionStack.append(SlimRnnStackBasedManipulationInstruction.makeSetTypeVariableForPieceAtStackTop(0), /*out*/appendSuccess);
+		resultInstructionStack.append(SlimRnnStackBasedManipulationInstruction.makeSetTypeVariableForPieceAtStackTop(translateTypeIndexOfPieceToType(0)), /*out*/appendSuccess);
 	}
 	if( encoding[7] ) {
-		resultInstructionStack.append(SlimRnnStackBasedManipulationInstruction.makeSetTypeVariableForPieceAtStackTop(1), /*out*/appendSuccess);
+		resultInstructionStack.append(SlimRnnStackBasedManipulationInstruction.makeSetTypeVariableForPieceAtStackTop(translateTypeIndexOfPieceToType(1)), /*out*/appendSuccess);
 	}
 	if( encoding[8] ) {
-		resultInstructionStack.append(SlimRnnStackBasedManipulationInstruction.makeSetTypeVariableForPieceAtStackTop(2), /*out*/appendSuccess);
+		resultInstructionStack.append(SlimRnnStackBasedManipulationInstruction.makeSetTypeVariableForPieceAtStackTop(translateTypeIndexOfPieceToType(2)), /*out*/appendSuccess);
 	}
 	if( encoding[9] ) {
-		resultInstructionStack.append(SlimRnnStackBasedManipulationInstruction.makeSetTypeVariableForPieceAtStackTop(3), /*out*/appendSuccess);
+		resultInstructionStack.append(SlimRnnStackBasedManipulationInstruction.makeSetTypeVariableForPieceAtStackTop(translateTypeIndexOfPieceToType(3)), /*out*/appendSuccess);
 	}
 
 	if( encoding[10] ) {
