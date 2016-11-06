@@ -83,6 +83,10 @@ private void convertPrimaryEncodingToInstructions(bool[12] encoding, uint data1,
 // instructions which get executed in order from left to right
 private const bool[12][] PRIMARYINSTRUCTIONENCODING = [
 
+// TODO< push next free  neuron index (as combined operation) >
+//       this should generalize by far bettern than pushing a constant
+
+
 // push data1 | pop     | pop2     | rewire input#0 to index 0 and input#1 to index 1 for neuron at index stack(top)|  set activation variable to activate neuron at index stack(top) | set activation variable to deactivate neuron at index stack(top) | set type for neuron at stack(#top) to 0 | set type for neuron at stack(#top) to 1 | set type for neuron at stack(#top) to 2 | set type for neuron at stack(#top) to 3 | set threshold for piece index #stack(top) for input data2 at bit #3 to data2[0..2] | interpret data2 after 2nd table
 [      false,      false,     false,      false,                                                                           false,                                                            false,                                                            false,                                    false,                                    false,                                    false,                               /*x*/ true,                                                                               false,                     ],
 [      false,      false,     false,      false,                                                                           false,                                                            false,                                                            false,                                    false,                                    false,                                    false,                                     false,                                                                         /*x*/true,                      ],
@@ -98,8 +102,10 @@ private const bool[12][] PRIMARYINSTRUCTIONENCODING = [
 //table 2: interpretation for data2
 // 0000 | set output strength of piece stack(top) to data1
 // 0001 | interpret data table 3
-// 0010 | set function type of neuron to data1
+// 0010 | set type of neuron to data1
 // 0011 | set output index of piece stack(top) to data1
+
+// TODO : put neuron stack(top) into WTA-group data1
 
 // --- TODO: other instruction
 private void interpretAfterTable2(uint data1, uint data2, ref StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) resultInstructionStack, out bool invalidEncoding) {
@@ -116,7 +122,7 @@ private void interpretAfterTable2(uint data1, uint data2, ref StackAllocator!(8,
 	}
 	else if( data2 == 2 ) {
 		invalidEncoding = false;
-		resultInstructionStack.append(SlimRnnStackBasedManipulationInstruction.makeSetFunctionTypeForPieceAtStackTop(data1), /*out*/appendSuccess);
+		resultInstructionStack.append(SlimRnnStackBasedManipulationInstruction.makeSetTypeVariableForPieceAtStackTop(data1), /*out*/appendSuccess);
 	}
 	else if( data2 == 3 ) {
 		invalidEncoding = false;
@@ -134,6 +140,7 @@ table 3: interpretation for data
   - vvv : 0 : nop
           1 : reset neuron activation
           2 : set neuron activation to deactivate neuron
+          3 : TODO : switch pieces at stack(top) and stack(top-1)
   - r: reset set type variable
   - p: pop
 */

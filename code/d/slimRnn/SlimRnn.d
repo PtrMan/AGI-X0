@@ -161,6 +161,7 @@ struct PieceCowFacade {
 	mixin(ctfeSetGetAccessors("CoordinateWithStrength", "output"));
 	mixin(ctfeSetGetAccessors("CoordinateWithAttribute[]", "inputs", false));
 
+
 	final @property uint caRule() {
 		if( opaque ) {
 			return front.caRule;
@@ -196,6 +197,18 @@ struct PieceCowFacade {
 		}
 	}
 
+	// the only way to resize inputs
+	final void setInputLength(size_t length) {
+		if( opaque ) {
+			front.inputs.length = length;
+		}
+		else {
+			copyShadowedToFront();
+			opaque = true;
+			setInputLength(length);
+		}
+	}
+
 	// returns the number of cells in the CA
 	final size_t getCaWidth() {
 		if( opaque ) {
@@ -218,6 +231,9 @@ struct PieceCowFacade {
 	}
 
 	static private void copy(Piece *destination, Piece *source) {
+		assert(destination !is null);
+		assert(source !is null);
+
 		destination.enabled = source.enabled;
 		destination.type = source.type;
 		destination.caReadofIndex = source.caReadofIndex;
@@ -281,6 +297,10 @@ struct Piece {
 		resultString ~= "\ttype=%s\n".format(type.to!string);
 		resultString ~= "\tinputs=%s\n".format(inputs.map!(v => "(idx=%s,t=%s)".format(v.coordinate.x, v.threshold)));
 		resultString ~= "\toutput=(idx=%s,s=%s)\n".format(output.coordinate.x, output.strength);
+		if( isCa ) {
+			resultString ~= "\tcaReadofIndex=%s\n".format(caReadofIndex);
+		}
+
 		// TODO< other >
 
 		return resultString;
@@ -375,7 +395,10 @@ class SlimRnn {
 		}
 	}
 
-
+	// resets all opaque pieces
+	final void flushOpaquePieces() {
+		cowFlushOpaquePieces();
+	}
 
 	// clones it and handles this SlimRnn as if it were the root SlimRnn
 	final SlimRnn cloneUnderCowAsRoot() {
@@ -407,6 +430,7 @@ class SlimRnn {
 
 		foreach( ref iterationPieceCowFacade; pieceAccessors ) {
 			iterationPieceCowFacade.type = type;
+
 			iterationPieceCowFacade.inputs =
 			[
 				CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.8f),
@@ -535,6 +559,11 @@ class SlimRnn {
 			nextOutputs[pieceIndex] = (inputActivation >= piece.output.threshold ? /*piece.output.value*/ 1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f);
 
 
+			if( false ) {
+				import std.stdio;
+				writeln("nextOutputs[", pieceIndex, "]=", nextOutputs[pieceIndex]);
+			}
+
 			// debug
 			if( false ) {
 				import std.stdio;
@@ -571,13 +600,18 @@ class SlimRnn {
 			}
 
 			nextOutputs[pieceIndex] = inputActivation ? /*piece.output.value*/1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f;
+
+			if( false ) {
+				import std.stdio;
+				writeln("nextOutputs[pieceIndex]=", nextOutputs[pieceIndex]);
+			}
 		}
 	}
 
 	private final void calcNextStates() {
-		foreach( pieceIndex, iterationReadySetPieceIndex; readySet ) {
+		foreach( iterationReadySetPieceIndex; readySet ) {
 			PieceCowFacade *iterationPieceFacade = &pieceAccessors[iterationReadySetPieceIndex];
-			calcNextState(iterationPieceFacade, pieceIndex);
+			calcNextState(iterationPieceFacade, iterationReadySetPieceIndex);
 		}
 	}
 
@@ -591,6 +625,9 @@ class SlimRnn {
 			if( iterationPieceFacade.output.coordinate.x >= map.arr.length ) {
 				return; // we return with an execution error
 			}
+
+			///import std.stdio;
+			///writeln("applyOutputs() write map.arr[", iterationPieceFacade.output.coordinate.x, "] = ", nextOutputs[iterationPieceIndex]);
 
 			map.arr[iterationPieceFacade.output.coordinate.x] = nextOutputs[iterationPieceIndex];
 		}
@@ -611,7 +648,7 @@ class SlimRnn {
 
 	// (1) set length of opaquePieces and accessors to zero and then to the requested length
 	// (2) rewire COW-Facade variables
-	private final void cowResetAndSetCountOfPiecesFor(uint countOfPieces) {
+	private final void cowResetAndSetCountOfPiecesFor(size_t countOfPieces) {
 		// (1)
 		opaquePieces.length = 0; // actually not necessary
 		opaquePieces.length = countOfPieces;
@@ -623,7 +660,10 @@ class SlimRnn {
 		// (2)
 		foreach( i, ref iterationPieceFacade; pieceAccessors ) {
 			iterationPieceFacade.shadowed = null;
-			if( parent !is null ) {
+			if( parent is null ) {
+				iterationPieceFacade.opaque = true;
+			}
+			else {
 				bool isIndexInRangeOfCountOfParentOpaquePieces = i < parent.opaquePieces.length;
 				if( isIndexInRangeOfCountOfParentOpaquePieces ) { // we can only point to the parent opaque piece if it exists in the first place
 					iterationPieceFacade.shadowed = &parent.opaquePieces[i]; // we just implement one level < TODO< multiple levels of indirection >

@@ -42,11 +42,11 @@ struct SlimRnnStackBasedInterpreter {
 	static void interpret(ref SlimRnnStackBasedInterpretationContext context, ref StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) instructions, SlimRnn slimRnn, out bool success) {
 		success = false;
 
-		context.reset(slimRnn.pieces.length);
+		context.reset(slimRnn.pieceAccessors.length);
 
 		foreach( instructionIndex; 0..instructions.length ) {
 			auto iterationInstruction = instructions.getAtIndex(instructionIndex);
-			
+
 			final switch( iterationInstruction.type ) with (SlimRnnStackBasedManipulationInstruction.EnumType) {
 				case PUSHVALUE: interpretInstructionPushValue(iterationInstruction, context, slimRnn, success); break;
 				case POP: interpretInstructionPop(iterationInstruction, context, slimRnn, success); break;
@@ -56,7 +56,6 @@ struct SlimRnnStackBasedInterpreter {
 				case SETTYPEVARIABLEFORPIECEATSTACKTOP: interpretInstructionSetTypeVariableForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
 				case SETTHRESHOLDFORINPUTINDEXFORPIECEATSTACKTOP: interpretInstructionSetThresholdForInputIndexForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
 				case RESETNEURONACTIVATION: interpretInstructionResetNeuronActivation(iterationInstruction, context, slimRnn, success); break;
-				case SETFUNCTIONTYPEFORPIECEATSTACKTOP: interpretInstructionSetFunctionTypeForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
 				case SETSWITCHBOARDINDEXFORINPUTINDEXANDPIECEATSTACKTOP: interpretInstructionSetSwitchboardIndexForInputIndexAndPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
 				case SETSWITCHBOARDINDEXFOROUTPUTFORPIECEATSTACKTOP: interpretInstructionSetSwitchboardIndexForOutputForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
 			}
@@ -87,7 +86,10 @@ struct SlimRnnStackBasedInterpreter {
 		uint pieceIndex = context.stack.top;
 
 		rewireInputsToDefaultInputIfRequired(slimRnn, pieceIndex, instruction.inputIndex);
-		slimRnn.pieces[pieceIndex].inputs[instruction.inputIndex].value = instruction.threshold;
+		
+		auto scratchpadInput = slimRnn.pieceAccessors[pieceIndex].inputs[instruction.inputIndex];
+		scratchpadInput.value = instruction.threshold;
+		slimRnn.pieceAccessors[pieceIndex].setInputAt(instruction.inputIndex, scratchpadInput);
 		success = true;
 	}
 
@@ -98,7 +100,9 @@ struct SlimRnnStackBasedInterpreter {
 		}
 		uint pieceIndex = context.stack.top;
 
-		slimRnn.pieces[pieceIndex].output.value = instruction.strength;
+		auto scratchpadOutput = slimRnn.pieceAccessors[pieceIndex].output;
+		scratchpadOutput.value = instruction.strength;
+		slimRnn.pieceAccessors[pieceIndex].output = scratchpadOutput;
 		success = true;
 	}
 
@@ -133,8 +137,9 @@ struct SlimRnnStackBasedInterpreter {
 		}
 		uint pieceIndex = context.stack.top;
 
-		rewireInputsToDefaultInputIfRequired(slimRnn, pieceIndex, instruction.inputIndex);
-		slimRnn.pieces[pieceIndex].inputs[instruction.inputIndex].value = instruction.threshold;
+		auto scratchpadInput = slimRnn.pieceAccessors[pieceIndex].inputs[instruction.inputIndex];
+		scratchpadInput.value = instruction.threshold;
+		slimRnn.pieceAccessors[pieceIndex].setInputAt(instruction.inputIndex, scratchpadInput);
 		success = true;
 	}
 
@@ -149,17 +154,6 @@ struct SlimRnnStackBasedInterpreter {
 		success = true;
 	}
 
-	private static void interpretInstructionSetFunctionTypeForPieceAtStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
-		success = false;
-		if( context.stack.isEmpty ) {
-			return;
-		}
-		uint pieceIndex = context.stack.top;
-
-		slimRnn.pieces[pieceIndex].functionType = instruction.functionType;
-		success = true;
-	}
-
 	private static void interpretInstructionSetSwitchboardIndexForInputIndexAndPieceAtStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
 		success = false;
 		if( context.stack.isEmpty ) {
@@ -168,7 +162,9 @@ struct SlimRnnStackBasedInterpreter {
 		uint pieceIndex = context.stack.top;
 
 		rewireInputsToDefaultInputIfRequired(slimRnn, pieceIndex, instruction.inputIndex);
-		slimRnn.pieces[pieceIndex].inputs[instruction.inputIndex].coordinate.x = instruction.switchboardIndex;
+		auto scratchpadInput = slimRnn.pieceAccessors[pieceIndex].inputs[instruction.inputIndex];
+		scratchpadInput.coordinate.x = instruction.switchboardIndex;
+		slimRnn.pieceAccessors[pieceIndex].setInputAt(instruction.inputIndex, scratchpadInput);
 		success = true;
 	}
 
@@ -179,7 +175,7 @@ struct SlimRnnStackBasedInterpreter {
 		}
 		uint pieceIndex = context.stack.top;
 
-		slimRnn.pieces[pieceIndex].output.coordinate.x = instruction.outputIndex;
+		slimRnn.pieceAccessors[pieceIndex].output.coordinate.x = instruction.outputIndex;
 
 		success = true;
 	}
@@ -188,16 +184,18 @@ struct SlimRnnStackBasedInterpreter {
 
 	// helper which checks if the # of inputs is <= to the required index and if so then it adds the new inputs and rewires the inputs to the defaultInputIndex
 	private static void rewireInputsToDefaultInputIfRequired(SlimRnn slimRnn, uint pieceIndex, uint requestedIndex) {
-		if( slimRnn.pieces[pieceIndex].inputs.length > requestedIndex ) {
+		if( slimRnn.pieceAccessors[pieceIndex].inputs.length > requestedIndex ) {
 			return;
 		}
 
-		size_t oldLength = slimRnn.pieces[pieceIndex].inputs.length;
+		size_t oldLength = slimRnn.pieceAccessors[pieceIndex].inputs.length;
 
-		slimRnn.pieces[pieceIndex].inputs.length = requestedIndex+1;
+		slimRnn.pieceAccessors[pieceIndex].setInputLength(requestedIndex+1);
 
-		foreach( i; oldLength..slimRnn.pieces[pieceIndex].inputs.length ) {
-			slimRnn.pieces[pieceIndex].inputs[i].coordinate.x = slimRnn.defaultInputSwitchboardIndex;
+		foreach( i; oldLength..slimRnn.pieceAccessors[pieceIndex].inputs.length ) {
+			auto scratchpadInput = slimRnn.pieceAccessors[pieceIndex].inputs[i];
+			scratchpadInput.coordinate.x = slimRnn.defaultInputSwitchboardIndex;
+			slimRnn.pieceAccessors[pieceIndex].setInputAt(i, scratchpadInput);
 		}
 	}
 
@@ -206,18 +204,18 @@ struct SlimRnnStackBasedInterpreter {
 	// executes the piece execution for all pieces of the SLIM-RNN
 	// a piece execution changes some variables of the piece
 	private static void commitAllPieceExecutions(ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn) {
-		foreach( i; 0..slimRnn.pieces.length ) {
+		foreach( i; 0..slimRnn.pieceAccessors.length ) {
 			commitPieceExecution(context, slimRnn, i);
 		}
 	}
 
 	private static void commitPieceExecution(ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, size_t pieceIndex) {
 		if( context.pieceExecutions[pieceIndex].flagEnableNeuron ) {
-			slimRnn.pieces[pieceIndex].enabled = context.pieceExecutions[pieceIndex].enableNeuronValue;
+			slimRnn.pieceAccessors[pieceIndex].enabled = context.pieceExecutions[pieceIndex].enableNeuronValue;
 		}
 
 		if( context.pieceExecutions[pieceIndex].flagSetType ) {
-			slimRnn.pieces[pieceIndex].type = cast(Piece.EnumType)context.pieceExecutions[pieceIndex].typeValue;
+			slimRnn.pieceAccessors[pieceIndex].type = cast(Piece.EnumType)context.pieceExecutions[pieceIndex].typeValue;
 		}
 	}
 	

@@ -14,7 +14,6 @@ struct SlimRnnStackBasedManipulationInstruction {
 		SETTYPEVARIABLEFORPIECEATSTACKTOP,
 		SETTHRESHOLDFORINPUTINDEXFORPIECEATSTACKTOP,
 		RESETNEURONACTIVATION,
-		SETFUNCTIONTYPEFORPIECEATSTACKTOP,
 		SETSWITCHBOARDINDEXFORINPUTINDEXANDPIECEATSTACKTOP,
 		SETSWITCHBOARDINDEXFOROUTPUTFORPIECEATSTACKTOP,
 	}
@@ -109,13 +108,6 @@ struct SlimRnnStackBasedManipulationInstruction {
 		return result;
 	}
 
-	static Instruction makeSetFunctionTypeForPieceAtStackTop(uint functionType) {
-		Instruction result;
-		result.type = EnumType.SETFUNCTIONTYPEFORPIECEATSTACKTOP;
-		result.functionType = functionType;
-		return result;
-	}
-
 	// if the # of inputs is higher or equal to inputIndex then the instruction adds the required # of inputs and rewires all added inputs to the defaultInput
 	static Instruction makeSetSwitchboardIndexForInputIndexAndPieceAtStackTop(uint inputIndex, uint switchboardIndex) {
 		Instruction result;
@@ -160,9 +152,6 @@ struct SlimRnnStackBasedManipulationInstruction {
 			}
 			else if( type == RESETNEURONACTIVATION ) {
 				return "ResetNeuronActivation";
-			}
-			else if( type == SETFUNCTIONTYPEFORPIECEATSTACKTOP ) {
-				return "SetFunctionTypeForPieceAtStackTop functionType=%s".format(functionType);
 			}
 			else if( type == SETSWITCHBOARDINDEXFORINPUTINDEXANDPIECEATSTACKTOP ) {
 				return "SetSwitchboardIndexForInputIndexAndPieceAtStackTop inputIndex=%s switchboardIndex=%s".format(inputIndex, switchboardIndex);

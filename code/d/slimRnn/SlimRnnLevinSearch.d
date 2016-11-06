@@ -317,7 +317,7 @@ final class SlimRnnLevinProblem : LevinProblem {
 	final this(SlimRnn slimRnn) {
 		this.slimRnn = slimRnn;
 
-		workingSlimRnn = slimRnn.clone();
+		workingSlimRnn = slimRnn.cloneUnderCowAsRoot();
 	}
 
 	private SlimRnn slimRnn, workingSlimRnn;
@@ -328,7 +328,7 @@ final class SlimRnnLevinProblem : LevinProblem {
 		hasHalted = false;
 
 		// "fast" copy, we don't allocate the class, we don't allocate all arrays
-		slimRnn.copyInto(workingSlimRnn);
+		workingSlimRnn.flushOpaquePieces();
 
 		uint[] levinProgram = program.instructions;
 
@@ -351,11 +351,36 @@ final class SlimRnnLevinProblem : LevinProblem {
 			}
 		}
 
-		// for debugging
+		// debugging : print levin program, instructions and resulting SLIM-RNN
 		if(false) {
-		import std.stdio;
-		writeln("levinProgram=", levinProgram);
-		writeln(workingSlimRnn.humanReadableDescriptionOfPieces());
+			import std.stdio;
+			writeln("levinProgram=", levinProgram);
+
+			// debug instructions
+			writeln("instructions:");
+
+			bool invalidEncoding;
+			StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) stackBasedInstructionsStack;
+			translateLevinProgramInstructionsToStackBasedInstructions(levinProgram, stackBasedInstructionsStack, /*out*/ invalidEncoding);
+			if( invalidEncoding ) {
+				writeln("<invalid encoding>");
+			}
+			else {
+				foreach(i;0..stackBasedInstructionsStack.length) {
+					SlimRnnStackBasedManipulationInstruction iterationInstruction = stackBasedInstructionsStack.getAtIndex(i);
+					writeln(iterationInstruction.humanReadableDescription());
+				}
+			}
+
+				
+
+			writeln("=> SLIM-RNN:");
+			writeln(workingSlimRnn.humanReadableDescriptionOfPieces());
+
+
+
+
+
 		}
 
 		/*
@@ -401,7 +426,7 @@ final class SlimRnnLevinProblem : LevinProblem {
 			workingSlimRnn.map.arr[0] = testsetElement.input[0] ? 1.0f : 0.0f;
 			workingSlimRnn.map.arr[1] = testsetElement.input[1] ? 1.0f : 0.0f;
 
-			workingSlimRnn.loop(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
+			workingSlimRnn.run(maxIterations, /*out*/iterations, /*out*/wasTerminated, /*out*/executionError);
 
 			
 
@@ -416,6 +441,11 @@ final class SlimRnnLevinProblem : LevinProblem {
 				innerFnReportFailure();
 				return;
 			}
+
+			// DEBUG
+			///import std.stdio;
+			///writeln("DEBUG executeProgram()   networkResult=", workingSlimRnn.map.arr[2]);
+
 			// read out result
 			bool networkResult = workingSlimRnn.map.arr[2] > 0.5f;
 			if( networkResult != testsetElement.expectedResult ) {
@@ -445,20 +475,38 @@ final class SlimRnnLevinProblem : LevinProblem {
 }
 
 // some rules are not used because we don't have enough space for them
-static const uint[] CARULES = 
-[30, 62, 90, 102, 110, 126, 150, 158, ] ~ // the usual extremly useful rules
-[2, 4, 6, 9, /*14,*/ 18, 20, 22, 24, 25, 26, 28, 37, 41, 45, /*47,*/ 57, 61, 86, 89, 107, 121, // followed by the more chaotic ones 
+static const uint[] CARULES = [
+254, // implements the OR function
+
+// the usual extremly useful rules
+30, 62, 90, 102, 110, 126, 150, 158,
+
+
+//2,   not used because it can be used for memory, but the implementation will use sateless CA's
+//4,   the same as above
+//6,   the same as above
+//9,   the same as above
+//20,  the same as above
+//24,  the same as above
+
+//14,  redundant
+//47,  redundant 
+18, 22, 25, 26, 28, 37, 41, 
+45,
+57, 61, 86, 89, 107, 121,
+
+// followed by the more chaotic ones 
 60, // see animation http://mathworld.wolfram.com/Rule60.html 
 90, // see animation http://mathworld.wolfram.com/Rule90.html
 102, // see animation http://mathworld.wolfram.com/Rule102.html
 150, // see animation http://mathworld.wolfram.com/Rule150.html
-
 ]; // rules for the celular automata
 static const uint TRESHOLDQUANTISATION = 8;
 
 static const uint BITSFORCARULES = 5;
 
-static assert((1 << BITSFORCARULES) >= CARULES.length);
+//                                    we add CASTART because the table has the Piece/Neuron rules followed by the CA rules
+static assert((1 << BITSFORCARULES) + Piece.EnumType._CASTART >= CARULES.length);
 
 uint max(uint[] values) {
 	uint maxValue = values[0];
@@ -519,7 +567,7 @@ void main() {
     levinSearch.c = 0.1;
     levinSearch.maxIterations = 50; // not a lot because the function is simple
 
-    uint programLength = 2; // equivalent to 24 bit,  is enougth to find the program to acomplish the XOR problem
+    uint programLength = 1;// for DEBUGGING  ////2; // equivalent to 24 bit,  is enougth to find the program to acomplish the XOR problem
 
     levinSearch.instructionPropabilityMatrix.length = programLength;
     foreach( ref iterationArray; levinSearch.instructionPropabilityMatrix ) {
@@ -540,48 +588,44 @@ void main() {
 
 
 
-
+    uint numberOfPieces = 1 << 5;
 	SlimRnnCtorParameters ctorParameters;
 	ctorParameters.mapSize[0] = 10;
+	ctorParameters.numberOfPieces = numberOfPieces;
 
-	SlimRnn slimRnn = new SlimRnn(ctorParameters);
-	uint countOfPieces = 1 << 5;
-	slimRnn.resetPiecesToTypeByCount(countOfPieces, Piece.EnumType.CLASSICNEURON);
+
+
+
+	SlimRnn slimRnn = SlimRnn.makeRoot(ctorParameters);
+	slimRnn.resetPiecesToTypeByCount(numberOfPieces, Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE);
 
 	slimRnn.terminal.coordinate.x = ctorParameters.mapSize[0]-cast(size_t)1; // last map element is the terminal
 	slimRnn.terminal.value = 0.1f;
 	slimRnn.defaultInputSwitchboardIndex = ctorParameters.mapSize[0]-cast(size_t)2; // switchboard element before the last elements which is the terminal, is not zero because the programs should generalize better
 	// position length-3 is used as a delay for the termination signal
 
-	
-
 	// add an neuron which sends the termination after an delay
 
 	
-	slimRnn.pieces[countOfPieces-2].type = Piece.EnumType.CLASSICNEURON;
-	slimRnn.pieces[countOfPieces-2].functionType = cast(uint32_t)Piece.classicalNeuron.EnumType.MULTIPLICATIVE;
+	slimRnn.pieceAccessors[numberOfPieces-2].type = Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE;
 
-	slimRnn.pieces[countOfPieces-2].inputs = 
+	slimRnn.pieceAccessors[numberOfPieces-2].inputs = 
 	[
 	];
 
-	slimRnn.pieces[countOfPieces-2].output = CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-3), 0.5f);
-	slimRnn.pieces[countOfPieces-2].enabled = true;
+	slimRnn.pieceAccessors[numberOfPieces-2].output = CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-3), 0.5f);
+	slimRnn.pieceAccessors[numberOfPieces-2].enabled = true;
 	
 
-	slimRnn.pieces[countOfPieces-1].type = Piece.EnumType.CLASSICNEURON;
-	slimRnn.pieces[countOfPieces-1].functionType = cast(uint32_t)Piece.classicalNeuron.EnumType.MULTIPLICATIVE;
+	slimRnn.pieceAccessors[numberOfPieces-1].type = Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE;
 
-	slimRnn.pieces[countOfPieces-1].inputs = 
+	slimRnn.pieceAccessors[numberOfPieces-1].inputs = 
 	[
 		CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-cast(size_t)3), 0.3f)
 	];
 
-	slimRnn.pieces[countOfPieces-1].output = CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-1), 0.2f);
-	slimRnn.pieces[countOfPieces-1].enabled = true; 
-
-
-
+	slimRnn.pieceAccessors[numberOfPieces-1].output = CoordinateWithValue.make(CoordinateType.make(ctorParameters.mapSize[0]-1), 0.2f);
+	slimRnn.pieceAccessors[numberOfPieces-1].enabled = true; 
 
 
 	SlimRnnLevinProblem slimRnnLevinProblem = new SlimRnnLevinProblem(slimRnn);
@@ -589,7 +633,7 @@ void main() {
 		SlimRnnLevinProblem.TestSetElement.make([false, false], false),
 		SlimRnnLevinProblem.TestSetElement.make([false, true], true),
 		SlimRnnLevinProblem.TestSetElement.make([true, false], true),
-		SlimRnnLevinProblem.TestSetElement.make([true, true], true),
+		SlimRnnLevinProblem.TestSetElement.make([true, true], false),
 	];
 
 
@@ -610,8 +654,7 @@ void main() {
     		// uncommented because its the old code InstructionEncoding.debugInstructionToConsole(iterationInstruction);
     	}
     }
-    
-    
+
 
 
     import std.stdio;
