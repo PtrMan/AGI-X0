@@ -2,39 +2,54 @@ module slimRnn.SlimRnn;
 
 import std.stdint;
 
-void applyCaRule(uint rule, uint[] inputArray, ref uint[] resultArray) {
+bool applyCaRule(uint rule, bool[3] values) {
+	uint value = values[2]*4 + values[1]*2 + values[0]*1;
+	return ((rule >> value) & 1) != 0;
+}
+
+unittest {
+	assert(!applyCaRule(254, [false, false, false]));
+	assert(applyCaRule(254, [false, false, true]));
+	assert(applyCaRule(254, [false, true, false]));
+	assert(applyCaRule(254, [false, true, true]));
+	assert(applyCaRule(254, [true, false, false]));
+	assert(applyCaRule(254, [true, false, true]));
+	assert(applyCaRule(254, [true, true, false]));
+	assert(applyCaRule(254, [true, true, true]));
+}
+
+
+void applyCaRuleOnUintArray(uint rule, uint[] inputArray, ref uint[] resultArray) {
 	assert(inputArray.length == resultArray.length);
 	assert(inputArray.length >= 2); // the optimization wasn't done for less elements
 
 	static uint calcResultFirst(uint rule, uint[] inputArray) {
-		uint value4 = inputArray[inputArray.length-1];
-		uint value2 = inputArray[0/* % inputArray.length*/];
-		uint value1 = inputArray[(0 + 1)];
-
-		uint value = value4*4 + value2*2 + value1*1;
-		return (rule >> value) & 1;
+		bool[3] values;
+		values[2] = inputArray[inputArray.length-1] != 0;
+		values[1] = inputArray[0/* % inputArray.length*/] != 0;
+		values[0] = inputArray[(0 + 1)] != 0;
+		return applyCaRule(rule, values);
 	}
 
 	static uint calcResultLast(uint rule, uint[] inputArray) {
-		uint value4 = inputArray[inputArray.length-2];
-		uint value2 = inputArray[inputArray.length-1];
-		uint value1 = inputArray[0];
-
-		uint value = value4*4 + value2*2 + value1*1;
-		return (rule >> value) & 1;
+		bool[3] values;
+		values[2] = inputArray[inputArray.length-2] != 0;
+		values[1] = inputArray[inputArray.length-1] != 0;
+		values[0] = inputArray[0] != 0;
+		return applyCaRule(rule, values);
 	}
 
 	resultArray[0] = calcResultFirst(rule, inputArray);
 	resultArray[$-1] = calcResultLast(rule, inputArray);
 	for( int i = 1; i < inputArray.length - 1; i++ ) {
-		uint value4 = inputArray[i - 1];
-		uint value2 = inputArray[i    ];
-		uint value1 = inputArray[i + 1];
-
-		uint value = value4*4 + value2*2 + value1*1;
-		resultArray[i] = (rule >> value) & 1;
+		bool[3] values;
+		values[2] = inputArray[i - 1] != 0;
+		values[1] = inputArray[i    ] != 0;
+		values[0] = inputArray[i + 1] != 0;
+		resultArray[i] = applyCaRule(rule, values);
 	}
 }
+
 
 struct Coordinate {
 	private size_t[1] values;
@@ -533,7 +548,7 @@ class SlimRnn {
 			}
 
 			assert(piece.caRule <= 255);
-			applyCaRule(piece.caRule, inputArray, /*out*/ resultArray);
+			applyCaRuleOnUintArray(piece.caRule, inputArray, /*out*/ resultArray);
 
 			bool outputActivation = resultArray[piece.caReadofIndex % resultArray.length] != 0;
 			nextOutputs[pieceIndex] = (outputActivation ? /*piece.output.strength*/ 1.0f/* TODO< set this with an SLIM parameter >*/ : 0.0f);
