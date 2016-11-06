@@ -352,7 +352,7 @@ final class SlimRnnLevinProblem : LevinProblem {
 		}
 
 		// debugging : print levin program, instructions and resulting SLIM-RNN
-		if(true) {
+		if(false) {
 			import std.stdio;
 			writeln("levinProgram=", levinProgram);
 
@@ -661,8 +661,6 @@ void main() {
     writeln("done=", done);
     writeln("##=", reportingNumberOfTriedPrograms);
 }
-
-import std.exception : enforce;
 
 // uses the VLIW1 encoding scheme for decoding
 private void translateLevinProgramInstructionsToStackBasedInstructions(uint[] instructions, ref StackAllocator!(8, SlimRnnStackBasedManipulationInstruction) resultInstructionStack, out bool invalidEncoding) {

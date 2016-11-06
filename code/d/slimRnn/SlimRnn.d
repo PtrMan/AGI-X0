@@ -19,8 +19,7 @@ unittest {
 }
 
 
-void applyCaRuleOnUintArray(uint rule, uint[] inputArray, ref uint[] resultArray) {
-	assert(inputArray.length == resultArray.length);
+void applyCaRuleOnUintArray(uint rule, uint[] inputArray, uint *resultArray) {
 	assert(inputArray.length >= 2); // the optimization wasn't done for less elements
 
 	static uint calcResultFirst(uint rule, uint[] inputArray) {
@@ -40,7 +39,7 @@ void applyCaRuleOnUintArray(uint rule, uint[] inputArray, ref uint[] resultArray
 	}
 
 	resultArray[0] = calcResultFirst(rule, inputArray);
-	resultArray[$-1] = calcResultLast(rule, inputArray);
+	resultArray[inputArray.length-1] = calcResultLast(rule, inputArray);
 	for( int i = 1; i < inputArray.length - 1; i++ ) {
 		bool[3] values;
 		values[2] = inputArray[i - 1] != 0;
@@ -334,6 +333,8 @@ struct SlimRnnCtorParameters {
 	size_t numberOfPieces;
 }
 
+import std.exception : enforce;
+
 // inspired by paper
 // J. Schmidhuber. Self-delimiting neural networks. Technical Report IDSIA-08-12, arXiv:1210.0118v1 [cs.NE], IDSIA, 2012.
 
@@ -538,19 +539,20 @@ class SlimRnn {
 		assert( piece.enabled ); // must be the case because we are working with the ready set, and the ready set has to have by definition only enabled elements in it
 
 		if( piece.isCa ) {
-			uint[] inputArray, resultArray;
-			inputArray.length = piece.inputs.length; // OPTIMIZATION< preallocate and check for need to resize >
-			resultArray.length = piece.inputs.length;
+			static const size_t CASTATICSIZE = 16;
+			enforce(piece.inputs.length <= CASTATICSIZE); // we don't have currently a logic for dynamic resizing of an dynamic array implemented
 
-			foreach( inputIndex; 0..inputArray.length ) {
+			uint[CASTATICSIZE] staticInputArray, staticResultArray;
+
+			foreach( inputIndex; 0..piece.inputs.length ) {
 				bool activated = readAtCoordinateAndCheckForThreshold(piece.inputs[inputIndex]);
-				inputArray[inputIndex] = activated ? 1 : 0;
+				staticInputArray[inputIndex] = activated ? 1 : 0;
 			}
 
 			assert(piece.caRule <= 255);
-			applyCaRuleOnUintArray(piece.caRule, inputArray, /*out*/ resultArray);
+			applyCaRuleOnUintArray(piece.caRule, staticInputArray[0..piece.inputs.length], /*out*/ &staticResultArray[0]);
 
-			bool outputActivation = resultArray[piece.caReadofIndex % resultArray.length] != 0;
+			bool outputActivation = staticResultArray[piece.caReadofIndex % piece.inputs.length] != 0;
 			nextOutputs[pieceIndex] = (outputActivation ? /*piece.output.strength*/ 1.0f/* TODO< set this with an SLIM parameter >*/ : 0.0f);
 		}
 		else if( piece.type == Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE ) {
