@@ -221,6 +221,7 @@ struct PieceCowFacade {
 	mixin(ctfeSetGetAccessors("Piece.EnumType", "type"));
 	mixin(ctfeSetGetAccessors("CoordinateWithStrength", "output"));
 	mixin(ctfeSetGetAccessors("CoordinateWithAttribute[]", "inputs", false));
+	mixin(ctfeSetGetAccessors("int", "wtaGroup")); 
 
 
 	final @property uint caRule() {
@@ -330,6 +331,8 @@ struct Piece {
 	EnumType type;
 
 	uint caReadofIndex; // from which index in the CA should the result be read
+
+	int wtaGroup = -1; // index of the winner-takes-all group
 	
 	CoordinateWithAttribute[] inputs; 
 	CoordinateWithStrength output;
@@ -361,6 +364,7 @@ struct Piece {
 		if( isCa ) {
 			resultString ~= "\tcaReadofIndex=%s\n".format(caReadofIndex);
 		}
+		resultString ~= "\twtaGroup=%s\n".format(wtaGroup);
 
 		// TODO< other >
 
@@ -368,16 +372,14 @@ struct Piece {
 	}
 }
 
-// TODO< make this 2d >
 struct Map1d {
 	float[] arr;
-
-
 }
 
 struct SlimRnnCtorParameters {
 	size_t[1] mapSize;
 	size_t numberOfPieces;
+	size_t numberOfWtaGroups;
 }
 
 import std.exception : enforce;
@@ -396,6 +398,14 @@ class SlimRnn {
 	private float[] nextOutputs; // next outputs of pieces
 	                             // not under COW
 
+	private static struct WtaWinnerIndexAndValue {
+		int winnerNeuronIndex = -1; // index of the current winner
+		float winnerOutputValue = 0; // output value of the current winner
+	}
+
+	private WtaWinnerIndexAndValue[] wta; // wta groups, has the length of the wta groups
+	                                      // not under COW
+
 	// precalculated ca-readoff-index % inputs.length for each piece
 	private size_t[] compiledPieceCaReadoffIndices;
 
@@ -412,8 +422,14 @@ class SlimRnn {
 	static SlimRnn makeRoot(SlimRnnCtorParameters parameters) {
 		SlimRnn result = new SlimRnn(parameters);
 		result.cowResetAndSetCountOfPiecesFor(parameters.numberOfPieces);
+		result.wta.length = parameters.numberOfWtaGroups;
+		result.wtaReset();
 		result.cowSetAllToOpaque();
 		return result;
+	}
+
+	final @property size_t numberOfWtaGroups() {
+		return wta.length;
 	}
 
 	final private this(SlimRnnCtorParameters parameters) {
@@ -427,6 +443,8 @@ class SlimRnn {
 		cowResetAndSetCountOfPiecesFor(countOfPieces);
 		nextOutputs.length = countOfPieces;
 	}
+
+
 
 	// array of piece indices which are ready to be executed
 	// is updated by the user with compile()
@@ -526,7 +544,6 @@ class SlimRnn {
 			[
 				CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.8f),
 				CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.8f),
-				//CoordinateWithValue.make(Coordinate.make(defaultInputSwitchboardIndex), 0.1f),  uncomemnting this has an effect on how the network will be structured for the XOR example/test
 			];
 
 			iterationPieceCowFacade.output = CoordinateWithValue.make(Coordinate.make(2), 0.6f);
@@ -595,8 +612,11 @@ class SlimRnn {
 	}
 
 	private final void step(out bool executionError) {
+		wtaReset();
 		calcNextStates();
 		applyOutputs(/*out*/executionError);
+
+		// TODO< figure which neurons take WTA >
 	}
 
 	private final bool readAtCoordinateAndCheckForThreshold(ref CoordinateWithValue coordinateWithValue) {
@@ -617,10 +637,10 @@ class SlimRnn {
 		}
 	}
 
-	private final void calcNextState(PieceCowFacade *piece, size_t pieceIndex) {
+	private final void calcNextState(PieceCowFacade *piece, size_t neuronIndex) {
 		assert( piece.enabled ); // must be the case because we are working with the ready set, and the ready set has to have by definition only enabled elements in it
 
-		if( compiledIsCa[pieceIndex] ) {
+		if( compiledIsCa[neuronIndex] ) {
 			assert(piece.isCa);
 
 			static const size_t CASTATICSIZE = 16;
@@ -633,9 +653,10 @@ class SlimRnn {
 			}
 
 			assert(piece.caRule <= 255);
-			size_t compiledPieceCaReadoffIndex = compiledPieceCaReadoffIndices[pieceIndex];
+			size_t compiledPieceCaReadoffIndex = compiledPieceCaReadoffIndices[neuronIndex];
 			bool outputActivation = applyCaRuleOnBoolArraySingle(piece.caRule, staticInputArray[0..piece.inputs.length], compiledPieceCaReadoffIndex);
-			nextOutputs[pieceIndex] = (outputActivation ? /*piece.output.strength*/ 1.0f/* TODO< set this with an SLIM parameter >*/ : 0.0f);
+			nextOutputs[neuronIndex] = (outputActivation ? /*piece.output.strength*/ 1.0f/* TODO< set this with an SLIM parameter >*/ : 0.0f);
+			wtaUpdateForNeuronActivation(piece.wtaGroup, neuronIndex, nextOutputs[neuronIndex]);
 		}
 		else if( piece.type == Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE ) {
 			float inputActivation = 1.0f;
@@ -652,15 +673,15 @@ class SlimRnn {
 				throw new Exception("Internal Error");
 			}
 
-			// TODO< add activation function
+			// TODO< add activation function >
 
 			// note< check for equivalence is important, because it allows us to activate a Neuron if the input is zero for neurons which have to be all the time on >
-			nextOutputs[pieceIndex] = (inputActivation >= piece.output.threshold ? /*piece.output.value*/ 1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f);
-
+			nextOutputs[neuronIndex] = (inputActivation >= piece.output.threshold ? /*piece.output.value*/ 1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f);
+			wtaUpdateForNeuronActivation(piece.wtaGroup, neuronIndex, nextOutputs[neuronIndex]);
 
 			if( false ) {
 				import std.stdio;
-				writeln("nextOutputs[", pieceIndex, "]=", nextOutputs[pieceIndex]);
+				writeln("nextOutputs[", neuronIndex, "]=", nextOutputs[neuronIndex]);
 			}
 
 			// debug
@@ -698,11 +719,12 @@ class SlimRnn {
 				writeln("inputActivation=", inputActivation);
 			}
 
-			nextOutputs[pieceIndex] = inputActivation ? /*piece.output.value*/1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f;
+			nextOutputs[neuronIndex] = inputActivation ? /*piece.output.value*/1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f;
+			wtaUpdateForNeuronActivation(piece.wtaGroup, neuronIndex, nextOutputs[neuronIndex]);
 
 			if( false ) {
 				import std.stdio;
-				writeln("nextOutputs[pieceIndex]=", nextOutputs[pieceIndex]);
+				writeln("nextOutputs[neuronIndex]=", nextOutputs[neuronIndex]);
 			}
 		}
 	}
@@ -733,8 +755,37 @@ class SlimRnn {
 
 
 
+	/////////////////////
+	// WTA
+	/////////////////////
 
+	private final void wtaReset() {
+		foreach( ref WtaWinnerIndexAndValue iterationWta; wta ) {
+			iterationWta.winnerOutputValue = 0;
+			iterationWta.winnerOutputValue = -1;
+		}
+	}
 
+	private final void wtaUpdateForNeuronActivation(int wtaGroup, size_t neuronIndex, float neuronOutputValue) {
+		if( wtaGroup == -1 ) { // special value which means that the neuron has no WTA group
+			return;
+		}
+
+		if( wta[wtaGroup].winnerOutputValue < neuronOutputValue ) {
+			wta[wtaGroup].winnerOutputValue = neuronOutputValue;
+			wta[wtaGroup].winnerNeuronIndex = cast(int)neuronIndex;
+		}
+	}
+
+	// checks if an neuron is the winner
+	private final bool wtaIsNeuronWinner(int wtaGroup, size_t neuronIndex, float neuronOutputValue) {
+		if(wtaGroup == -1) {
+			return true;
+		}
+		return
+			(wta[wtaGroup].winnerNeuronIndex == neuronIndex) ||     // normal case
+			(wta[wtaGroup].winnerOutputValue == neuronOutputValue); // case for multiple neurons with the same result value, then we don't have a winner and just fire all of them
+	}
 
 
 
@@ -901,3 +952,5 @@ unittest { // one neuron  overwritten
 
 	assert(true == (usedSlimRnn.map.arr[3] >= 0.5f));
 }
+
+// TODO< unittest WTA >
