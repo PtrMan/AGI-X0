@@ -8,7 +8,7 @@ import slimRnn.SlimRnn;
 import search.levin.LevinSearch;
 
 import slimRnn.SlimRnnStackBasedManipulationInstruction;
-static import slimRnn.programEncoding.Vliw1;                    // stack based "very large instruction word"-style instructions on which levin search can operate
+static import slimRnn.programEncoding.Vliw2;                    // stack based "very large instruction word"-style instructions on which levin search can operate
 import slimRnn.SlimRnnStackBasedInterpreter;
 
 /*
@@ -639,7 +639,7 @@ void main() {
 	slimRnnLevinProblem.testset = [
 		SlimRnnLevinProblem.TestSetElement.make([false, false], false),
 		SlimRnnLevinProblem.TestSetElement.make([false, true], true),
-		SlimRnnLevinProblem.TestSetElement.make([true, false], false),
+		SlimRnnLevinProblem.TestSetElement.make([true, false], true),
 		SlimRnnLevinProblem.TestSetElement.make([true, true], false),
 	];
 
@@ -694,7 +694,7 @@ private void translateLevinProgramInstructionsToStackBasedInstructions(uint[] in
 	}
 
 	foreach( uint iterationInstruction; instructions ) {
-		.slimRnn.programEncoding.Vliw1.decodeInstruction(iterationInstruction, &translateTypeIndexOfPieceToType, resultInstructionStack, /*out*/ invalidEncoding);
+		.slimRnn.programEncoding.Vliw2.vliw2emitInstructions(iterationInstruction, &translateTypeIndexOfPieceToType, resultInstructionStack, /*out*/ invalidEncoding);
 		if( invalidEncoding ) {
 			return;
 		}

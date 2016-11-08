@@ -5,7 +5,7 @@ import memoryLowlevel.StackAllocator;
 import slimRnn.SlimRnnStackBasedManipulationInstruction;
 import slimRnn.SlimRnn;
 
-// privdes an interpreter for the stack based SLIM-RNN instructions
+// provides an interpreter for the stack based SLIM-RNN instructions
 // and the context
 
 struct SlimRnnStackBasedInterpretationContext {
@@ -48,24 +48,92 @@ struct SlimRnnStackBasedInterpreter {
 			auto iterationInstruction = instructions.getAtIndex(instructionIndex);
 
 			final switch( iterationInstruction.type ) with (SlimRnnStackBasedManipulationInstruction.EnumType) {
-				case PUSHVALUE: interpretInstructionPushValue(iterationInstruction, context, slimRnn, success); break;
+				case ACTIVATENEURON: interpretInstructionActivateNeuron(iterationInstruction, context, slimRnn, success); break;
+				case DEACTIVATENEURON: interpretInstructionDeactivateNeuron(iterationInstruction, context, slimRnn, success); break;
+				case ACTIVATENEURONATSTACKTOP: interpretInstructionActivateNeuronAtStackTop(iterationInstruction, context, slimRnn, success); break;
+				case DEACTIVATENEURONATSTACKTOP: interpretInstructionDeactivateNeuronAtStackTop(iterationInstruction, context, slimRnn, success); break;
+
+				case COMMIT: interpretInstructionCommit(iterationInstruction, context, slimRnn, success); break;
+
+				case DUPLICATESTACKTOP: interpretInstructionDuplicateStackTop(iterationInstruction, context, slimRnn, success); break;
 				case POP: interpretInstructionPop(iterationInstruction, context, slimRnn, success); break;
-				case SETINPUTTHRESHOLDFORPIECEATSTACKTOP: interpretInstructionSetInputThresholdForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
-				case SETOUPUTSTRENGTHFORPIECEATSTACKTOP: interpretInstructionSetOutputStrengthForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
-				case SETACTIVATEFORPIECEACTIVATIONVARIABLEATSTACKTOP: interpretInstructionSetActivateForPieceActivationVariableStackTop(iterationInstruction, context, slimRnn, success); break;
-				case SETTYPEVARIABLEFORPIECEATSTACKTOP: interpretInstructionSetTypeVariableForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
-				case SETTHRESHOLDFORINPUTINDEXFORPIECEATSTACKTOP: interpretInstructionSetThresholdForInputIndexForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
-				case RESETNEURONACTIVATION: interpretInstructionResetNeuronActivation(iterationInstruction, context, slimRnn, success); break;
-				case SETSWITCHBOARDINDEXFORINPUTINDEXANDPIECEATSTACKTOP: interpretInstructionSetSwitchboardIndexForInputIndexAndPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
+				case POP2: interpretInstructionPop2(iterationInstruction, context, slimRnn, success); break;
+				case PUSHNEXTNEURONINDEX: interpretInstructionPushNextNeuronIndex(iterationInstruction, context, slimRnn, success); break;
+				case PUSHCONSTANT: interpretInstructionPushConstant(iterationInstruction, context, slimRnn, success); break;
+				case SWAPSTACK: interpretInstructionSwapStack(iterationInstruction, context, slimRnn, success); break;
+				
+
+				case NOP: break;
+				case RESETNEURONACTIVATIONFORNEURONATTOP: interpretInstructionResetNeuronActivationForNeuronAtTop(iterationInstruction, context, slimRnn, success); break;
+				case SETOUTPUTHSTRENGTHTOVALUEFORNEURONATSTACKTOP: interpretInstructionSetOutputStrengthForNeuronAtStackTop(iterationInstruction, context, slimRnn, success); break;
+				case SETTYPEVARIABLEFORNEURONATSTACKTOP: interpretInstructionSetTypeVariableForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
 				case SETSWITCHBOARDINDEXFOROUTPUTFORPIECEATSTACKTOP: interpretInstructionSetSwitchboardIndexForOutputForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
+				case SETSWITCHBOARDINDEXFORINPUTINDEXANDPIECEATSTACKTOP: interpretInstructionSetSwitchboardIndexForInputIndexAndPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
+
+				case SETINPUTTHRESHOLDFORPIECEATSTACKTOP: interpretInstructionSetInputThresholdForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
+				case SETTHRESHOLDFORINPUTINDEXFORPIECEATSTACKTOP: interpretInstructionSetThresholdForInputIndexForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
+				case RESETNEURONACTIVATION: throw new Exception("not jet implemented"); // TODO
+			}
+
+			if( !success ) {
+				return;
 			}
 		}
 
 		commitAllPieceExecutions(context, slimRnn);
 	}
 
-	private static void interpretInstructionPushValue(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
-		context.stack.push(instruction.valueToPush);
+
+
+
+	private static void interpretInstructionActivateNeuron(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		activateNeuronAtIndex(context, instruction.neuronIndex, true);
+		success = true;
+	}
+
+	private static void interpretInstructionDeactivateNeuron(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		activateNeuronAtIndex(context, instruction.neuronIndex, false);
+		success = true;
+	}
+
+	private static void interpretInstructionActivateNeuronAtStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		success = false;
+		if( context.stack.isEmpty ) {
+			return;
+		}
+		uint neuronIndex = context.stack.top;
+
+		activateNeuronAtIndex(context, neuronIndex, true);
+		success = true;
+	}
+
+	private static void interpretInstructionDeactivateNeuronAtStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		success = false;
+		if( context.stack.isEmpty ) {
+			return;
+		}
+		uint neuronIndex = context.stack.top;
+
+		activateNeuronAtIndex(context, neuronIndex, false);
+		success = true;
+	}
+
+
+
+
+	private static void interpretInstructionCommit(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		commitAllPieceExecutions(context, slimRnn);
+	}
+
+	private static void interpretInstructionDuplicateStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		success = false;
+		if( context.stack.isEmpty ) {
+			return;
+		}
+
+		uint topValue = context.stack.top;
+		context.stack.push(topValue);
+
 		success = true;
 	}
 
@@ -75,6 +143,48 @@ struct SlimRnnStackBasedInterpreter {
 			return;
 		}
 		context.stack.pop();
+		success = true;
+	}
+
+	private static void interpretInstructionPop2(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		interpretInstructionPop(instruction, context, slimRnn, success);
+		if( !success ) {
+			return;
+		}
+		interpretInstructionPop(instruction, context, slimRnn, success);
+	}
+
+	private static void interpretInstructionPushNextNeuronIndex(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		uint nextNeuronIndex = cast(uint)slimRnn.findNextNeuronIndex(/*out*/success);
+		if( !success ) {
+			return;
+		}
+
+		context.stack.push(nextNeuronIndex);
+
+		success = true;
+	}
+
+	private static void interpretInstructionPushConstant(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		context.stack.push(instruction.valueToPush);
+		success = true;
+	}
+
+	private static void interpretInstructionSwapStack(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		success = false;
+		if( context.stack.isEmpty ) {
+			return;
+		}
+
+		if( context.stack.length == 1 ) { // acts like an NOP
+			success = true;
+			return;
+		}
+
+		uint temp = context.stack[$-1];
+		context.stack[$-1] = context.stack[$-2];
+		context.stack[$-2] = temp;
+
 		success = true;
 	}
 
@@ -93,7 +203,31 @@ struct SlimRnnStackBasedInterpreter {
 		success = true;
 	}
 
-	private static void interpretInstructionSetOutputStrengthForPieceAtStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+	private static void interpretInstructionSetThresholdForInputIndexForPieceAtStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		success = false;
+		if( context.stack.isEmpty ) {
+			return;
+		}
+		uint pieceIndex = context.stack.top;
+
+		auto scratchpadInput = slimRnn.pieceAccessors[pieceIndex].inputs[instruction.inputIndex];
+		scratchpadInput.value = instruction.threshold;
+		slimRnn.pieceAccessors[pieceIndex].setInputAt(instruction.inputIndex, scratchpadInput);
+		success = true;
+	}
+
+	private static void interpretInstructionResetNeuronActivationForNeuronAtTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		success = false;
+		if( context.stack.isEmpty ) {
+			return;
+		}
+		uint pieceIndex = context.stack.top;
+
+		context.pieceExecutions[pieceIndex].flagEnableNeuron = false;
+		success = true;
+	}
+
+	private static void interpretInstructionSetOutputStrengthForNeuronAtStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
 		success = false;
 		if( context.stack.isEmpty ) {
 			return;
@@ -103,18 +237,6 @@ struct SlimRnnStackBasedInterpreter {
 		auto scratchpadOutput = slimRnn.pieceAccessors[pieceIndex].output;
 		scratchpadOutput.value = instruction.strength;
 		slimRnn.pieceAccessors[pieceIndex].output = scratchpadOutput;
-		success = true;
-	}
-
-	private static void interpretInstructionSetActivateForPieceActivationVariableStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
-		success = false;
-		if( context.stack.isEmpty ) {
-			return;
-		}
-		uint pieceIndex = context.stack.top;
-
-		context.pieceExecutions[pieceIndex].flagEnableNeuron = true;
-		context.pieceExecutions[pieceIndex].enableNeuronValue = instruction.activateFlag;
 		success = true;
 	}
 
@@ -130,29 +252,23 @@ struct SlimRnnStackBasedInterpreter {
 		success = true;
 	}
 
-	private static void interpretInstructionSetThresholdForInputIndexForPieceAtStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+
+
+
+
+
+	private static void interpretInstructionSetActivateForPieceActivationVariableStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
 		success = false;
 		if( context.stack.isEmpty ) {
 			return;
 		}
 		uint pieceIndex = context.stack.top;
 
-		auto scratchpadInput = slimRnn.pieceAccessors[pieceIndex].inputs[instruction.inputIndex];
-		scratchpadInput.value = instruction.threshold;
-		slimRnn.pieceAccessors[pieceIndex].setInputAt(instruction.inputIndex, scratchpadInput);
+		context.pieceExecutions[pieceIndex].flagEnableNeuron = true;
+		context.pieceExecutions[pieceIndex].enableNeuronValue = instruction.activateFlag;
 		success = true;
 	}
 
-	private static void interpretInstructionResetNeuronActivation(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
-		success = false;
-		if( context.stack.isEmpty ) {
-			return;
-		}
-		uint pieceIndex = context.stack.top;
-
-		context.pieceExecutions[pieceIndex].flagEnableNeuron = false;
-		success = true;
-	}
 
 	private static void interpretInstructionSetSwitchboardIndexForInputIndexAndPieceAtStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
 		success = false;
@@ -198,6 +314,13 @@ struct SlimRnnStackBasedInterpreter {
 			slimRnn.pieceAccessors[pieceIndex].setInputAt(i, scratchpadInput);
 		}
 	}
+
+	// helper
+	private static void activateNeuronAtIndex(ref SlimRnnStackBasedInterpretationContext context, size_t neuronIndex, bool value) {
+		context.pieceExecutions[neuronIndex].flagEnableNeuron = true;
+		context.pieceExecutions[neuronIndex].enableNeuronValue = value;
+	}
+
 
 
 

@@ -461,8 +461,26 @@ class SlimRnn {
 
 		valid = true;
 
+		if( !compileCheckInputs() ) {
+			valid = false;
+			return;
+		}
+
 		compileEntryReadySet();
 		compileCa(valid);
+	}
+
+	// checks the inputs to see if the indices are in range
+	private final bool compileCheckInputs() {
+		foreach( ref iterationPieceAccessor; pieceAccessors ) {
+			foreach( iterationInput; iterationPieceAccessor.inputs ) {
+				if( iterationInput.coordinate.x >= map.arr.length ) {
+					return false;
+				}
+			}
+		}
+
+		return true;
 	}
 
 	final private void compileEntryReadySet() {
@@ -548,6 +566,26 @@ class SlimRnn {
 
 			iterationPieceCowFacade.output = CoordinateWithValue.make(Coordinate.make(2), 0.6f);
 			iterationPieceCowFacade.enabled = false;
+		}
+	}
+
+	private size_t currentWalkerNeuronIndex = 0;
+
+	// finds the next neuron which is not enabled
+	final size_t findNextNeuronIndex(out bool success) {
+		success = false;
+
+		for(;;) {
+			if( currentWalkerNeuronIndex >= pieceAccessors.length ) {
+				return 0;
+			}
+		
+			if( !pieceAccessors[currentWalkerNeuronIndex].enabled ) {
+				success = true;
+				return currentWalkerNeuronIndex;
+			}
+
+			currentWalkerNeuronIndex++;
 		}
 	}
 
