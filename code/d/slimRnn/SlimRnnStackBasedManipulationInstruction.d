@@ -31,6 +31,8 @@ struct SlimRnnStackBasedManipulationInstruction {
 		SETSWITCHBOARDINDEXFOROUTPUTFORPIECEATSTACKTOP,
 		SETSWITCHBOARDINDEXFORINPUTINDEXANDPIECEATSTACKTOP,
 
+		LINKOUTPUTOFNEURONTOSLIMRNNOUTPUTFORNEURONATSTACKTOP,
+
 		// instructions to be revised
 
 		SETINPUTTHRESHOLDFORPIECEATSTACKTOP, // set threshold of input index to #top
@@ -183,6 +185,14 @@ struct SlimRnnStackBasedManipulationInstruction {
 		return result;
 	}
 
+	// links the output of the neuron at stack(top) to the output slot of the SLIM-RNN to the outputIndex
+	static Instruction makeLinkOutputOfNeuronToSlimRnnOutputForNeuronAtStackTop(uint outputIndex) {
+		Instruction result;
+		result.type = EnumType.LINKOUTPUTOFNEURONTOSLIMRNNOUTPUTFORNEURONATSTACKTOP;
+		result.outputIndex = outputIndex;
+		return result;
+	}
+
 
 
 
@@ -263,6 +273,9 @@ struct SlimRnnStackBasedManipulationInstruction {
 			}
 			else if( type == SETSWITCHBOARDINDEXFORINPUTINDEXANDPIECEATSTACKTOP ) {
 				return "SetSwitchboardIndexForInputIndexAndPieceAtStackTop inputIndex=%s switchboardIndex=%s".format(inputIndex, switchboardIndex);
+			}
+			else if( type == LINKOUTPUTOFNEURONTOSLIMRNNOUTPUTFORNEURONATSTACKTOP ) {
+				return "LinkOutputOfNeuronToSlimRnnOutputForNeuronAtStackTop outputIndex=%s".format(outputIndex);
 			}
 			else if( type == SETINPUTTHRESHOLDFORPIECEATSTACKTOP ) {
 				return "SetInputThresholdForPieceAtStackTop inputIndex=%s".format(inputIndex);

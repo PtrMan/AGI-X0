@@ -1,5 +1,7 @@
 module slimRnn.SlimRnn;
 
+// TODO< finish WTA >
+
 import std.stdint;
 
 bool applyCaRule(uint rule, bool[3] values) {
@@ -380,6 +382,7 @@ struct SlimRnnCtorParameters {
 	size_t[1] mapSize;
 	size_t numberOfPieces;
 	size_t numberOfWtaGroups;
+	size_t numberOfOutputs; // how many outputs has the network which feed back signals into the environment
 }
 
 import std.exception : enforce;
@@ -395,8 +398,8 @@ class SlimRnn {
 	// length should not be changed
 	PieceCowFacade[] pieceAccessors;
 
-	private float[] nextOutputs; // next outputs of pieces
-	                             // not under COW
+	private float[] nextNeuronOutputs; // next outputs of pieces
+	                                   // not under COW
 
 	private static struct WtaWinnerIndexAndValue {
 		int winnerNeuronIndex = -1; // index of the current winner
@@ -405,6 +408,12 @@ class SlimRnn {
 
 	private WtaWinnerIndexAndValue[] wta; // wta groups, has the length of the wta groups
 	                                      // not under COW
+
+	float[] outputValues; // output array in which the values get written for the neurons which do have an output index set
+	                      // not under COW
+
+	private int[] readOutputFromNeuronIndices; // values can be -1 if the are not connected to an neuron
+	                                            // under COW, if it gets changed it will be copied and set to the copied array, else it is null
 
 	// precalculated ca-readoff-index % inputs.length for each piece
 	private size_t[] compiledPieceCaReadoffIndices;
@@ -425,6 +434,12 @@ class SlimRnn {
 		result.wta.length = parameters.numberOfWtaGroups;
 		result.wtaReset();
 		result.cowSetAllToOpaque();
+
+		result.readOutputFromNeuronIndices = new int[parameters.numberOfOutputs];
+		foreach( ref o; result.readOutputFromNeuronIndices ) {
+			o = -1; // set the index so it doesn't read anything
+		}
+
 		return result;
 	}
 
@@ -434,14 +449,37 @@ class SlimRnn {
 
 	final private this(SlimRnnCtorParameters parameters) {
 		assert(parameters.numberOfPieces > 0);
+		enforce(parameters.numberOfOutputs > 0); // must have an output
 
 		map.arr.length = parameters.mapSize[0];
-		nextOutputs.length = parameters.numberOfPieces;
+		nextNeuronOutputs.length = parameters.numberOfPieces;
+
+		outputValues.length = parameters.numberOfOutputs;
+
+		readOutputFromNeuronIndices = null;
 	}
 
 	final void resizePieces(uint countOfPieces) {
 		cowResetAndSetCountOfPiecesFor(countOfPieces);
-		nextOutputs.length = countOfPieces;
+		nextNeuronOutputs.length = countOfPieces;
+	}
+
+	// method to set output index, which does COW if required
+	final void setOutputIndex(size_t neuronIndex, int outputIndex, out bool success) {
+		success = false;
+
+		if( neuronIndex >= pieceAccessors.length ) {
+			return;
+		}
+
+		if( outputIndex >= outputValues.length || outputIndex < -1 ) {
+			return;
+		}
+
+		cowOutputDoCowForWriteIfRequired();
+		readOutputFromNeuronIndices[outputIndex] = neuronIndex;
+
+		success = true;
 	}
 
 
@@ -457,9 +495,14 @@ class SlimRnn {
 	final void compile(out bool valid) {
 		// some checks
 		assert(opaquePieces.length == pieceAccessors.length);
-		assert(opaquePieces.length == nextOutputs.length);
+		assert(opaquePieces.length == nextNeuronOutputs.length);
 
 		valid = true;
+
+		if( !compileCheckOuputs() ) {
+			valid = false;
+			return;
+		}
 
 		if( !compileCheckInputs() ) {
 			valid = false;
@@ -468,6 +511,29 @@ class SlimRnn {
 
 		compileEntryReadySet();
 		compileCa(valid);
+	}
+
+	private final bool compileCheckOuputs() {
+		if( outputValues.length == 0 ) { // networks without an output are not valid
+			return false;
+		}
+
+		int[] usedReadOutputFromNeuronIndices = cowGetReadOutoutFromNeuronIndices();
+
+		assert( usedReadOutputFromNeuronIndices !is null ); // must be set, the root has to allocate this on setup
+		assert( usedReadOutputFromNeuronIndices.length == outputValues.length );
+
+		foreach( int iterationReadoffIndex; usedReadOutputFromNeuronIndices ) {
+			if( iterationReadoffIndex == -1 ) { // if the readoff index is not set then we continue
+				continue;
+			}
+
+			if( iterationReadoffIndex >= pieceAccessors.length ) { // check for index out of bounds
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	// checks the inputs to see if the indices are in range
@@ -530,15 +596,19 @@ class SlimRnn {
 	// clones it and handles this SlimRnn as if it were the root SlimRnn
 	final SlimRnn cloneUnderCowAsRoot() {
 		assert(parent is null, "assumption is that this SlimRnn is the root, having a parent breaks this assumption");
+		assert(outputValues.length == cowGetReadOutoutFromNeuronIndices().length);
 
 		SlimRnnCtorParameters parameters;
 		parameters.mapSize[0] = map.arr.length;
 		parameters.numberOfPieces = pieceAccessors.length;
+		parameters.numberOfOutputs = outputValues.length;
 		SlimRnn result = new SlimRnn(parameters);
 		result.parent = &this;
 
 		result.terminal = terminal;
 		result.defaultInputSwitchboardIndex = defaultInputSwitchboardIndex;
+
+		result.readOutputFromNeuronIndices = readOutputFromNeuronIndices;
 
 		result.cowResetAndSetCountOfPiecesFor(pieceAccessors.length);
 		result.cowFlushOpaquePieces();
@@ -655,6 +725,19 @@ class SlimRnn {
 		applyOutputs(/*out*/executionError);
 
 		// TODO< figure which neurons take WTA >
+
+		transferToOutputs(); // propagate the result to the output pins
+	}
+
+	private final void transferToOutputs() {
+		int[] usedReadOutputFromNeuronIndices = cowGetReadOutoutFromNeuronIndices();
+		foreach( i, int readOutputFromNeuronIndex; usedReadOutputFromNeuronIndices ) {
+			if( readOutputFromNeuronIndex == -1 ) {
+				continue;
+			}
+
+			outputValues[i] = nextNeuronOutputs[readOutputFromNeuronIndex];
+		}
 	}
 
 	private final bool readAtCoordinateAndCheckForThreshold(ref CoordinateWithValue coordinateWithValue) {
@@ -693,8 +776,8 @@ class SlimRnn {
 			assert(piece.caRule <= 255);
 			size_t compiledPieceCaReadoffIndex = compiledPieceCaReadoffIndices[neuronIndex];
 			bool outputActivation = applyCaRuleOnBoolArraySingle(piece.caRule, staticInputArray[0..piece.inputs.length], compiledPieceCaReadoffIndex);
-			nextOutputs[neuronIndex] = (outputActivation ? /*piece.output.strength*/ 1.0f/* TODO< set this with an SLIM parameter >*/ : 0.0f);
-			wtaUpdateForNeuronActivation(piece.wtaGroup, neuronIndex, nextOutputs[neuronIndex]);
+			nextNeuronOutputs[neuronIndex] = (outputActivation ? /*piece.output.strength*/ 1.0f/* TODO< set this with an SLIM parameter >*/ : 0.0f);
+			wtaUpdateForNeuronActivation(piece.wtaGroup, neuronIndex, nextNeuronOutputs[neuronIndex]);
 		}
 		else if( piece.type == Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE ) {
 			float inputActivation = 1.0f;
@@ -714,12 +797,12 @@ class SlimRnn {
 			// TODO< add activation function >
 
 			// note< check for equivalence is important, because it allows us to activate a Neuron if the input is zero for neurons which have to be all the time on >
-			nextOutputs[neuronIndex] = (inputActivation >= piece.output.threshold ? /*piece.output.value*/ 1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f);
-			wtaUpdateForNeuronActivation(piece.wtaGroup, neuronIndex, nextOutputs[neuronIndex]);
+			nextNeuronOutputs[neuronIndex] = (inputActivation >= piece.output.threshold ? /*piece.output.value*/ 1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f);
+			wtaUpdateForNeuronActivation(piece.wtaGroup, neuronIndex, nextNeuronOutputs[neuronIndex]);
 
 			if( false ) {
 				import std.stdio;
-				writeln("nextOutputs[", neuronIndex, "]=", nextOutputs[neuronIndex]);
+				writeln("nextNeuronOutputs[", neuronIndex, "]=", nextNeuronOutputs[neuronIndex]);
 			}
 
 			// debug
@@ -757,12 +840,12 @@ class SlimRnn {
 				writeln("inputActivation=", inputActivation);
 			}
 
-			nextOutputs[neuronIndex] = inputActivation ? /*piece.output.value*/1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f;
-			wtaUpdateForNeuronActivation(piece.wtaGroup, neuronIndex, nextOutputs[neuronIndex]);
+			nextNeuronOutputs[neuronIndex] = inputActivation ? /*piece.output.value*/1.0f/* TODO< set this with an SLIM parameter >*/  : 0.0f;
+			wtaUpdateForNeuronActivation(piece.wtaGroup, neuronIndex, nextNeuronOutputs[neuronIndex]);
 
 			if( false ) {
 				import std.stdio;
-				writeln("nextOutputs[neuronIndex]=", nextOutputs[neuronIndex]);
+				writeln("nextNeuronOutputs[neuronIndex]=", nextNeuronOutputs[neuronIndex]);
 			}
 		}
 	}
@@ -785,9 +868,9 @@ class SlimRnn {
 		}
 
 		///import std.stdio;
-		///writeln("applyOutputs() write map.arr[", piece.output.coordinate.x, "] = ", nextOutputs[iterationPieceIndex]);
+		///writeln("applyOutputs() write map.arr[", piece.output.coordinate.x, "] = ", nextNeuronOutputs[iterationPieceIndex]);
 
-		map.arr[piece.output.coordinate.x] = nextOutputs[pieceIndex];
+		map.arr[piece.output.coordinate.x] = nextNeuronOutputs[pieceIndex];
 	}
 
 
@@ -874,16 +957,63 @@ class SlimRnn {
 			iterationPieceFacade.opaque = true;
 		}
 	}
+
+	// returns the array for the neuron indices from which the RNN output values get fetched
+	private final int[] cowGetReadOutoutFromNeuronIndices() {
+		int[] resultReadOutputFromNeuronIndices;
+
+		// TODO< do this for a parent depth of > 1 >
+		resultReadOutputFromNeuronIndices = readOutputFromNeuronIndices;
+		if( resultReadOutputFromNeuronIndices is null ) {
+			resultReadOutputFromNeuronIndices = parent.readOutputFromNeuronIndices;
+
+			// cases can lead to a failiure of this check
+			// (a) if the parent depth is > 1
+			// (b) if the root has not set this to a non-null pointer, this is invalid and it means that the construction mechanism of the root SlimRnn is broken
+			assert(resultReadOutputFromNeuronIndices !is null);
+		}
+
+		// cases can lead to a failiure of this check
+		// (a) if the parent depth is > 1
+		// (b) if the root has not set this to a non-null pointer, this is invalid and it means that the construction mechanism of the root SlimRnn is broken
+		assert(resultReadOutputFromNeuronIndices !is null);
+
+		return resultReadOutputFromNeuronIndices;
+	}
+
+	private final void cowOutputDoCowForWriteIfRequired() {
+		// if we are at root, then the readOutputFromNeuronIndices array must be set
+		if( parent is null ) { // if it is the root, then readOutputFromNeuronIndices must not be null
+			assert(readOutputFromNeuronIndices !is null);
+			return;
+		}
+
+		if( readOutputFromNeuronIndices !is null ) { // check if we have nothing to do
+			return;
+		}
+
+		// if we are here we have to deep copy
+		int[] copyFrom = cowGetReadOutoutFromNeuronIndices();
+
+		assert(outputValues.length == pieceAccessors.length);
+		readOutputFromNeuronIndices = new int[pieceAccessors.length];
+		readOutputFromNeuronIndices = copyFrom.dup;
+	}
 }
 
 unittest { // one neuron  in root
 	SlimRnnCtorParameters ctorParameters;
 	ctorParameters.mapSize[0] = 5;
 	ctorParameters.numberOfPieces = 2;
+	ctorParameters.numberOfOutputs = 1;
 	SlimRnn root = SlimRnn.makeRoot(ctorParameters);
 	assert(root.pieceAccessors.length == 2);
 
 	root.terminal = CoordinateWithThreshold.make(CoordinateType.make(4), 0.1f);
+
+	bool calleeSuccess;
+	root.setOutputIndex(0, 0, /*out*/ calleeSuccess);
+	assert(calleeSuccess);
 
 
 	root.pieceAccessors[0].type = Piece.EnumType.XOR;
@@ -920,7 +1050,7 @@ unittest { // one neuron  in root
 	assert(!executionError);
 	assert(wasTerminated_);
 
-	assert(false == (root.map.arr[3] >= 0.5f));
+	assert(false == (root.outputValues[0] >= 0.5f));
 
 	root.map.arr[0] = 0.0f;
 	root.map.arr[1] = 1.0f;
@@ -928,17 +1058,22 @@ unittest { // one neuron  in root
 	assert(!executionError);
 	assert(wasTerminated_);
 
-	assert(true == (root.map.arr[3] >= 0.5f));
+	assert(true == (root.outputValues[0] >= 0.5f));
 }
 
 unittest { // one neuron  overwritten
 	SlimRnnCtorParameters ctorParameters;
 	ctorParameters.mapSize[0] = 5;
 	ctorParameters.numberOfPieces = 2;
+	ctorParameters.numberOfOutputs = 1;
 	SlimRnn root = SlimRnn.makeRoot(ctorParameters);
 	assert(root.pieceAccessors.length == 2);
 
 	root.terminal = CoordinateWithThreshold.make(CoordinateType.make(4), 0.1f);
+
+	bool calleeSuccess;
+	root.setOutputIndex(0, 0, /*out*/ calleeSuccess);
+	assert(calleeSuccess);
 
 	root.pieceAccessors[0].type = Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE;
 	root.pieceAccessors[0].inputs =
@@ -980,7 +1115,7 @@ unittest { // one neuron  overwritten
 	assert(!executionError);
 	assert(wasTerminated_);
 
-	assert(false == (usedSlimRnn.map.arr[3] >= 0.5f));
+	assert(false == (usedSlimRnn.outputValues[0] >= 0.5f));
 
 	usedSlimRnn.map.arr[0] = 0.0f;
 	usedSlimRnn.map.arr[1] = 1.0f;
@@ -988,7 +1123,7 @@ unittest { // one neuron  overwritten
 	assert(!executionError);
 	assert(wasTerminated_);
 
-	assert(true == (usedSlimRnn.map.arr[3] >= 0.5f));
+	assert(true == (usedSlimRnn.outputValues[0] >= 0.5f));
 }
 
 // TODO< unittest WTA >

@@ -131,6 +131,9 @@ private string generateDCodeForEmissionOfInstructions(const(EnumInstructionType)
 
 
 private enum EnumInstructionType {
+	LINKOUTPUTOFNEURONTOSLIMRNNOUTPUT0FORNEURONATSTACKTOP,	// must be first instruction because we will enumerate for an effective program length of 3 a program length 4, but we make sure that only the first 4th instruction gets checked
+	LINKOUTPUTOFNEURONTOSLIMRNNOUTPUT1FORNEURONATSTACKTOP,
+
 	ACTIVATENEURON,
 	DEACTIVATENEURON,
 	ACTIVATENEURONATSTACKTOP,
@@ -166,6 +169,9 @@ private enum EnumInstructionType {
 }
 
 private immutable EnumInstructionType[] allInstructions = [
+	EnumInstructionType.LINKOUTPUTOFNEURONTOSLIMRNNOUTPUT0FORNEURONATSTACKTOP,
+	EnumInstructionType.LINKOUTPUTOFNEURONTOSLIMRNNOUTPUT1FORNEURONATSTACKTOP,
+
 	EnumInstructionType.ACTIVATENEURON,
 	EnumInstructionType.DEACTIVATENEURON,
 	EnumInstructionType.ACTIVATENEURONATSTACKTOP,
@@ -252,6 +258,9 @@ private immutable string[EnumInstructionType] codeByInstructions;
 static this() {
 	with(EnumInstructionType) {
 		codeByInstructions = [
+			LINKOUTPUTOFNEURONTOSLIMRNNOUTPUT0FORNEURONATSTACKTOP: "SlimRnnStackBasedManipulationInstruction.makeLinkOutputOfNeuronToSlimRnnOutputForNeuronAtStackTop(0)",
+			LINKOUTPUTOFNEURONTOSLIMRNNOUTPUT1FORNEURONATSTACKTOP: "SlimRnnStackBasedManipulationInstruction.makeLinkOutputOfNeuronToSlimRnnOutputForNeuronAtStackTop(1)",
+
 			ACTIVATENEURON: "SlimRnnStackBasedManipulationInstruction.makeActivateNeuron(%s)",
 			DEACTIVATENEURON: "SlimRnnStackBasedManipulationInstruction.makeDeactivateNeuron(%s)",
 			ACTIVATENEURONATSTACKTOP: "SlimRnnStackBasedManipulationInstruction.makeActivateNeuronAtStackTop()",
@@ -306,6 +315,10 @@ private string convertInstructionToEmissionCode(const(EnumInstructionType) instr
 // linear combinations of these are possible
 // macro's can be made up of more than 2 instructions, they count as one value in the resulting instruction-set
 private immutable EnumInstructionType[][] preferedMacros = [
+	// must be the first because we enumerate effectivly n+1 instructions for an n long program, with this at the end
+	[EnumInstructionType.LINKOUTPUTOFNEURONTOSLIMRNNOUTPUT0FORNEURONATSTACKTOP,],
+	[EnumInstructionType.LINKOUTPUTOFNEURONTOSLIMRNNOUTPUT1FORNEURONATSTACKTOP,],
+
 	// requires 5 bit operand
 	[EnumInstructionType.ACTIVATENEURON,],
 	[EnumInstructionType.DEACTIVATENEURON,],

@@ -69,6 +69,7 @@ struct SlimRnnStackBasedInterpreter {
 				case SETTYPEVARIABLEFORNEURONATSTACKTOP: interpretInstructionSetTypeVariableForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
 				case SETSWITCHBOARDINDEXFOROUTPUTFORPIECEATSTACKTOP: interpretInstructionSetSwitchboardIndexForOutputForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
 				case SETSWITCHBOARDINDEXFORINPUTINDEXANDPIECEATSTACKTOP: interpretInstructionSetSwitchboardIndexForInputIndexAndPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
+				case LINKOUTPUTOFNEURONTOSLIMRNNOUTPUTFORNEURONATSTACKTOP: interpretInstructionLinkOutputOfNeuronToSlimRnnOutputForNeuronAtStackTop(iterationInstruction, context, slimRnn, success); break;
 
 				case SETINPUTTHRESHOLDFORPIECEATSTACKTOP: interpretInstructionSetInputThresholdForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
 				case SETTHRESHOLDFORINPUTINDEXFORPIECEATSTACKTOP: interpretInstructionSetThresholdForInputIndexForPieceAtStackTop(iterationInstruction, context, slimRnn, success); break;
@@ -294,6 +295,16 @@ struct SlimRnnStackBasedInterpreter {
 		slimRnn.pieceAccessors[pieceIndex].output.coordinate.x = instruction.outputIndex;
 
 		success = true;
+	}
+
+	private static void interpretInstructionLinkOutputOfNeuronToSlimRnnOutputForNeuronAtStackTop(SlimRnnStackBasedManipulationInstruction instruction, ref SlimRnnStackBasedInterpretationContext context, SlimRnn slimRnn, out bool success) {
+		success = false;
+		if( context.stack.isEmpty ) {
+			return;
+		}
+		uint neuronIndex = context.stack.top;
+
+		slimRnn.setOutputIndex(neuronIndex, instruction.outputIndex, /*out*/success);
 	}
 
 

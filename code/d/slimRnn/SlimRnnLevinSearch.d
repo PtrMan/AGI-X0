@@ -324,7 +324,7 @@ final class SlimRnnLevinProblem : LevinProblem {
 
 	private SlimRnnStackBasedInterpretationContext slimRnnStackBasedInterpretationContext;
 
-	final void executeProgram(LevinProgram program, uint maxNumberOfStepsToExecute, out bool hasHalted) {
+	final override void executeProgram(LevinProgram program, uint maxNumberOfStepsToExecute, out bool hasHalted) {
 		hasHalted = false;
 
 		// "fast" copy, we don't allocate the class, we don't allocate all arrays
@@ -451,7 +451,7 @@ final class SlimRnnLevinProblem : LevinProblem {
 			///writeln("DEBUG executeProgram()   networkResult=", workingSlimRnn.map.arr[2]);
 
 			// read out result
-			bool networkResult = workingSlimRnn.map.arr[2] > 0.5f;
+			bool networkResult = workingSlimRnn.outputValues[0] > 0.5f;
 			if( networkResult != testsetElement.expectedResult ) {
 				// result is wrong
 				innerFnReportFailure();
@@ -599,7 +599,7 @@ void main() {
 	SlimRnnCtorParameters ctorParameters;
 	ctorParameters.mapSize[0] = 10;
 	ctorParameters.numberOfPieces = numberOfPieces;
-
+	ctorParameters.numberOfOutputs = 1;
 
 
 
