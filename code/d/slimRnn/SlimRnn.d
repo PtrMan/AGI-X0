@@ -159,6 +159,15 @@ struct PieceCowFacade {
 
 	bool opaque = false; // OPTIMIZATION< COW >< is this piece or the piece of the parent accessed when reading data? >
 
+	final uint64_t calcHash() {
+		if( opaque ) {
+			return front.calcHash();
+		}
+		else {
+			return shadowed.calcHash();
+		}
+	}
+
 	// we can't directly access the inputs for writing
 	final @property void setInputs(CoordinateWithAttribute[] inputs) {
 		if( opaque ) {
@@ -287,6 +296,14 @@ struct PieceCowFacade {
 		}
 		return shadowed.humanReadableDescription;
 	}
+
+	// should only be used for copying the piece!
+	final Piece *getPiece() {
+		if( opaque ) {
+			return front;
+		}
+		return shadowed;
+	}
 	
 
 
@@ -301,7 +318,8 @@ struct PieceCowFacade {
 		destination.enabled = source.enabled;
 		destination.type = source.type;
 		destination.caReadofIndex = source.caReadofIndex;
-		
+		destination.wtaGroup = source.wtaGroup;
+
 		if( destination.inputs.length != source.inputs.length ) {
 			destination.inputs.length = source.inputs.length;
 		}
@@ -316,6 +334,26 @@ struct PieceCowFacade {
 	}
 }
 
+uint64_t calcHash(Piece *neuron, uint64_t inputHash = 0) {
+	void addHash(uint64_t value) {
+		inputHash = (inputHash << 13) | (inputHash >> (64-13));
+		inputHash ^= value;
+	}
+
+	addHash(neuron.enabled);
+	addHash(neuron.type);
+	addHash(neuron.caReadofIndex);
+	addHash(neuron.caReadofIndex);
+	addHash(cast(uint32_t)neuron.wtaGroup);
+	addHash(neuron.inputs.length);
+	foreach( ref iterationInput; neuron.inputs ) {
+		addHash(iterationInput.coordinate.x);
+		addHash(*(cast(uint32_t*)&iterationInput.value));
+	}
+	addHash(neuron.output.coordinate.x);
+	addHash(*(cast(uint32_t*)&neuron.output.value));
+	return inputHash;
+}
 
 // do not access directly because it's under COW!
 struct Piece {
@@ -338,6 +376,28 @@ struct Piece {
 	
 	CoordinateWithAttribute[] inputs; 
 	CoordinateWithStrength output;
+
+	final Piece deepCopy() {
+		Piece result;
+		result.enabled = enabled;
+		result.type = type;
+		result.caReadofIndex = caReadofIndex;
+		result.wtaGroup = wtaGroup;
+		
+		if( result.inputs.length != inputs.length ) {
+			result.inputs.length = inputs.length;
+		}
+
+		foreach( i; 0..inputs.length) {
+			result.inputs[i].coordinate.x = inputs[i].coordinate.x;
+			result.inputs[i].value = inputs[i].value;
+		}
+
+		result.output.coordinate.x = output.coordinate.x;
+		result.output.value = output.value;
+
+		return result;
+	}
 
 	// returns the number of cells in the CA
 	final size_t getCaWidth() {
@@ -387,6 +447,29 @@ struct SlimRnnCtorParameters {
 
 import std.exception : enforce;
 
+uint64_t calcHash(SlimRnn slimRnn) {
+	uint64_t hash;
+
+	void addHash(uint64_t value) {
+		hash = (hash << 13) | (hash >> (64-13));
+		hash ^= value;
+	}
+
+	addHash(slimRnn.pieceAccessors.length);
+	foreach( iterationNeuronCowFacade; slimRnn.pieceAccessors ) {
+		addHash(iterationNeuronCowFacade.calcHash());
+	}
+
+	addHash(slimRnn.defaultInputSwitchboardIndex);
+
+	addHash(slimRnn.terminal.coordinate.x);
+	addHash(*(cast(uint32_t*)&slimRnn.terminal.value));
+
+	assert(false, "TODO - read output from neuron index");
+
+	return hash;
+}
+
 // inspired by paper
 // J. Schmidhuber. Self-delimiting neural networks. Technical Report IDSIA-08-12, arXiv:1210.0118v1 [cs.NE], IDSIA, 2012.
 
@@ -427,6 +510,34 @@ class SlimRnn {
 
 	size_t defaultInputSwitchboardIndex = 0; // index of the switchboard to which created inputs are automatically set to
 	                                         // not under COW
+
+	// creates a identical Slim-RNN out of this rnn
+	final SlimRnn flatten() {
+		assert(outputValues.length == cowGetReadOutoutFromNeuronIndices().length);
+
+		SlimRnnCtorParameters parameters;
+		parameters.mapSize[0] = map.arr.length;
+		parameters.numberOfPieces = pieceAccessors.length;
+		parameters.numberOfOutputs = outputValues.length;
+		SlimRnn result = new SlimRnn(parameters);
+
+		result.terminal = terminal;
+		result.defaultInputSwitchboardIndex = defaultInputSwitchboardIndex;
+
+		result.readOutputFromNeuronIndices = readOutputFromNeuronIndices.dup; // dup is important!
+
+		result.cowResetAndSetCountOfPiecesFor(parameters.numberOfPieces);
+		result.wta.length = parameters.numberOfWtaGroups;
+		result.wtaReset();
+		result.cowSetAllToOpaque();
+
+		// deep copy pieces
+		foreach( i, ref iterationOpaquePiece; result.opaquePieces ) {
+			iterationOpaquePiece = (*(pieceAccessors[i].getPiece)).deepCopy();
+		}
+
+		return result;		
+	}
 
 	static SlimRnn makeRoot(SlimRnnCtorParameters parameters) {
 		SlimRnn result = new SlimRnn(parameters);
@@ -1125,5 +1236,83 @@ unittest { // one neuron  overwritten
 
 	assert(true == (usedSlimRnn.outputValues[0] >= 0.5f));
 }
+
+unittest { // unittest for flatten
+	SlimRnn flattened;
+
+	{
+		SlimRnnCtorParameters ctorParameters;
+		ctorParameters.mapSize[0] = 5;
+		ctorParameters.numberOfPieces = 2;
+		ctorParameters.numberOfOutputs = 1;
+		SlimRnn root = SlimRnn.makeRoot(ctorParameters);
+		assert(root.pieceAccessors.length == 2);
+
+		root.terminal = CoordinateWithThreshold.make(CoordinateType.make(4), 0.1f);
+
+		bool calleeSuccess;
+		root.setOutputIndex(0, 0, /*out*/ calleeSuccess);
+		assert(calleeSuccess);
+
+		root.pieceAccessors[0].type = Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE;
+		root.pieceAccessors[0].inputs =
+		[
+			CoordinateWithValue.make(Coordinate.make(0), 0.5f),
+			CoordinateWithValue.make(Coordinate.make(1), 0.5f),
+		];
+
+		root.pieceAccessors[0].output = CoordinateWithValue.make(Coordinate.make(3), 0.6f);
+		root.pieceAccessors[0].enabled = true;
+
+		// termination neuron
+		root.pieceAccessors[1].type = Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE;
+		root.pieceAccessors[1].inputs =
+		[
+		];
+
+		root.pieceAccessors[1].output = CoordinateWithValue.make(Coordinate.make(4), 0.6f);
+		root.pieceAccessors[1].enabled = true;
+
+
+
+		SlimRnn usedSlimRnn = root.cloneUnderCowAsRoot();
+
+		// overwrite with COW
+		usedSlimRnn.pieceAccessors[0].type = Piece.EnumType.XOR;
+
+		flattened = usedSlimRnn.flatten();
+
+	}
+
+	assert(flattened.pieceAccessors[0].type == Piece.EnumType.XOR);
+	assert(flattened.pieceAccessors[1].type == Piece.EnumType.CLASSICNEURON_MULTIPLICATIVE);
+
+
+	bool isValidNetwork;
+	flattened.compile(/*out*/ isValidNetwork);
+	assert(isValidNetwork);
+
+	uint maxIterations = 2;
+	uint iterations;
+	bool wasTerminated_, executionError;
+
+	flattened.map.arr[0] = 0.0f;
+	flattened.map.arr[1] = 0.0f;
+	flattened.run(maxIterations, /*out*/ iterations, /*out*/ wasTerminated_, /*out*/ executionError);
+	assert(!executionError);
+	assert(wasTerminated_);
+
+	assert(false == (flattened.outputValues[0] >= 0.5f));
+
+	flattened.map.arr[0] = 0.0f;
+	flattened.map.arr[1] = 1.0f;
+	flattened.run(maxIterations, /*out*/ iterations, /*out*/ wasTerminated_, /*out*/ executionError);
+	assert(!executionError);
+	assert(wasTerminated_);
+
+	assert(true == (flattened.outputValues[0] >= 0.5f));
+}
+
+
 
 // TODO< unittest WTA >
