@@ -6,6 +6,8 @@ import std.algorithm.searching : canFind;
 import std.typecons : Tuple;
 import std.exception : enforce;
 
+import causal.Datastructures;
+
 // this algorithm tries to find valid insertion/swap operations and notes all done tries in a tree
 
 // (1) find a potential element/neuron to swap or insert with another position, which is not jet in the tree
@@ -15,21 +17,6 @@ import std.exception : enforce;
 //     - if energy is lower then execute swap/insertion and create a new network/linearlization, flush tree, we have one with an lower energy
 //     - if energy is equal add it to the tree as another possibility to do a swap
 //     - if energy is higher add it to the tree as an reminder that the action is propably pointless
-
-struct Decoration {
-	uint overlapCounter; // used to find the elements of the overlaps
-	int regionMarker; // used for marking elements in different regions, used for swapping elements
-}
-
-struct Element {
-	Element*[] childrens;
-	Element*[] up;
-
-	size_t index;
-
-	// decoration
-	Decoration decoration;
-}
 
 private void resetOverlapCounters(Element*[] elements) {
 	foreach( iterationElement; elements ) {
