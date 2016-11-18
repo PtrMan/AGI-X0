@@ -127,38 +127,6 @@ struct Linearized {
 
 }
 
-// returns the linearized form
-/* uncommented because outdated, because the algorithm to find the children is slightly wrong 
-private Linearized findRandomSwapPairAndDoSwap(Element*[] elements, Replay *replay) {
-	static Element*[] innerFnFilterByOverlapCounter(Element[] *arr, uint comparisionOverlapCounter) {
-		return bChildrenSet.filter(v => v.decoration.overlapCounter == comparisionOverlapCounter).array;
-	}
-
-	Tuple!(Element*, Element*) swapPair = getRandomSwapPair(elements);
-	Element *a = swapPair[0];
-	Element *b = swapPair[1];
-
-	Element*[] aChildrenSet = calcSetOfChildrenInclusive(a);
-	Element*[] bChildrenSet = calcSetOfChildrenInclusive(b);
-	
-	// figure out which elements overlap
-	// if elements overlap we can't just add them to the result array (twice)
-	incrementOverlapCounters(aChildrenSet);
-	incrementOverlapCounters(bChildrenSet);
-
-
-	// build the linearized version
-	Element*[] resultLinearized;
-	resultLinearized ~= replay.elementsBeforeA();
-	resultLinearized ~= innerFnFilterByOverlapCounter(bChildrenSet, 1);
-	resultLinearized ~= replay.elementsBetweenAAndB();
-	resultLinearized ~= innerFnFilterByOverlapCounter(aChildrenSet, 1);
-	resultLinearized ~= innerFnFilterByOverlapCounter(aChildrenSet, 2); // add overlap
-	resultLinearized ~= replay.elementsAfterB();
-	return Linearized.make(resultLinearized);
-}
-*/
-
 
 // a swap is possible if
 // (a) the two elements do have a common "up" element
@@ -384,64 +352,6 @@ struct Algorithm {
 			AFTERB,
 		}
 
-		/* uncommented because dead code
-		static void innerFnCheck(Linearized *workingLinearized) {
-			with(EnumMode) {
-				EnumMode mode = BEFOREA;
-
-				foreach( ie; workingLinearized.linearized ) {
-					if( mode == BEFOREA ) {
-						if( ie.decoration.regionMarker == -1 ) {
-						}
-						else if( ie.decoration.regionMarker == 1 ) {
-							mode = INA;
-						}
-						else if( ie.decoration.regionMarker == 2 ) {
-							mode = INB;
-						}
-					}
-					else if( mode == INA ) {
-						if( ie.decoration.regionMarker == -1 ) {
-							mode = AFTERABEFOREB;
-						}
-						else if( ie.decoration.regionMarker == 1 ) {
-							// stay in mode
-						}
-						else if( ie.decoration.regionMarker == 2 ) {
-							mode = INB;
-						}
-					}
-					else if( mode == AFTERABEFOREB ) {
-						if( ie.decoration.regionMarker == -1 ) {
-							// stay in the mode
-						}
-						else if( ie.decoration.regionMarker == 1 ) {
-							throw new Exception("");
-						}
-						else if( ie.decoration.regionMarker == 2 ) {
-							mode = INB;
-						}
-					}
-					else if( mode == INB ) {
-						if( ie.decoration.regionMarker == -1 ) {
-							mode = AFTERB;
-						}
-						else if( ie.decoration.regionMarker == 1 ) {
-							throw new Exception("");
-						}
-						else if( ie.decoration.regionMarker == 2 ) {
-							// stay in the mode
-						}
-					}
-					else if( mode == AFTERB ) {
-						if( ie.decoration.regionMarker != -1 ) {
-							throw new Exception("");
-						}
-					}
-				}
-			}
-		}
-		*/
 
 		Replay *innerFnMakeReplayAndCheck() {
 			Replay *resultReplay = new Replay;
