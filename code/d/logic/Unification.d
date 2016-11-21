@@ -155,142 +155,6 @@ private bool isAtEnd(Element element, size_t[] currentPosition) {
 }
 
 
-/+
-// checks if it's at the end for the last position and recurses down the path if this is the case
-private bool isAtEnd(Element element, size_t[] currentPosition) {
-	Element selected = elementAt(element, currentPosition);
-
-	bool atEndOfSelected = false;
-	if( selected.isFormula ) {
-		Formula elementAsFormula = cast(Formula)element;
-
-		if( elementAsFormula.children.length == 0 ) {
-			enforce(currentPosition.length == 0);
-			atEndOfSelected = true;
-		}
-		else {
-			atEndOfSelected = elementAsFormula.children.length == elementAsFormula.children.length-1;
-		}
-	}
-	else {
-		atEndOfSelected = true;
-	}
-
-	if( atEndOfSelected ) {
-		if( currentPosition.length == 0 ) {
-			return true;
-		}
-		else {
-			return isAtEnd(element, exceptLast(currentPosition));
-		}
-	}
-	else {
-		return false;
-	}
-
-
-
-	/*
-	if( currentPosition.length == 0 ) {
-
-	}
-	if( isAtEndInternal(selected, exceptLast(currentPosition)) ) {
-		return 
-	}
-	*/
-}
-+/
-
-/+
-private bool isAtEnd(Element element, size_t[] currentPosition) {
-	// enforce instead of assert because it should be relativly fast
-
-	if( !element.isFormula ) {
-		enforce(currentPosition.length == 0);
-		return true;
-	}
-
-	// it is a formula
-	Formula elementAsFormula = cast(Formula)element;
-
-
-
-
-
-
-
-
-	if( currentPosition.length == 0 && elementAsFormula.children.length == 0 ) {
-		return true;
-	}
-	else if( currentPosition.length == 0 ) {
-		return false;
-	}
-
-	size_t firstCurrentPosition = currentPosition[0];
-
-	enforce( firstCurrentPosition <= elementAsFormula.children.length-1 );
-	if( elementAsFormula.children.length == elementAsFormula.children.length-1 ) {
-		return isAtEnd(elementAsFormula.children[$], exceptFirst(currentPosition));
-	}
-	else {
-		return false;
-	}
-
-	++++
-	Element lastElement = elementAt(element, currentPosition[0..$-1]);
-
-
-
-	if( element.isFormula ) {
-		Formula elementAsFormula = cast(Formula)element;
-
-		if( currentPosition.length == 0 ) {
-			return elementAsFormula.children.length == 0;
-		}
-
-		size_t firstCurrentPosition = currentPosition[0];
-		
-		//size_t lastCurrentPosition = currentPosition[$];
-		enforce( firstCurrentPosition <= elementAsFormula.children.length-1 );
-		return isAtEnd(elementAsFormula.children[firstCurrentPosition], currentPosition[1..$]);
-
-		/* uncommented because outdated
-		if( currentPosition.length == 0 ) {
-			return false; // return false because we "point" at the Formula itself, not its children
-		}
-		Formula elementAsFormula = cast(Formula)element;
-		enforce(firstCurrentPosition < (cast(Formula)element).children.length);
-		if( currentPosition.length == 1 ) {
-			Formula lastElementAsFormula = elementAt();
-			return lastCurrentPosition == lastElementAsFormula.children.length-1;
-		}
-		else { // currentPosition >= 1
-			import std.stdio;
-			writeln(currentPosition[1..$]);
-			return isAtEnd(elementAsFormula.children[firstCurrentPosition], currentPosition[1..$]);
-		}
-		*/
-	}
-	else {
-		enforce(currentPosition.length == 0);
-		return true;
-	}
-
-	+++
-}
-+/
-
-
-
-
-
-
-
-
-
-
-
 
 // naive list implementation of set, works for unification because it doesn't have a lot of elements
 struct ElementSet {
@@ -596,8 +460,6 @@ struct Substitution {
 	}
 }
 
-import std.stdio; // for debugging
-
 private Substitution unificationRobinson(ElementSet M, out bool unifies) {
 	unifies = false;
 
@@ -622,13 +484,6 @@ private Substitution unificationRobinson(ElementSet M, out bool unifies) {
 
 		Element[] MselectedElements = M.asList.map!(v => elementAt(v, firstPositionWhereDifference)).array;
 
-		writeln("unificationRobinson.innerFnExistsCorrectingUnificationForCurrentPosition()");
-		writeln("   MselectedElements");
-
-		foreach( ie; MselectedElements ) {
-			writeln("      " ~ ie.toString());
-		}
-
 		// iterate over all elements and check if it could substitute/unify with the other elements
 		foreach( i, MselectedElementsIteration; MselectedElements ) {
 			foreach( j, otherMselectedElementsIteration; MselectedElements ) {
@@ -638,15 +493,11 @@ private Substitution unificationRobinson(ElementSet M, out bool unifies) {
 
 				// case if both are no variables and of the same type
 				if( !MselectedElementsIteration.isVariable && !otherMselectedElementsIteration.isVariable && MselectedElementsIteration.type == otherMselectedElementsIteration.type ) {
-					writeln("   case !var !var");
-
 					if( !MselectedElementsIteration.equalsRecursivly(otherMselectedElementsIteration) ) {
 						return false;
 					}
 				}
 				else if( MselectedElementsIteration.isVariable && !otherMselectedElementsIteration.isVariable ) {
-					writeln("   case var !var");
-
 					bool exists;
 					innerFnAddUnificationIfPossible(cast(Variable)MselectedElementsIteration, otherMselectedElementsIteration, /*out*/exists);
 					if( exists ) {
@@ -654,8 +505,6 @@ private Substitution unificationRobinson(ElementSet M, out bool unifies) {
 					}
 				}
 				else if( !MselectedElementsIteration.isVariable && otherMselectedElementsIteration.isVariable ) {
-					writeln("   case !var var");
-
 					bool exists;
 					innerFnAddUnificationIfPossible(cast(Variable)otherMselectedElementsIteration, MselectedElementsIteration, /*out*/exists);
 					if( exists ) {
@@ -663,8 +512,6 @@ private Substitution unificationRobinson(ElementSet M, out bool unifies) {
 					}
 				}
 				else if( MselectedElementsIteration.isVariable && otherMselectedElementsIteration.isVariable ) { // case if both are variables
-					writeln("   case var var");
-
 					if( !MselectedElementsIteration.equalsRecursivly(otherMselectedElementsIteration) ) {
 						return false;
 					}
@@ -679,20 +526,10 @@ private Substitution unificationRobinson(ElementSet M, out bool unifies) {
 	}
 
 	for(;;) {
-		import std.stdio;
-		writeln("unificationRobinson() iteration");
-
 		enforce(M.size >= 1);
 		if( M.size == 1 ) {
 			unifies = true;
 			return substitution;
-		}
-
-		{ // DEBUG
-			writeln("   call findFirstPositionWhereElementsAreDifferent() with");
-			foreach( ie; M.asList ) {
-				writeln("      " ~ ie.toString());
-			}
 		}
 
 		bool differenceFound;
@@ -701,10 +538,7 @@ private Substitution unificationRobinson(ElementSet M, out bool unifies) {
 
 		Substitution substitutionForCorrection;
 		bool existsCorrectingUnification = innerFnExistsCorrectingUnificationForCurrentPosition(/*out*/substitutionForCorrection);
-		writeln("unificationRobinson() existsCorrectingUnification=", existsCorrectingUnification);
 		if( !existsCorrectingUnification ) {
-			writeln("unificationRobinson() !existsCorrectingUnification, return");
-
 			unifies = false;
 			substitution.isIdentity = false;
 			return substitution;
@@ -739,15 +573,7 @@ private size_t[] findFirstPositionWhereElementsAreDifferentInternal(Element[] fo
 	}
 
 	bool innerFnAllRecursivlyEqualFirstAt(size_t[] position) {
-		import std.stdio;
-			
-
-		writeln("xxxxx");
-		writeln("   formulas.length=", formulas.length );
-
 		foreach( i; 0..formulas.length-1 ) {
-			writeln("i=", i);
-
 			Element a = formulas[i];
 			Element b = formulas[i+1];
 			if( !innerFnRecursivelyEqualFirstAt(a, b, position) ) {
@@ -763,38 +589,19 @@ private size_t[] findFirstPositionWhereElementsAreDifferentInternal(Element[] fo
 	size_t[] currentPosition = [];
 
 	for(;;) {
-		writeln("xxxx ", formulas[0].toString());
-		writeln("xxxx ", formulas[1].toString());
-		writeln("     ", currentPosition);
-
-		writeln("here 1, currentPosition=", currentPosition);
-
 		// we check for the end after checking for a possible difference because the difference could be at the end
 
 		if( innerFnAllRecursivlyEqualFirstAt(currentPosition) ) {
 			// do nothing
-
-			writeln("here all equal");
 		}
 		else {
-			writeln("here all not equal");
-
 			found = true;
 			return currentPosition;
 		}
 
 		if( isAtEnd(formulas[0], currentPosition) ) {
-			writeln("is at end");
-
 			return [];
 		}
-
-		foreach( e; formulas ) {
-			writeln(e.toString());
-		}
-		writeln("~~~");
-
-
 
 		increment(currentPosition, formulas[0]); // we only use the first formula to increment the position because the formulas are up to the current position identical
 	}
