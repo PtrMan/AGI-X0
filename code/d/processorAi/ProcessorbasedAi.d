@@ -133,14 +133,17 @@ struct Process {
 struct Processor {
 	// olds information about the next to be spawned process
 	static struct NextSpawn {
+		alias void function(Hub hub, ProcessorIndex processorIndex, float spawnUrgency, ProcessDelegateType function_, ProcessorIndex spawnedFromProcessorIndex, bool wasSpawned) TrySpawnConfirmationFunctionType;
+
 		float spawnUrgency;
 		ProcessDelegateType function_;
-		void function(ProcessorIndex processorIndex, float spawnUrgency, ProcessDelegateType function_, bool wasSpawned) confirmation;
+		TrySpawnConfirmationFunctionType confirmation;
 
 		final void reset() {
 			spawnUrgency = 0.0f;
 			function_ = null;
 			confirmation = null;
+			spawnedFromProcessorIndex = -1; // max for datatype, to force a faulty implementation to crash when using this
 		}
 
 		final @property bool isNull() pure {
@@ -191,8 +194,8 @@ struct OperationContext {
 	}
 
 	// confirmation is called defered either immediatly or defered to confirm or deny the spawn
-	final void trySpawn(ProcessorIndex processorIndex, float spawnUrgency, ProcessDelegateType function_, void function(ProcessorIndex processorIndex, float spawnUrgency, ProcessDelegateType function_, bool wasSpawned) confirmation) {
-		hub.operationTrySpawn(processorIndex, spawnUrgency, function_, confirmation);
+	final void trySpawn(ProcessorIndex processorIndex, float spawnUrgency, ProcessDelegateType function_, ProcessorIndex spawnedFromProcessorIndex, TrySpawnConfirmationFunctionType confirmation) {
+		hub.operationTrySpawn(processorIndex, spawnUrgency, function_, spawnedFromProcessorIndex, confirmation);
 	}
 }
 
@@ -285,7 +288,7 @@ class Hub {
 					// TODO< call function to reset the context for the process >
 				}
 
-				iterationProcessor.nextSpawn.confirmation(processorIndex, iterationProcessor.nextSpawn.spawnUrgency, iterationProcessor.nextSpawn.function_, spawned);
+				iterationProcessor.nextSpawn.confirmation(this, processorIndex, iterationProcessor.nextSpawn.spawnUrgency, iterationProcessor.nextSpawn.function_, iterationProcessor.nextSpawn.spawnedFromProcessorIndex, spawned);
 			}
 		}
 	}
@@ -329,22 +332,23 @@ class Hub {
 	}
 
 	// confirmation is called defered either immediatly or defered to confirm or deny the spawn
-	final void operationTrySpawn(ProcessorIndex processorIndex, float spawnUrgency, ProcessDelegateType function_, void function(ProcessorIndex processorIndex, float spawnUrgency, ProcessDelegateType function_, bool wasSpawned) confirmation) {
+	final void operationTrySpawn(ProcessorIndex processorIndex, float spawnUrgency, ProcessDelegateType function_, ProcessorIndex spawnedFromProcessorIndex, TrySpawnConfirmationFunctionType confirmation) {
 		assert(function_ !is null);
 
 		if( spawnUrgency < processors[processorIndex].nextSpawn.spawnUrgency ) {
-			confirmation(processorIndex, spawnUrgency, function_, false); // send nagative confirmation directly
+			confirmation(this, processorIndex, spawnUrgency, function_, spawnedFromProcessorIndex, false); // send nagative confirmation directly
 			return;
 		}
 
 		// we have to send a negative confirmation to the spawn request we may override now
 		if( processors[processorIndex].nextSpawn.confirmation !is null ) {
-			processors[processorIndex].nextSpawn.confirmation(processorIndex, processors[processorIndex].nextSpawn.spawnUrgency, processors[processorIndex].nextSpawn.function_, false);
+			processors[processorIndex].nextSpawn.confirmation(this, processorIndex, processors[processorIndex].nextSpawn.spawnUrgency, processors[processorIndex].nextSpawn.function_, processors[processorIndex].nextSpawn.spawnedFromProcessorIndex, false);
 		}
 
 		processors[processorIndex].nextSpawn.spawnUrgency = spawnUrgency;
 		processors[processorIndex].nextSpawn.function_ = function_;
 		processors[processorIndex].nextSpawn.confirmation = confirmation;
+		processors[processorIndex].nextSpawn.spawnedFromProcessorIndex = spawnedFromProcessorIndex;
 	}
 
 }
@@ -384,6 +388,10 @@ class PerceptionMessage {
 		return result;
 	}
 
+	static PerceptionMessage makeKeepAlive() {
+		return new PerceptionMessage(EnumType.KEEPALIVE);
+	}
+
 	final private this(EnumType type) {
 		this.senderProcessorIndex = senderProcessorIndex;
 	}
@@ -398,6 +406,8 @@ struct AliveLink {
 	uint linkId;
 }
 
+import std.typecons : Nullable;
+
 struct VisualProcessorContext {
 	AliveLink*[] aliveLinks;
 
@@ -405,10 +415,14 @@ struct VisualProcessorContext {
 
 	uint noKeepAliveMessageSinceCycles; // number of cycles since when no keep alive message was sent
 
+	Nullable!ProcessorIndex highPrimitiveLinkCountProcessProcessor; // if it has successfully spawned a process to indicate a highPrimitivLinkCount then this value is set
+
 	// resets the state of the context to the startstate
 	final void reset() {
 		aliveLinks.length = 0;
 		noKeepAliveMessageSinceCycles = 0;
+		highPrimitiveLinkCountProcessProcessor.nullify();
+
 	}
 }
 
@@ -418,8 +432,8 @@ struct VisualProcessorContext {
    Each processor coresponds to an location in the image.
    Each pixel in the image can corespond to less than one, one or more than one processors.
    Processors are connected to the immediate neightborhood and processors further away. These long connections are required to keep track of
-   the soroundings.
-   The neightborhood is divided into the following neightbor-slot's:
+   the surroundings.
+   The neightborhood is divided into the following neightbor-slots:
       * processors of this pixel, which are a number of processors for keeping track of contextual information for this pixel
       * immediate neightbor processors for the pixels
       * neightbor nonpixel processors
@@ -440,8 +454,8 @@ struct VisualProcessorContext {
    
    'b' could spawn another process which indicates a high primitive-link count. The new process is spawned in the neightbor-slot for the processors of this pixel.
    This could be interpreted as 'lineness' on a higher level which monitors the low level interactions of the processes.
-   the new created process increases its own urgency by receiving messages from b, because b broadcasts these special messages to the neightborhood.
-   If b doesn't have a high primitive-link count anymore it stops sending these special messages,
+   The new created process increases its own urgency by receiving messages from b, because b sends this special message to the special process.
+   If b doesn't have a high primitive-link count anymore it stops sending this special message,
    which mean that the process which indices a high primitive-link count dies off.
 
    Note that there are no hardcoded concepts such as points, lines, shapes, etc. these high level descriptions can be derived by a system which monitors the
@@ -478,6 +492,19 @@ struct VisualProcessorContext {
 
 */
 
+// TODO< build general purpose "propagate fire" mechanism which can be tuned with parameters.
+// parameters are: refractoryPeriod (in cycles) : how long does it take to reset to an unexcited state
+//                 
+
+// variables in the processors are
+// * refractoryRemainingCounter (in cycles)
+// * (signals to look out for and send in response)
+// * (to which type of neightborhood should the responses be sent)
+// * hardcoded type of resend propability, 0% 40% 98% 100%
+// * propability of spontanious emission (per cyclee)
+
+// inspired by the neuroid model, hebbian learning.
+
 
 
 // structure which abstracts common variables and methods of a visual Process
@@ -499,7 +526,7 @@ struct VisualProcessCommon {
 	private static const size_t NEIGHTBORHOOD_NUMBEROFPROCESSORSOFPIXELIMMEDIATENEIGHTBORHOOD = 4;
 
 	private enum EnumNeightborhoodIndices {
-		_0 = 0,
+		_0 = NUMBEROFIMMEDIATEPIXELPROCESSORS,
 		_1 = _0 + NEIGHTBORHOOD_NUMBEROFPROCESSORSOFPIXEL,
 		_2 = _1 + NEIGHTBORHOOD_NUMBEROFPROCESSORSOFPIXELIMMEDIATENEIGHTBORHOOD,
 		_3 = _2 + (NEIGHTBORHOOD_NUMBEROFPROCESSORSOFPIXEL-NUMBEROFIMMEDIATEPIXELPROCESSORS) * NEIGHTBORHOOD_NUMBEROFPROCESSORSOFPIXELIMMEDIATENEIGHTBORHOOD, // because one processor is receiving the immediate pixel activity
@@ -547,10 +574,22 @@ struct VisualProcessCommon {
 import std.array : array;
 import std.algorithm.iteration : filter;
 
+// called by the spawn machinery of the hub
+private void visualProcessConfirmationSpawnHighLinkCountProcess(Hub hub, ProcessorIndex processorIndex, float spawnUrgency, ProcessDelegateType function_, ProcessorIndex spawnedFromProcessorIndex, bool wasSpawned) {
+	if( !wasSpawned ) {
+		return;
+	}
+
+	(cast(VisualProcessorContext*)hub.processors[spawnedFromProcessorIndex].process.contextParameter).highPrimitiveLinkCountProcessProcessor = processIndex;
+}
+
 struct VisualProcessHelper {
 	VisualProcessCommon common;
 
-	private static const URGENCYINCREASEFORLINK = 0.3f;
+	private static const float URGENCYINCREASEFORLINK = 0.3f;
+
+	private static const uint MINIMALNUMBEROFLINKSTOINITIATEHIGHLINKCOUNTPROCESS = 2;
+	private static const float HIGHLINKCOUNTPROCESSSPAWNURGENCY = 0.5f;
 
 	final void run() {
 		sendAliveMessageToAliveLinks();
@@ -558,7 +597,31 @@ struct VisualProcessHelper {
 		receiveKeepAliveMessagesAndResetCounterForLinks();
 		removeTooOldLinks();
 
+		manageAssociatedHighLinkCountProcess();
+
 		incrementUrgencyForExistingLinks();
+	}
+
+	// checks if a connection to a highlinkcount process has to be maintained or established
+	private final void manageAssociatedHighLinkCountProcess() {
+		if( common.context.highPrimitiveLinkCountProcessProcessor.isNull ) {
+			// if we don't hve jet an process for the highlinkcount but the condition is fullfilled then we hav to try to spawn a new process
+
+			bool enoughLinksForSpawnOfHighLinkCountProcess = /* TODO< filter for link type */common.context.aliveLinks.length >= MINIMALNUMBEROFLINKSTOINITIATEHIGHLINKCOUNTPROCESS;
+			if( enoughLinksForSpawnOfHighLinkCountProcess ) {
+				ProcessorIndex processorIndexToSpawn = takeRandom(common.getNeightborhoodProcessors(VisualProcessCommon.EnumNeightborhoodProcessorCategories.PROCESSORSOFTHISPIXEL)).processorIndex;
+				float spawnUrgency = HIGHLINKCOUNTPROCESSSPAWNURGENCY;
+				ProcessDelegateType spawnFunction = &visualHighPrimitiveLinkCountProcess;
+				TrySpawnConfirmationFunctionType confirmation = &visualProcessConfirmationSpawnHighLinkCountProcess;
+
+				common.operationContext.trySpawn(processorIndexToSpawn, spawnUrgency, spawnFunction, confirmation);
+			}
+		}
+		else {
+			// if we have already an process for the highlinkcount then we just have to send it a message
+
+			common.operationContext.send(common.context.highPrimitiveLinkCountProcessProcessor, Variant(PerceptionMessage.makeKeepAlive()));
+		}
 	}
 
 	// for each link we add a certain amount of urgency
@@ -597,10 +660,10 @@ struct VisualProcessHelper {
 
 				foreach( iterationLink; common.context.aliveLinks ) {
 					import std.format : format;
-					import std.stdio; writeln("iterate over link linkTo=%s linkId=%s".format(iterationLink.linkTo, iterationLink.linkId));
+					import std.stdio; writeln("   iterate over link linkTo=%s linkId=%s".format(iterationLink.linkTo, iterationLink.linkId));
 
-					if( iterationLink.linkTo == senderProcessorIndex && iterationLink.linkId == linkId) {
-						import std.stdio; writeln("found keep alive for ", senderProcessorIndex);
+					if( iterationLink.linkTo == senderProcessorIndex && iterationLink.linkId == linkId ) {
+						import std.stdio; writeln("      found keep alive for ", senderProcessorIndex);
 
 						iterationLink.noResponseSinceTicks = 0;
 						return; // we can return because of the invariant that the link appears just once for the senderProcessorIndex
@@ -614,7 +677,7 @@ struct VisualProcessHelper {
 				// convert the message to our message type and check if the type of the message is equal to the keep alive message,
 				// if it is we read out the processorIndex
 
-				// then we reset the link for the correpsonding processor 
+				// then we reset the link for the corresponding processor 
 				
 				PerceptionMessage receivedMessagePayload = message.receivedMessage.get!PerceptionMessage;
 				if( receivedMessagePayload.type == PerceptionMessage.EnumType.KEEPLINKALIVE ) {
@@ -642,11 +705,11 @@ void visualProcess(ProcessorIndex processorIndex, Processor *self, OperationCont
 struct VisualHighPrimitiveLinkCountProcessHelper {
 	VisualProcessCommon common;
 
-	private static uint MAXNOKEEPALIVEMESSAGESUNTILSELFKILL = 4; // hhow many cycles can be waited until the process kills itself because 
+	private static uint MAXNOKEEPALIVEMESSAGESUNTILSELFKILL = 4; // how many cycles can be waited until the process kills itself because 
 	                                                             // no other process sends keep alive messages to it?
 
 	final void run() {
-		incrementCylce();
+		incrementCycle();
 		receiveKeepAliveMessages();
 		killSelfIfTooOld();
 	}
@@ -670,7 +733,7 @@ struct VisualHighPrimitiveLinkCountProcessHelper {
 		});
 	}
 
-	final private void incrementCylce() {
+	final private void incrementCycle() {
 		common.context.noKeepAliveMessageSinceCycles++;
 	}
 
