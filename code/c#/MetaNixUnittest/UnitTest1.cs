@@ -55,5 +55,19 @@ namespace MetaNixUnittest {
             ImmutableNodeReferer result = rootNode.entry.interpretationResult;
             Assert.AreEqual(result.valueInt, 1);
         }
+
+        [TestMethod]
+        public void interpreterIfTrue1() {
+            NodeRefererEntry rootNode = interpretAndReturnRootnode("(if 1 42 5)");
+            ImmutableNodeReferer result = rootNode.entry.interpretationResult;
+            Assert.AreEqual(result.valueInt, 42);
+        }
+
+        [TestMethod]
+        public void interpreterIfFalse1() {
+            NodeRefererEntry rootNode = interpretAndReturnRootnode("(if 0 42 5)");
+            ImmutableNodeReferer result = rootNode.entry.interpretationResult;
+            Assert.AreEqual(result.valueInt, 5);
+        }
     }
 }

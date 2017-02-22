@@ -68,6 +68,14 @@ namespace MetaNix {
         int sequenceEnter(ImmutableNodeReferer node);
         void sequenceExit(int sequenceId);
 
+        int conditionEnter(ImmutableNodeReferer node);
+        void conditionCondition(int conditionId, ImmutableNodeReferer node, ImmutableNodeReferer value);
+
+        // \param branch is the boolean value to which the condition was evaluated
+        void conditionPathTaken(int conditionId, ImmutableNodeReferer node, bool branch);
+        void conditionExit(int conditionId);
+
+
         // called when the interpreter is invoked for the function node with the arguments
         void interpreterEnter(ImmutableNodeReferer node, IList<ImmutableNodeReferer> arguments);
         // called when the interpreter is done doing it's job
@@ -91,6 +99,13 @@ namespace MetaNix {
 
         public void interpreterEnter(ImmutableNodeReferer node, IList<ImmutableNodeReferer> arguments) {}
         public void interpreterExit() {}
+
+        public int conditionEnter(ImmutableNodeReferer node) {
+            return 0;
+        }
+        public void conditionCondition(int conditionId, ImmutableNodeReferer node, ImmutableNodeReferer value) {}
+        public void conditionPathTaken(int conditionId, ImmutableNodeReferer node, bool branch) {}
+        public void conditionExit(int conditionId) {}
     }
 
     // interpreter for functional expressions
@@ -214,7 +229,8 @@ namespace MetaNix {
             string operationName = getNativeString(node.children[0]);
             bool isSequence = operationName == "seq";
             bool isLet = operationName == "let";
-            bool isSpecial = isSequence || isLet;
+            bool isCondition = operationName == "if";
+            bool isSpecial = isSequence || isLet || isCondition;
             string callName = "";
             if( !isSpecial ) {
                 callName = operationName;
@@ -228,12 +244,15 @@ namespace MetaNix {
                 }
             }
             
-            int callId = -1, sequenceId = -1; // illegal
+            int callId = -1, sequenceId = -1, conditionId = -1; // illegal
             if (isSequence) {
                 sequenceId = tracer.sequenceEnter(node);
             }
             else if(isLet) {
                 // nothing by purpose
+            }
+            else if(isCondition) {
+                conditionId = tracer.conditionEnter(node);
             }
             else {
                 Ensure.ensureHard(!isSpecial);
@@ -323,6 +342,37 @@ namespace MetaNix {
                 // transfer result
                 node.interpretationResult = executionNode.interpretationResult;
             }
+            else if( isCondition ) {
+                Ensure.ensure(node.children.Count == 1 + 3); // "if" and conditionNode and true tode and false node
+
+                ImmutableNodeReferer conditionNode = node.children[1];
+                ImmutableNodeReferer trueBranchNode = node.children[2];
+                ImmutableNodeReferer falseBranchNode = node.children[3];
+
+                // execute the condition node
+                recursiveInterpret(interpretationContext, conditionNode);
+
+                Ensure.ensure(conditionNode.interpretationResult != null);
+                Ensure.ensure(!conditionNode.isBranch);
+                Ensure.ensure(conditionNode.type == ValueNode.EnumType.VALUE);
+                Ensure.ensure(conditionNode.value.type == Variant.EnumType.INT); // int which gets interpreted as bool
+
+                long conditionInt = conditionNode.value.valueInt;
+                Ensure.ensure(conditionInt == 0 || conditionInt == 1); // is it a valid boolean value
+                bool conditionBool = conditionInt == 1;
+
+                tracer.conditionCondition(conditionId, conditionNode, conditionNode.interpretationResult);
+                tracer.conditionPathTaken(conditionId, conditionNode, conditionBool);
+
+                if(conditionBool) {
+                    recursiveInterpret(interpretationContext, trueBranchNode);
+                    node.interpretationResult = trueBranchNode.interpretationResult;
+                }
+                else {
+                    recursiveInterpret(interpretationContext, falseBranchNode);
+                    node.interpretationResult = falseBranchNode.interpretationResult;
+                }
+            }
             else {
                 // force all arguments to be calculated
                 for (int argIdx = 0; argIdx < node.children.Count - 1; argIdx++) {
@@ -333,6 +383,9 @@ namespace MetaNix {
 
             if ( isSequence ) {
                 tracer.sequenceExit(sequenceId);
+            }
+            else if( isCondition ) {
+                tracer.conditionExit(conditionId);
             }
             else if( !isSpecial ) {
                 if ( isArithmetic(callName) ) {
