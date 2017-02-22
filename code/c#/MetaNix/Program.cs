@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MetaNix {
     class CellularAutomata {
@@ -84,6 +81,8 @@ namespace MetaNix {
 
         }
 
+        /* uncommented because we have to overhaul this and unify it with the other functional representation
+         * and it must be an unittest
         static void interpreterTest0() {
             PrimitiveInstructionInterpreter interpreter = new PrimitiveInstructionInterpreter();
 
@@ -93,33 +92,33 @@ namespace MetaNix {
             interpreterContext.registers[1] = new Register();
             interpreterContext.registers[2] = new Register();
 
-            Node rootnode0 = Node.makeBranch();
-            rootnode0.children = new Node[4];
+            ImmutableNodeReferer rootnode0 = ImmutableNodeReferer.makeBranch();
+            rootnode0.children = new ImmutableNodeReferer[4];
 
-            rootnode0.children[0] = Node.makeBranch();
-            rootnode0.children[0].children = new Node[4];
+            rootnode0.children[0] = ImmutableNodeReferer.makeBranch();
+            rootnode0.children[0].children = new ImmutableNodeReferer[4];
             rootnode0.children[0].children[0] = Node.makeInstr(Node.EnumType.INSTR_ADD_INT);
             rootnode0.children[0].children[1] = Node.makeAtomic(Variant.makeInt(0));
             rootnode0.children[0].children[2] = Node.makeAtomic(Variant.makeInt(1));
             rootnode0.children[0].children[3] = Node.makeAtomic(Variant.makeInt(2));
 
 
-            rootnode0.children[1] = Node.makeBranch();
-            rootnode0.children[1].children = new Node[2];
+            rootnode0.children[1] = ImmutableNodeReferer.makeBranch();
+            rootnode0.children[1].children = new ImmutableNodeReferer[2];
             rootnode0.children[1].children[0] = Node.makeInstr(Node.EnumType.INSTR_GOTO);
             rootnode0.children[1].children[1] = Node.makeAtomic(Variant.makeInt(0));
 
 
 
 
-            interpreter.interpret(interpreterContext, rootnode0.children[0], new List<Node>(), new List<string>());
+            interpreter.interpret(interpreterContext, rootnode0.children[0], new List<ImmutableNodeReferer>(), new List<string>());
         }
-        
+        **/
 
 
         static void parsedTest0() {
             Functional.ParseTreeElement parseTree = Functional.parseRecursive("(bAnd (shl value i) 1)");
-            Node node = TranslateFunctionalParseTree.translateRecursive(parseTree);
+            NodeRefererEntry node = TranslateFunctionalParseTree.translateRecursive(parseTree);
 
             int debugHere = 1;
         }
@@ -152,7 +151,7 @@ namespace MetaNix {
             dispatch.PublicCallDispatcher callDispatcher = new dispatch.PublicCallDispatcher(publicDispatcherByArguments);
             
             Functional.ParseTreeElement parseTree = Functional.parseRecursive("(let [value 4 i 1   read2 (bAnd (shl value (+ i 1)) 1)] read2)");
-            Node rootNode = TranslateFunctionalParseTree.translateRecursive(parseTree);
+            NodeRefererEntry rootNode = TranslateFunctionalParseTree.translateRecursive(parseTree);
 
             { // set descriptor to route all public function id's 0 to hidden function id 0
                 dispatch.PublicDispatcherByArguments.FunctionDescriptor fnDescriptor = new dispatch.PublicDispatcherByArguments.FunctionDescriptor();
@@ -161,7 +160,7 @@ namespace MetaNix {
             }
 
             surrogateProvider.updateSurrogateByFunctionId(dispatch.HiddenFunctionId.make(0), interpreterSurrogate);
-            interpreterSurrogate.updateFunctionBody(dispatch.HiddenFunctionId.make(0), rootNode);
+            interpreterSurrogate.updateFunctionBody(dispatch.HiddenFunctionId.make(0), rootNode.entry);
             interpreterSurrogate.updateParameterNames(dispatch.HiddenFunctionId.make(0), new List<string>());
 
             callDispatcher.setFunctionId("test", dispatch.PublicFunctionId.make(0));

@@ -5,20 +5,20 @@ using MetaNix.dispatch;
 namespace MetaNix {
     // tries to lookup the value
     class MemoizerShadowableDispatcher : IShadowableDispatcher {
-        public void informCompleteFallThroughWithResult(HiddenFunctionId hiddenFunctionId, IList<Node> arguments, Node result) {
+        public void informCompleteFallThroughWithResult(HiddenFunctionId hiddenFunctionId, IList<ImmutableNodeReferer> arguments, ImmutableNodeReferer result) {
             if (hiddenFunctionId != functionId) {
                 return;
             }
             lookup.memoize(arguments, result);
         }
 
-        public Node tryDispatch(HiddenFunctionId hiddenFunctionId, IList<Node> arguments, out bool wasShadowed) {
+        public ImmutableNodeReferer tryDispatch(HiddenFunctionId hiddenFunctionId, IList<ImmutableNodeReferer> arguments, out bool wasShadowed) {
             wasShadowed = false;
             if( hiddenFunctionId != functionId ) {
                 return null;
             }
 
-            Node lookupResult = lookup.tryLookup(arguments);
+            ImmutableNodeReferer lookupResult = lookup.tryLookup(arguments);
             if( lookupResult == null ) {
                 return null;
             }

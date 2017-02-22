@@ -2,129 +2,6 @@
 using System.Collections.Generic;
 
 namespace MetaNix {
-    public class NodeHelper {
-        public static Node makeString(string value) {
-            Node result = Node.makeBranch();
-            result.children = new Node[1+value.Length]; // datatype + content
-            result.children[0] = Node.makeDatatype("string");
-            for(int i = 0;i< value.Length;i++) {
-                result.children[1+i] = Node.makeAtomic(Variant.makeInt(value[i]));
-            }
-
-            return result;
-        }
-
-        internal static bool checkEquality(Node a, Node b) {
-            if(a.type != b.type) {
-                return false;
-            }
-
-            if(a.type == Node.EnumType.BRANCH) {
-                if(a.children.Length != b.children.Length) {
-                    return false;
-                }
-
-                for(int i=0;i<a.children.Length;i++) {
-                    if(!checkEquality(a.children[i], b.children[i])) {
-                        return false;
-                    }
-                }
-            }
-            else {
-                if(!a.value.checkEquality(b.value)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-    }
-
-    public class Node {
-        public static Node makeAtomic(Variant value) {
-            Node result = new Node(EnumType.VALUE);
-            result.privateValue = value;
-            return result;
-        }
-
-        public static Node makeBranch() {
-            return new Node(EnumType.BRANCH);
-        }
-
-        public static Node makeInstr(EnumType type) {
-            Ensure.ensure(type != EnumType.BRANCH && type != EnumType.STRING_DATATYPE && type != EnumType.VALUE); // real ensure and not just InterpretationException
-            return new Node(type);
-        }
-
-        public static Node makeDatatype(string datatype) {
-            Node result = new Node(EnumType.STRING_DATATYPE);
-            result.privateValue = Variant.makeString(datatype);
-            return result;
-        }
-
-        Node(EnumType type) {
-            privateType = type;
-        }
-
-        public void resetInterpretationResult() {
-            interpretationResult = null;
-        }
-
-        public Node[] children;
-        public Node parent;
-
-        public Node interpretationResult; // is most of the time null
-
-        public enum EnumType {
-            BRANCH,
-            VALUE, // variant value
-
-            STRING_DATATYPE, // native string payload is used to indicate the datatype of the parent branch, like [DATATYPE:string, 20, 20, 54, 63, 20, 20], can also be used to store the datatypes of functions etc
-
-            INSTR_CMP_NEQ_INT,
-            INSTR_CMP_EQ_INT, // compare equal and store in condition flag
-            INSTR_CMP_G_INT,
-            INSTR_CMP_GE_INT,
-
-            INSTR_GOTO,
-
-            INSTR_ADD_INT,
-            INSTR_SUB_INT,
-            INSTR_MUL_INT,
-
-            INSTR_DEREF_INT, // follows the 1st argument which is a relative path to an int and puts the value into the register
-        }
-
-        Variant privateValue;
-
-        public Variant value {
-            get {
-                return privateValue;
-            }
-        }
-
-        public long valueInt {
-            get {
-                return privateValue.valueInt;
-            }
-        }
-
-        public string valueString {
-            get {
-                Ensure.ensure(privateType == EnumType.STRING_DATATYPE); // is only represented by the string if it's a datatype!
-                return privateValue.valueString;
-            }
-        }
-
-        public EnumType type {
-            get {
-                return privateType;
-            }
-        }
-
-        public EnumType privateType;
-    }
-
     class Register {
         public long valueInt;
     }
@@ -138,29 +15,29 @@ namespace MetaNix {
     }
 
     public abstract class Interpreter<ContextType> {
-        public void interpret(ContextType interpretationContext, Node node, IList<Node> arguments, IList<string> argumentNames) {
+        public void interpret(ContextType interpretationContext, ImmutableNodeReferer node, IList<ImmutableNodeReferer> arguments, IList<string> argumentNames) {
             // is just a small layer over interpret2
 
             Ensure.ensureHard(arguments.Count <= argumentNames.Count);
             interpret2(interpretationContext, node, arguments, argumentNames);
         }
 
-        protected abstract void interpret2(ContextType interpretationContext, Node node, IList<Node> arguments, IList<string> argumentNames);
+        protected abstract void interpret2(ContextType interpretationContext, ImmutableNodeReferer node, IList<ImmutableNodeReferer> arguments, IList<string> argumentNames);
     }
 
     public class FunctionalInterpretationContext {
-        Dictionary<string, Node> valuesByName = new Dictionary<string, Node>();
+        Dictionary<string, ImmutableNodeReferer> valuesByName = new Dictionary<string, ImmutableNodeReferer>();
 
         public bool existsVariableByName(string name) {
             return valuesByName.ContainsKey(name);
         }
 
-        public void assignVariable(string name, Node node) {
+        public void assignVariable(string name, ImmutableNodeReferer node) {
             Ensure.ensureHard(!existsVariableByName(name));
             valuesByName.Add(name, node);
         }
 
-        internal Node getVariableByName(string name) {
+        internal ImmutableNodeReferer getVariableByName(string name) {
             Ensure.ensureHard(existsVariableByName(name));
             return valuesByName[name];
         }
@@ -174,7 +51,7 @@ namespace MetaNix {
 
     // used for tracing the functional interpretation
     public interface IFunctionalInterpretationTracer {
-        int callEnter(string callName, Node node);
+        int callEnter(string callName, ImmutableNodeReferer node);
         void callExit(int callId);
 
         /**
@@ -183,36 +60,36 @@ namespace MetaNix {
          * \param value the Node which carries or is the current argument
          * \param idx the index of the argument
          */
-        void callArgument(int callId, Node node, Node value, int idx);
+        void callArgument(int callId, ImmutableNodeReferer node, ImmutableNodeReferer value, int idx);
 
-        void callResult(int callId, Node resultNode);
+        void callResult(int callId, ImmutableNodeReferer resultNode);
 
 
-        int sequenceEnter(Node node);
+        int sequenceEnter(ImmutableNodeReferer node);
         void sequenceExit(int sequenceId);
 
         // called when the interpreter is invoked for the function node with the arguments
-        void interpreterEnter(Node node, IList<Node> arguments);
+        void interpreterEnter(ImmutableNodeReferer node, IList<ImmutableNodeReferer> arguments);
         // called when the interpreter is done doing it's job
         void interpreterExit();
     }
 
     public class NullFunctionalInterpreterTracer : IFunctionalInterpretationTracer {
-        public void callArgument(int callId, Node node, Node value, int idx) {}
-        public int callEnter(string callName, Node node) {
+        public void callArgument(int callId, ImmutableNodeReferer node, ImmutableNodeReferer value, int idx) {}
+        public int callEnter(string callName, ImmutableNodeReferer node) {
             return 0;
         }
 
         public void callExit(int callId) {}
-        public void callResult(int callId, Node resultNode) {}
+        public void callResult(int callId, ImmutableNodeReferer resultNode) {}
 
-        public int sequenceEnter(Node node) {
+        public int sequenceEnter(ImmutableNodeReferer node) {
             return 0;
         }
 
         public void sequenceExit(int sequenceId) {}
 
-        public void interpreterEnter(Node node, IList<Node> arguments) {}
+        public void interpreterEnter(ImmutableNodeReferer node, IList<ImmutableNodeReferer> arguments) {}
         public void interpreterExit() {}
     }
 
@@ -220,7 +97,7 @@ namespace MetaNix {
     public class FunctionalInterpreter : Interpreter<FunctionalInterpretationContext> {
         public IFunctionalInterpretationTracer tracer;
 
-        protected override void interpret2(FunctionalInterpretationContext interpretationContext, Node node, IList<Node> arguments, IList<string> argumentNames) {
+        protected override void interpret2(FunctionalInterpretationContext interpretationContext, ImmutableNodeReferer node, IList<ImmutableNodeReferer> arguments, IList<string> argumentNames) {
             resetVariablesToParameters(interpretationContext, arguments, argumentNames);
 
             tracer.interpreterEnter(node, arguments);
@@ -228,10 +105,10 @@ namespace MetaNix {
             tracer.interpreterExit();
         }
 
-        private void resetVariablesToParameters(FunctionalInterpretationContext interpretationContext, IList<Node> arguments, IList<string> argumentNames) {
+        private void resetVariablesToParameters(FunctionalInterpretationContext interpretationContext, IList<ImmutableNodeReferer> arguments, IList<string> argumentNames) {
             interpretationContext.resetVariables();
             int argumentIdx = 0;
-            foreach (Node iArgument in arguments) {
+            foreach (ImmutableNodeReferer iArgument in arguments) {
                 string argumentName = argumentNames[argumentIdx];
                 interpretationContext.assignVariable(argumentName, iArgument);
                 argumentIdx++;
@@ -313,8 +190,8 @@ namespace MetaNix {
         delegate void primitiveCalcResultForAdditionalArgumentType(Variant argument);
 
 
-        void recursiveInterpret(FunctionalInterpretationContext interpretationContext, Node node) {
-            if( node.type == Node.EnumType.VALUE ) {
+        void recursiveInterpret(FunctionalInterpretationContext interpretationContext, ImmutableNodeReferer node) {
+            if( !node.isBranch ) {
                 // it's it's own result
 
                 node.interpretationResult = node;
@@ -322,14 +199,13 @@ namespace MetaNix {
             }
 
             // if we are here it must be an branch which must be executable
-            Ensure.ensure(node.type == Node.EnumType.BRANCH); // hard ensure
+
 
             // figure out if it is a native function call or a registered function call or a variable
 
             // if it is a string then this means that it indicates an variablename and not an call
-            // this way to check this is a bit hackish but for now we don't have a better solution
-            if( node.children[0].type == Node.EnumType.STRING_DATATYPE ) {
-                string variableName = getNativeString(node);
+            if( !node.children[0].isBranch && node.children[0].type == ValueNode.EnumType.STRING_DATATYPE ) {
+                string variableName = getNativeString(node.children[0]);
 
                 Ensure.ensure(interpretationContext.existsVariableByName(variableName));
                 node.interpretationResult = interpretationContext.getVariableByName(variableName);
@@ -418,20 +294,20 @@ namespace MetaNix {
             };
 
             if( isLet ) {
-                Ensure.ensure(node.children.Length == 1+2); // let and variableAssignmentNode an executionNode
-                Node variableAssignmentArrayNode = node.children[1];
-                Node executionNode = node.children[2];
+                Ensure.ensure(node.children.Count == 1+2); // let and variableAssignmentNode an executionNode
+                ImmutableNodeReferer variableAssignmentArrayNode = node.children[1];
+                ImmutableNodeReferer executionNode = node.children[2];
 
-                Ensure.ensure(variableAssignmentArrayNode.type == Node.EnumType.BRANCH);
+                Ensure.ensure(variableAssignmentArrayNode.isBranch);
 
-                Ensure.ensure(variableAssignmentArrayNode.children.Length != 0);
+                Ensure.ensure(variableAssignmentArrayNode.children.Count != 0);
                 Ensure.ensure(getNativeString(variableAssignmentArrayNode.children[0]) == "array");
 
-                Ensure.ensure((variableAssignmentArrayNode.children.Length - 1) % 2 == 0); // array minus the array prefix must have a length divisable by two
-                int numberOfAssingments = (variableAssignmentArrayNode.children.Length - 1) / 2;
+                Ensure.ensure((variableAssignmentArrayNode.children.Count - 1) % 2 == 0); // array minus the array prefix must have a length divisable by two
+                int numberOfAssingments = (variableAssignmentArrayNode.children.Count - 1) / 2;
                 for ( int assigmentI = 0; assigmentI < numberOfAssingments; assigmentI++ ) {
                     string assignmentVariableName = getNativeString(variableAssignmentArrayNode.children[(1+ assigmentI*2)]);
-                    Node assignmentNode = variableAssignmentArrayNode.children[(1 + assigmentI * 2)    + 1];
+                    ImmutableNodeReferer assignmentNode = variableAssignmentArrayNode.children[(1 + assigmentI * 2)    + 1];
 
                     // for it to be calculated
                     recursiveInterpret(interpretationContext, assignmentNode);
@@ -446,8 +322,8 @@ namespace MetaNix {
             }
             else {
                 // force all arguments to be calculated
-                for (int argIdx = 0; argIdx < node.children.Length - 1; argIdx++) {
-                    Node argumentNode = node.children[argIdx + 1];
+                for (int argIdx = 0; argIdx < node.children.Count - 1; argIdx++) {
+                    ImmutableNodeReferer argumentNode = node.children[argIdx + 1];
                     recursiveInterpret(interpretationContext, argumentNode);
                 }
             }
@@ -458,8 +334,8 @@ namespace MetaNix {
             else if( !isSpecial ) {
                 if ( isArithmetic(callName) ) {
                     // process arguments
-                    for (int argIdx = 0; argIdx < node.children.Length - 1; argIdx++) {
-                        Node argumentValueNode = node.children[argIdx + 1].interpretationResult;
+                    for (int argIdx = 0; argIdx < node.children.Count - 1; argIdx++) {
+                        ImmutableNodeReferer argumentValueNode = node.children[argIdx + 1].interpretationResult;
 
                         primitiveCalcResultForAdditionalArgument(argumentValueNode.value);
 
@@ -467,9 +343,9 @@ namespace MetaNix {
                     }
                 }
                 else if( callName == "shl" || callName == "shr" || callName == "bAnd" || callName == "bOr" ) { // shift
-                    Ensure.ensure(node.children.Length == 1+2/* two arguments*/);
-                    Node leftNode = node.children[1 + 0].interpretationResult;
-                    Node rightNode = node.children[1 + 1].interpretationResult;
+                    Ensure.ensure(node.children.Count == 1+2/* two arguments*/);
+                    ImmutableNodeReferer leftNode = node.children[1 + 0].interpretationResult;
+                    ImmutableNodeReferer rightNode = node.children[1 + 1].interpretationResult;
                     long leftValue = leftNode.value.valueInt;
                     long rightValue = rightNode.value.valueInt;
 
@@ -497,7 +373,7 @@ namespace MetaNix {
                     throw new Exception("INTERNALERRROR"); // hard internal error because the case should be handled, because we already made sure that the callName is valid
                 }
 
-                node.interpretationResult = Node.makeAtomic(interpretationResult.Value);
+                node.interpretationResult = ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(interpretationResult.Value));
 
                 tracer.callResult(callId, node.interpretationResult);
                 tracer.callExit(callId);
@@ -507,16 +383,16 @@ namespace MetaNix {
         
 
         // TODO< move to helper >
-        static void ensureNodeIsDatatype(Node node, string datatype) {
-            Ensure.ensure(node.type == Node.EnumType.STRING_DATATYPE && node.valueString == datatype);
+        static void ensureNodeIsDatatype(ImmutableNodeReferer node, string datatype) {
+            Ensure.ensure(node.type == ValueNode.EnumType.STRING_DATATYPE && node.valueString == datatype);
         }
 
         // TODO< move to helper >
-        static string getNativeString(Node node) {
+        static string getNativeString(ImmutableNodeReferer node) {
             ensureNodeIsDatatype(node.children[0], "string");
 
-            char[] charArray = new char[node.children.Length - 1];
-            for(int i = 0; i < node.children.Length-1; i++) {
+            char[] charArray = new char[node.children.Count - 1];
+            for(int i = 0; i < node.children.Count-1; i++) {
                 charArray[i] = (char)node.children[i + 1].valueInt;
             }
 
@@ -561,46 +437,46 @@ namespace MetaNix {
             instructionDerefInteger = new InterpreterInstructionDerefInteger();
         }
 
-        protected override void interpret2(PrimitiveInterpretationContext interpretationContext, Node node, IList<Node> arguments, IList<string> argumentNames) {
+        protected override void interpret2(PrimitiveInterpretationContext interpretationContext, ImmutableNodeReferer node, IList<ImmutableNodeReferer> arguments, IList<string> argumentNames) {
             switch(node.children[0].type) {
-                case Node.EnumType.INSTR_CMP_NEQ_INT:
+                case ValueNode.EnumType.INSTR_CMP_NEQ_INT:
                 instructionCmpNeqInteger.execute(interpretationContext, node);
                 return;
 
-                case Node.EnumType.INSTR_CMP_EQ_INT:
+                case ValueNode.EnumType.INSTR_CMP_EQ_INT:
                 instructionCmpEqInteger.execute(interpretationContext, node);
                 return;
 
-                case Node.EnumType.INSTR_CMP_G_INT:
+                case ValueNode.EnumType.INSTR_CMP_G_INT:
                 instructionCmpGInteger.execute(interpretationContext, node);
                 return;
 
-                case Node.EnumType.INSTR_CMP_GE_INT:
+                case ValueNode.EnumType.INSTR_CMP_GE_INT:
                 instructionCmpGeInteger.execute(interpretationContext, node);
                 return;
 
 
 
-                case Node.EnumType.INSTR_GOTO:
+                case ValueNode.EnumType.INSTR_GOTO:
                 instructionGoto.execute(interpretationContext, node);
                 return;
 
 
 
-                case Node.EnumType.INSTR_ADD_INT:
+                case ValueNode.EnumType.INSTR_ADD_INT:
                 instructionAddInteger.execute(interpretationContext, node);
                 return;
 
-                case Node.EnumType.INSTR_SUB_INT:
+                case ValueNode.EnumType.INSTR_SUB_INT:
                 instructionSubInteger.execute(interpretationContext, node);
                 return;
 
-                case Node.EnumType.INSTR_MUL_INT:
+                case ValueNode.EnumType.INSTR_MUL_INT:
                 instructionMulInteger.execute(interpretationContext, node);
                 return;
 
 
-                case Node.EnumType.INSTR_DEREF_INT:
+                case ValueNode.EnumType.INSTR_DEREF_INT:
                 instructionDerefInteger.execute(interpretationContext, node);
                 return;
             }
@@ -608,7 +484,7 @@ namespace MetaNix {
     }
 
     interface InterpretationInstruction {
-        void execute(PrimitiveInterpretationContext context, Node node);
+        void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node);
     }
 
     // comparision instruction working on integer described by type
@@ -626,7 +502,7 @@ namespace MetaNix {
             this.comparisionType = comparisionType;
         }
 
-        public void execute(PrimitiveInterpretationContext context, Node node) {
+        public void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node) {
             long registerIdxA = node.children[1].valueInt;
             long registerIdxB = node.children[2].valueInt;
 
@@ -655,7 +531,7 @@ namespace MetaNix {
     }
 
     class InterpreterInstructionGoto : InterpretationInstruction {
-        public void execute(PrimitiveInterpretationContext context, Node node) {
+        public void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node) {
             Ensure.ensure(node.children[1].valueInt >= 0);// TODO< ensure >
             context.ip = (int)node.children[1].valueInt;
 
@@ -663,9 +539,9 @@ namespace MetaNix {
     }
 
     class InterpreterInstructionAddInteger : InterpretationInstruction {
-        public void execute(PrimitiveInterpretationContext context, Node node) {
-            Ensure.ensure(node.children.Length >= 1 + 1); // arguments have to be at least   op + target
-            int numberOfArgs = node.children.Length - 1 - 1;
+        public void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node) {
+            Ensure.ensure(node.children.Count >= 1 + 1); // arguments have to be at least   op + target
+            int numberOfArgs = node.children.Count - 1 - 1;
             
             long accumulator = 0;
 
@@ -674,7 +550,7 @@ namespace MetaNix {
                 accumulator += context.registers[registerIdxIteration].valueInt;
             }
 
-            long registerIdxDest = node.children[node.children.Length - 1].valueInt;
+            long registerIdxDest = node.children[node.children.Count - 1].valueInt;
             context.registers[registerIdxDest].valueInt = accumulator;
 
             context.ip++;
@@ -682,9 +558,9 @@ namespace MetaNix {
     }
 
     class InterpreterInstructionSubInteger : InterpretationInstruction {
-        public void execute(PrimitiveInterpretationContext context, Node node) {
-            Ensure.ensure(node.children.Length >= 1 + 1); // arguments have to be at least   op + target
-            int numberOfArgs = node.children.Length - 1 - 1;
+        public void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node) {
+            Ensure.ensure(node.children.Count >= 1 + 1); // arguments have to be at least   op + target
+            int numberOfArgs = node.children.Count - 1 - 1;
 
             long accumulator = 0;
 
@@ -698,7 +574,7 @@ namespace MetaNix {
                 accumulator -= context.registers[registerIdxIteration].valueInt;
             }
 
-            long registerIdxDest = node.children[node.children.Length - 1].valueInt;
+            long registerIdxDest = node.children[node.children.Count - 1].valueInt;
             context.registers[registerIdxDest].valueInt = accumulator;
 
             context.ip++;
@@ -706,9 +582,9 @@ namespace MetaNix {
     }
 
     class InterpreterInstructionMulInteger : InterpretationInstruction {
-        public void execute(PrimitiveInterpretationContext context, Node node) {
-            Ensure.ensure(node.children.Length >= 1 + 1); // arguments have to be at least   op + target
-            int numberOfArgs = node.children.Length - 1 - 1;
+        public void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node) {
+            Ensure.ensure(node.children.Count >= 1 + 1); // arguments have to be at least   op + target
+            int numberOfArgs = node.children.Count - 1 - 1;
 
             long accumulator = 1;
 
@@ -717,7 +593,7 @@ namespace MetaNix {
                 accumulator *= context.registers[registerIdxIteration].valueInt;
             }
 
-            long registerIdxDest = node.children[node.children.Length - 1].valueInt;
+            long registerIdxDest = node.children[node.children.Count - 1].valueInt;
             context.registers[registerIdxDest].valueInt = accumulator;
 
             context.ip++;
@@ -726,15 +602,15 @@ namespace MetaNix {
 
 
     class InterpreterInstructionDerefInteger : InterpretationInstruction {
-        public void execute(PrimitiveInterpretationContext context, Node node) {
-            Node pathNode = node.children[1];
+        public void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node) {
+            ImmutableNodeReferer pathNode = node.children[1];
             // translate path to integer array
-            int[] path = new int[pathNode.children.Length];
-            for(int i = 0;i < pathNode.children.Length;i++) {
+            int[] path = new int[pathNode.children.Count];
+            for(int i = 0;i < pathNode.children.Count; i++) {
                 path[i] = (int)pathNode.children[i].valueInt;
             }
 
-            Node valueNode = NodeWalker.walk(node.parent, path);
+            ImmutableNodeReferer valueNode = NodeWalker.walk(node.parent, path);
             long value = valueNode.valueInt;
 
             // store into register
@@ -748,7 +624,7 @@ namespace MetaNix {
 
 
     class NodeWalker {
-        public static Node walk(Node entry, int[] path, int pathStartIdx = 0) {
+        public static ImmutableNodeReferer walk(ImmutableNodeReferer entry, int[] path, int pathStartIdx = 0) {
             Ensure.ensure(pathStartIdx <= path.Length);
 
             if (path.Length - pathStartIdx == 0) {
@@ -765,13 +641,13 @@ namespace MetaNix {
             return walk(entry.children[currentPathElementIdx], path, pathStartIdx + 1);
         }
 
-        public static void walkAndAct(Node entry, int[] path, INodeAction action, int pathStartIdx = 0) {
-            Node node = walk(entry, path, pathStartIdx);
+        public static void walkAndAct(ImmutableNodeReferer entry, int[] path, INodeAction action, int pathStartIdx = 0) {
+            ImmutableNodeReferer node = walk(entry, path, pathStartIdx);
             action.act(node);
         }
     }
 
     interface INodeAction {
-        void act(Node current);
+        void act(ImmutableNodeReferer current);
     }
 }

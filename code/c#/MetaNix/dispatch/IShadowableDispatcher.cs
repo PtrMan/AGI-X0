@@ -7,9 +7,9 @@ namespace MetaNix.dispatch {
         /**
          * \param wasShadowed got the call fullfilled by the implementation
          */
-        Node tryDispatch(HiddenFunctionId hiddenFunctionId, IList<Node> arguments, out bool wasShadowed);
+        ImmutableNodeReferer tryDispatch(HiddenFunctionId hiddenFunctionId, IList<ImmutableNodeReferer> arguments, out bool wasShadowed);
 
         // is called if no shadowable dispatcher got called
-        void informCompleteFallThroughWithResult(HiddenFunctionId hiddenFunctionId, IList<Node> arguments, Node result);
+        void informCompleteFallThroughWithResult(HiddenFunctionId hiddenFunctionId, IList<ImmutableNodeReferer> arguments, ImmutableNodeReferer result);
     }
 }

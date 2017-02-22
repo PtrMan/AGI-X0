@@ -10,7 +10,7 @@ namespace MetaNix.dispatch {
             this.hiddenDispatcher = hiddenDispatcher;
         }
 
-        public Node dispatch(PublicFunctionId publicFunctionId, IList<Node> arguments) {
+        public ImmutableNodeReferer dispatch(PublicFunctionId publicFunctionId, IList<ImmutableNodeReferer> arguments) {
             Ensure.ensure(functionsByPublicFunctionId.ContainsKey(publicFunctionId));
 
             FunctionDescriptor fnDescriptor = functionsByPublicFunctionId[publicFunctionId];
@@ -24,7 +24,7 @@ namespace MetaNix.dispatch {
             functionsByPublicFunctionId[functionId] = functionDescriptor;
         }
 
-        static IList<Variant> extractValuesFromNodes(IList<Node> arguments) {
+        static IList<Variant> extractValuesFromNodes(IList<ImmutableNodeReferer> arguments) {
             IList<Variant> result = new List<Variant>(arguments.Count);
             for(int i =0;i<arguments.Count;i++) {
                 result[i] = arguments[i].value;

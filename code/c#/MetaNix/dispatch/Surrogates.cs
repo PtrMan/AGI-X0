@@ -4,9 +4,9 @@ using System.Collections.Generic;
 namespace MetaNix.dispatch {
     // dispatches a call to an function to the interpreter or JIT or native code
     interface ISurrogate {
-        Node dispatchCall(HiddenFunctionId functionId, IList<Node> arguments);
+        ImmutableNodeReferer dispatchCall(HiddenFunctionId functionId, IList<ImmutableNodeReferer> arguments);
         void invalidateByFunctionId(HiddenFunctionId functionId);
-        void updateFunctionBody(HiddenFunctionId functionId, Node body);
+        void updateFunctionBody(HiddenFunctionId functionId, ImmutableNodeReferer body);
         void updateParameterNames(HiddenFunctionId functionId, IList<string> parameterNames);
     }
     
@@ -15,7 +15,7 @@ namespace MetaNix.dispatch {
         FunctionalInterpreter interpreter;
 
         class FunctionDescriptor {
-            public Node body;
+            public ImmutableNodeReferer body;
             public IList<string> parameterNames;
         }
 
@@ -26,7 +26,7 @@ namespace MetaNix.dispatch {
             this.interpretationContext = context;
         }
         
-        public Node dispatchCall(HiddenFunctionId functionId, IList<Node> arguments) {
+        public ImmutableNodeReferer dispatchCall(HiddenFunctionId functionId, IList<ImmutableNodeReferer> arguments) {
             Ensure.ensure(functiondescriptorByFunctionId.ContainsKey(functionId));
 
             FunctionDescriptor fnDescriptor = functiondescriptorByFunctionId[functionId];
@@ -41,7 +41,7 @@ namespace MetaNix.dispatch {
             functiondescriptorByFunctionId.Remove(functionId);
         }
 
-        public void updateFunctionBody(HiddenFunctionId functionId, Node body) {
+        public void updateFunctionBody(HiddenFunctionId functionId, ImmutableNodeReferer body) {
             if (!functiondescriptorByFunctionId.ContainsKey(functionId)) {
                 functiondescriptorByFunctionId[functionId] = new FunctionDescriptor();
             }
@@ -60,7 +60,7 @@ namespace MetaNix.dispatch {
     class SurrogateProvider : IHiddenDispatcher {
         Dictionary<HiddenFunctionId, ISurrogate> surrogateByFunctionId = new Dictionary<HiddenFunctionId, ISurrogate>();
         
-        public Node dispatch(HiddenFunctionId functionId, IList<Node> arguments) {
+        public ImmutableNodeReferer dispatch(HiddenFunctionId functionId, IList<ImmutableNodeReferer> arguments) {
             Ensure.ensure(existsFunctionId(functionId));
             return surrogateByFunctionId[functionId].dispatchCall(functionId, arguments);
         }
@@ -97,10 +97,10 @@ namespace MetaNix.dispatch {
         }
 
         // call for more convinience
-        public Node dispatchCallByFunctionName(string functionname, IList<Variant> argumentVariants) {
-            IList<Node> arguments = new List<Node>(argumentVariants.Count);
+        public ImmutableNodeReferer dispatchCallByFunctionName(string functionname, IList<Variant> argumentVariants) {
+            IList<ImmutableNodeReferer> arguments = new List<ImmutableNodeReferer>(argumentVariants.Count);
             for (int i = 0; i < argumentVariants.Count; i++) {
-                arguments[i] = Node.makeAtomic(argumentVariants[i]);
+                arguments[i] = ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(argumentVariants[i]));
             }
             return publicDispatcherByArguments.dispatch(functionIdByFunctionname[functionname], arguments);
         }

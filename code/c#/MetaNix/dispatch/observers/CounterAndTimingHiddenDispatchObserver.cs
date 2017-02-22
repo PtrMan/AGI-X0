@@ -14,7 +14,7 @@ namespace MetaNix.dispatch {
         Dictionary<HiddenFunctionId, Instrumentation> countersDictionary = new Dictionary<HiddenFunctionId, Instrumentation>();
 
 
-        public void dispatchEnter(HiddenFunctionId hiddenFunctionId, IList<Node> arguments) {
+        public void dispatchEnter(HiddenFunctionId hiddenFunctionId, IList<ImmutableNodeReferer> arguments) {
             incrementCallCounter(hiddenFunctionId);
 
             if (!privateEnabledTimingInstrumentation) {
@@ -23,7 +23,7 @@ namespace MetaNix.dispatch {
             sw.Restart();
         }
 
-        public void dispatchExit(HiddenFunctionId hiddenFunctionId, Node resultOfCall) {
+        public void dispatchExit(HiddenFunctionId hiddenFunctionId, ImmutableNodeReferer resultOfCall) {
             if (!privateEnabledTimingInstrumentation) {
                 return;
             }

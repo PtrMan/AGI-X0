@@ -13,8 +13,8 @@ namespace MetaNix.dispatch {
             this.proxy = proxy;
         }
 
-        public Node dispatch(HiddenFunctionId hiddenFunctionId, IList<Node> arguments) {
-            Node result;
+        public ImmutableNodeReferer dispatch(HiddenFunctionId hiddenFunctionId, IList<ImmutableNodeReferer> arguments) {
+            ImmutableNodeReferer result;
 
             foreach (IShadowableDispatcher iDispatcher in shadowableDispatchers) {
                 bool wasShadowed;

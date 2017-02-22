@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace MetaNix.dispatch {
     // observes dispatching calls
     interface IHiddenDispatchObserver {
-        void dispatchEnter(HiddenFunctionId hiddenFunctionId, IList<Node> arguments);
-        void dispatchExit(HiddenFunctionId hiddenFunctionId, Node resultOfCall);
+        void dispatchEnter(HiddenFunctionId hiddenFunctionId, IList<ImmutableNodeReferer> arguments);
+        void dispatchExit(HiddenFunctionId hiddenFunctionId, ImmutableNodeReferer resultOfCall);
     }
 
     // informs instrumentations about a dispatch
@@ -19,12 +19,12 @@ namespace MetaNix.dispatch {
             this.chainDispatcher = chainDispatcher;
         }
 
-        public Node dispatch(HiddenFunctionId hiddenFunctionId, IList<Node> arguments) {
+        public ImmutableNodeReferer dispatch(HiddenFunctionId hiddenFunctionId, IList<ImmutableNodeReferer> arguments) {
             for(int i = dispatchObservers.Count-1;i>=0;i--) {
                 dispatchObservers[i].dispatchEnter(hiddenFunctionId, arguments);
             }
 
-            Node result = chainDispatcher.dispatch(hiddenFunctionId, arguments);
+            ImmutableNodeReferer result = chainDispatcher.dispatch(hiddenFunctionId, arguments);
 
             for (int i = 0; i < dispatchObservers.Count; i++) {
                 dispatchObservers[i].dispatchExit(hiddenFunctionId, result);
