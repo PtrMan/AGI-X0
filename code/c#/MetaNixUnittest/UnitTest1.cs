@@ -7,18 +7,26 @@ using MetaNix;
 namespace MetaNixUnittest {
     [TestClass]
     public class UnitTest1 {
-        NodeRefererEntry interpretAndReturnRootnode(string functionalProgram) {
+        NodeRefererEntry interpretAndReturnRootnode(string functionalProgram, IList < ImmutableNodeReferer>  parameterValues = null, IList<String> parameterNames = null) {
             Functional.ParseTreeElement parseTree = Functional.parseRecursive(functionalProgram);
             NodeRefererEntry rootnode = TranslateFunctionalParseTree.translateRecursive(parseTree);
 
             FunctionalInterpreter functionalInterpreter = new FunctionalInterpreter();
             functionalInterpreter.tracer = new NullFunctionalInterpreterTracer();
 
-            functionalInterpreter.interpret(new FunctionalInterpretationContext(), rootnode.entry, new List<ImmutableNodeReferer>(), new List<string>());
+            functionalInterpreter.interpret(new FunctionalInterpretationContext(), rootnode.entry, parameterValues == null ? new List<ImmutableNodeReferer>() : parameterValues, parameterNames == null ? new List<string>() : parameterNames);
 
             return rootnode;
         }
 
+        [TestMethod]
+        public void InterpreterVariableLookup() {
+            FunctionalInterpretationContext functionalContext = new FunctionalInterpretationContext();
+            NodeRefererEntry rootNode = interpretAndReturnRootnode("a", new List<ImmutableNodeReferer>{ ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(Variant.makeInt(42))) }, new List<String>{"a" });
+            ImmutableNodeReferer result = rootNode.entry.interpretationResult;
+            Assert.AreEqual(result.valueInt, 42);
+        }
+        
         [TestMethod]
         public void InterpreterAndLet1() {
             NodeRefererEntry rootNode = interpretAndReturnRootnode("(let [value 4 i 1   read2 (shl value (+ i 1))] read2)");

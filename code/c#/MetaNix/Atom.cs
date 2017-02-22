@@ -204,8 +204,8 @@ namespace MetaNix {
             // figure out if it is a native function call or a registered function call or a variable
 
             // if it is a string then this means that it indicates an variablename and not an call
-            if( !node.children[0].isBranch && node.children[0].type == ValueNode.EnumType.STRING_DATATYPE ) {
-                string variableName = getNativeString(node.children[0]);
+            if( !node.children[0].isBranch && node.children[0].type == ValueNode.EnumType.STRING_DATATYPE && node.children[0].valueString == "string") {
+                string variableName = getNativeString(node);
 
                 Ensure.ensure(interpretationContext.existsVariableByName(variableName));
                 node.interpretationResult = interpretationContext.getVariableByName(variableName);
@@ -319,6 +319,9 @@ namespace MetaNix {
 
                 // execute the execution node
                 recursiveInterpret(interpretationContext, executionNode);
+
+                // transfer result
+                node.interpretationResult = executionNode.interpretationResult;
             }
             else {
                 // force all arguments to be calculated
