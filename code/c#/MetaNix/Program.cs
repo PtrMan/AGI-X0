@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using MetaNix.instrumentation;
+
 namespace MetaNix {
     class CellularAutomata {
         public static int calc(int rule, uint bits, int value) {
@@ -172,6 +174,9 @@ namespace MetaNix {
             System.Console.WriteLine(instrObserver.getInstrumentation(dispatch.HiddenFunctionId.make(0)).calltimeMaxInNs);
             System.Console.WriteLine(instrObserver.getInstrumentation(dispatch.HiddenFunctionId.make(0)).calltimeMinInNs);
             System.Console.WriteLine(instrObserver.getInstrumentation(dispatch.HiddenFunctionId.make(0)).calltimeSumInNs);
+
+            Statistics statistics = new Statistics(instrObserver);
+            statistics.doIt();
 
             int debugMe = 0;
         }

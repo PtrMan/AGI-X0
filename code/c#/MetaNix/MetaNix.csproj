@@ -73,6 +73,7 @@
     <Compile Include="dispatch\ShadowableHiddenDispatcher.cs" />
     <Compile Include="Ensure.cs" />
     <Compile Include="FunctionalParser.cs" />
+    <Compile Include="instrumentation\Statistics.cs" />
     <Compile Include="Memoizer.cs" />
     <Compile Include="MemoizerShadowableDispatcher.cs" />
     <Compile Include="Misc.cs" />
@@ -89,5 +90,6 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

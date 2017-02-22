@@ -130,13 +130,12 @@ namespace MetaNix {
             }
         }
 
-        static bool isCallValid(string callName) {
-            switch (callName) {
-                // arithmetic
-                case "+":
-                case "-":
-                case "*":
-                case "/":
+        static bool isCallValid(string functionname) {
+            if( isArithmetic(functionname) || isBasicMathFunctionWithOneParameter(functionname) ) {
+                return true;
+            }
+
+            switch (functionname) {
                 
                 // bit manipulation
                 case "shl":
@@ -151,8 +150,25 @@ namespace MetaNix {
             }
         }
 
-        static bool isArithmetic(string callName) {
-            switch (callName) {
+        static bool isBasicMathFunctionWithOneParameter(string functionname) {
+            switch (functionname) {
+                // arithmetic
+                case "sin":
+                case "asin":
+                case "cos":
+                case "acos":
+                case "tan":
+                case "atan":
+                case "exp":
+                return true;
+
+                default:
+                return false;
+            }
+        }
+
+        static bool isArithmetic(string functionname) {
+            switch (functionname) {
                 // arithmetic
                 case "+":
                 case "-":
@@ -185,7 +201,22 @@ namespace MetaNix {
             throw new Exception("INTERPRETATIONEXCEPTION internal error while widening");
         }
 
-        private Variant castVariantTo(Variant argument, Variant.EnumType type) {
+        static bool isCastableTo(Variant argument, Variant.EnumType type) {
+            if (argument.type == type) { // no cast necessary
+                return true;
+            }
+
+            if (type == Variant.EnumType.FLOAT && argument.type == Variant.EnumType.INT) {
+                return true;
+            }
+            else if (type == Variant.EnumType.INT && argument.type == Variant.EnumType.FLOAT) {
+                return true;
+            }
+
+            return false;
+        }
+
+        static Variant hardCastVariantTo(Variant argument, Variant.EnumType type) {
             if( argument.type == type ) { // no cast necessary
                 return argument;
             }
@@ -196,10 +227,10 @@ namespace MetaNix {
             else if( type == Variant.EnumType.INT && argument.type == Variant.EnumType.FLOAT ) {
                 return Variant.makeInt((long)argument.valueFloat);
             }
-
+            
             throw new Exception("INTERPRETATIONEXCEPTION Intrnal error while casting, not handled case");
         }
-
+        
 
 
         delegate void primitiveCalcResultForAdditionalArgumentType(Variant argument);
@@ -275,7 +306,7 @@ namespace MetaNix {
                     tryToWidenArithmeticType(ref interpretationResultTemp, argument.type);
                     interpretationResult = interpretationResultTemp;
                 }
-                Variant castedArgument = castVariantTo(argument, interpretationResult.Value.type);
+                Variant castedArgument = hardCastVariantTo(argument, interpretationResult.Value.type);
 
                 if ( callName == "+" ) {
                     if(castedArgument.type == Variant.EnumType.FLOAT) {
@@ -303,9 +334,11 @@ namespace MetaNix {
                 }
                 else if (callName == "/") {
                     if (castedArgument.type == Variant.EnumType.FLOAT) {
+                        Ensure.ensure(castedArgument.valueFloat != 0.0);
                         interpretationResult = Variant.makeFloat(interpretationResult.Value.valueFloat / castedArgument.valueFloat);
                     }
                     else if (castedArgument.type == Variant.EnumType.INT) {
+                        Ensure.ensure(castedArgument.valueInt != 0);
                         interpretationResult = Variant.makeInt(interpretationResult.Value.valueInt / castedArgument.valueInt);
                     }
                 }
@@ -397,6 +430,45 @@ namespace MetaNix {
 
                         tracer.callArgument(callId, node.children[argIdx + 1], argumentValueNode, argIdx);
                     }
+                }
+                else if( isBasicMathFunctionWithOneParameter(callName) ) {
+                    Ensure.ensure(node.children.Count == 1+1/* one arguments*/);
+                    ImmutableNodeReferer valueNode = node.children[1 + 0].interpretationResult;
+
+                    Ensure.ensure(isCastableTo(valueNode.value, Variant.EnumType.FLOAT));
+                    Variant castedValueVariant = hardCastVariantTo(valueNode.value, Variant.EnumType.FLOAT);
+
+                    double resultValue = 0.0;
+                    switch(callName) {
+                        case "exp":
+                        resultValue = Math.Exp(castedValueVariant.valueFloat);
+                        break;
+                        case "sin":
+                        resultValue = Math.Sin(castedValueVariant.valueFloat);
+                        break;
+                        case "asin":
+                        resultValue = Math.Asin(castedValueVariant.valueFloat);
+                        break;
+                        case "cos":
+                        resultValue = Math.Cos(castedValueVariant.valueFloat);
+                        break;
+                        case "acos":
+                        resultValue = Math.Acos(castedValueVariant.valueFloat);
+                        break;
+                        case "tan":
+                        resultValue = Math.Tan(castedValueVariant.valueFloat);
+                        break;
+                        case "atan":
+                        resultValue = Math.Atan(castedValueVariant.valueFloat);
+                        break;
+
+                        default:
+                        throw new Exception("INTERNALERROR interpreter internal error");
+                    }
+
+                    interpretationResult = Variant.makeFloat(resultValue);
+
+                    tracer.callArgument(callId, node.children[1 + 0], valueNode, 0);
                 }
                 else if( callName == "shl" || callName == "shr" || callName == "bAnd" || callName == "bOr" ) { // shift
                     Ensure.ensure(node.children.Count == 1+2/* two arguments*/);
