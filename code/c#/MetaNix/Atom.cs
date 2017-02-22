@@ -28,6 +28,8 @@ namespace MetaNix {
     public class FunctionalInterpretationContext {
         Dictionary<string, ImmutableNodeReferer> valuesByName = new Dictionary<string, ImmutableNodeReferer>();
 
+        public PublicFunctionRegistryAndDispatcher publicFnRegistryAndDispatcher;
+
         public bool existsVariableByName(string name) {
             return valuesByName.ContainsKey(name);
         }
@@ -130,7 +132,7 @@ namespace MetaNix {
             }
         }
 
-        static bool isCallValid(string functionname) {
+        static bool isNativeCallValid(string functionname) {
             if( isArithmetic(functionname) || isBasicMathFunctionWithOneParameter(functionname) ) {
                 return true;
             }
@@ -257,6 +259,11 @@ namespace MetaNix {
                 node.interpretationResult = interpretationContext.getVariableByName(variableName);
                 return;
             }
+
+            // was the result of the node already set in the node
+            // used if we return an nonatomic result
+            bool interpretationResultOfNodeIsAlreadySet = false;
+
             string operationName = getNativeString(node.children[0]);
             bool isSequence = operationName == "seq";
             bool isLet = operationName == "let";
@@ -265,9 +272,11 @@ namespace MetaNix {
             string callName = "";
             if( !isSpecial ) {
                 callName = operationName;
-
-                bool nativeCallValid = isCallValid(callName);
-                if (nativeCallValid) {
+                
+                if (
+                    isNativeCallValid(callName) ||
+                    interpretationContext.publicFnRegistryAndDispatcher.existsFunction(callName)
+                ) {
                     // nothing by purpose
                 }
                 else {
@@ -413,7 +422,7 @@ namespace MetaNix {
                     recursiveInterpret(interpretationContext, argumentNode);
                 }
             }
-
+            
             if ( isSequence ) {
                 tracer.sequenceExit(sequenceId);
             }
@@ -497,11 +506,27 @@ namespace MetaNix {
                     tracer.callArgument(callId, node.children[1 + 0], leftNode, 0);
                     tracer.callArgument(callId, node.children[1 + 1], rightNode, 1);
                 }
+                else if(interpretationContext.publicFnRegistryAndDispatcher.existsFunction(callName)) {
+                    // a function was invoked
+
+                    IList<ImmutableNodeReferer> invokeParameters = new List<ImmutableNodeReferer>();
+                    // collect invoke parameters
+                    for(int i=0; i < node.children.Count-1; i++) {
+                        invokeParameters.Add(node.children[1 + 0].interpretationResult);
+                    }
+
+                    ImmutableNodeReferer calleeResult = interpretationContext.publicFnRegistryAndDispatcher.dispatchCall(callName, invokeParameters);
+
+                    node.interpretationResult = calleeResult;
+                    interpretationResultOfNodeIsAlreadySet = true;
+                }
                 else {
                     throw new Exception("INTERNALERRROR"); // hard internal error because the case should be handled, because we already made sure that the callName is valid
                 }
 
-                node.interpretationResult = ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(interpretationResult.Value));
+                if( !interpretationResultOfNodeIsAlreadySet ) {
+                    node.interpretationResult = ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(interpretationResult.Value));
+                }
 
                 tracer.callResult(callId, node.interpretationResult);
                 tracer.callExit(callId);
@@ -749,6 +774,28 @@ namespace MetaNix {
         }
     }
 
+
+    // acts as an registry for function names as as an dispatcher for calls by name
+    public class PublicFunctionRegistryAndDispatcher {
+        ISet<string> publicFunctions = new HashSet<string>();
+        dispatch.PublicCallDispatcher callDispatcher;
+
+        public PublicFunctionRegistryAndDispatcher(dispatch.PublicCallDispatcher callDispatcher) {
+            this.callDispatcher = callDispatcher;
+        }
+
+        public void addFunction(string name) {
+            publicFunctions.Add(name);
+        }
+
+        public bool existsFunction(string name) {
+            return publicFunctions.Contains(name);
+        }
+
+        public ImmutableNodeReferer dispatchCall(string publicFunctionName, IList<ImmutableNodeReferer> parameters) {
+            return callDispatcher.dispatchCallByFunctionName(publicFunctionName, parameters);
+        }
+    }
 
 
     class NodeWalker {

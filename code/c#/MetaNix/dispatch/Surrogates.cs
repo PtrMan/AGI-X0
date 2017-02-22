@@ -81,7 +81,7 @@ namespace MetaNix.dispatch {
     }
 
     // allows to call functions by name or public function id
-    class PublicCallDispatcher {
+    public class PublicCallDispatcher {
         //public SurrogateProvider surrogateProvider;
 
         PublicDispatcherByArguments publicDispatcherByArguments;
@@ -102,6 +102,10 @@ namespace MetaNix.dispatch {
             for (int i = 0; i < argumentVariants.Count; i++) {
                 arguments[i] = ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(argumentVariants[i]));
             }
+            return publicDispatcherByArguments.dispatch(functionIdByFunctionname[functionname], arguments);
+        }
+
+        public ImmutableNodeReferer dispatchCallByFunctionName(string functionname, IList<ImmutableNodeReferer> arguments) {
             return publicDispatcherByArguments.dispatch(functionIdByFunctionname[functionname], arguments);
         }
     }

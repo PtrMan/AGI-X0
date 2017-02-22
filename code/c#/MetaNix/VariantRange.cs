@@ -2,7 +2,7 @@
 
 
 namespace MetaNix {
-    struct VariantRange {
+    public struct VariantRange {
         public Variant min, max; // range
 
         public bool isInRange(Variant value) {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MetaNix.dispatch {
     // looks up the function which is specialized for certain parameters
-    class PublicDispatcherByArguments {
+    public class PublicDispatcherByArguments {
         IHiddenDispatcher hiddenDispatcher;
 
         public PublicDispatcherByArguments(IHiddenDispatcher hiddenDispatcher) {

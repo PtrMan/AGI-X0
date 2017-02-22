@@ -1,6 +1,6 @@
 ﻿// typesafe function id's
 namespace MetaNix.dispatch {
-    struct PublicFunctionId {
+    public struct PublicFunctionId {
         public long value;
 
         public static PublicFunctionId make(long value) {
@@ -19,7 +19,7 @@ namespace MetaNix.dispatch {
     }
 
     // hidden function IDs are ot directly callable from the outside
-    struct HiddenFunctionId {
+    public struct HiddenFunctionId {
         public long value;
 
         public static HiddenFunctionId make(long value) {
