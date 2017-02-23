@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MetaNix.datastructures {
     /**
@@ -260,9 +261,10 @@ namespace MetaNix.datastructures {
             int? previousIdx = null;
 
             // we iterate from elements with high indices to low because we don't have to keep track of index changes
-            for (int i=elementsWithIndices.Count-1;i>=0;i--) {
-                int idx = elementsWithIndices[i].Item1;
-                ImmutableNodeReferer nodeReferer = elementsWithIndices[i].Item2;
+
+            foreach(var iElementWithIndex in elementsWithIndices.Reverse()) {
+                int idx = iElementWithIndex.Item1;
+                ImmutableNodeReferer nodeReferer = iElementWithIndex.Item2;
 
                 Ensure.ensureHard(previousIdx.HasValue ? idx < previousIdx : true); // make sure the index is smaller than the previous one
 
@@ -303,9 +305,7 @@ namespace MetaNix.datastructures {
             int? previousIdx = null;
 
             // we iterate from elements with high indices to low because we don't have to keep track of index changes
-            for (int i = indices.Count - 1; i >= 0; i--) {
-                int idx = indices[i];
-
+            foreach (int idx in indices.Reverse()) {
                 Ensure.ensureHard(previousIdx.HasValue ? idx < previousIdx : true); // make sure the index is smaller than the previous one
 
                 Ensure.ensure(idx < resultReferer.children.Count);
