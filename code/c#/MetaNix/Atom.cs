@@ -68,6 +68,8 @@ namespace MetaNix {
 
 
         int sequenceEnter(ImmutableNodeReferer node);
+        void sequenceElement(int sequenceId, ImmutableNodeReferer node);
+        void sequenceResult(int sequenceId, ImmutableNodeReferer result);
         void sequenceExit(int sequenceId);
 
         int conditionEnter(ImmutableNodeReferer node);
@@ -96,7 +98,7 @@ namespace MetaNix {
         public int sequenceEnter(ImmutableNodeReferer node) {
             return 0;
         }
-
+        public void sequenceElement(int sequenceId, ImmutableNodeReferer node) { }
         public void sequenceExit(int sequenceId) {}
 
         public void interpreterEnter(ImmutableNodeReferer node, IList<ImmutableNodeReferer> arguments) {}
@@ -108,6 +110,10 @@ namespace MetaNix {
         public void conditionCondition(int conditionId, ImmutableNodeReferer node, ImmutableNodeReferer value) {}
         public void conditionPathTaken(int conditionId, ImmutableNodeReferer node, bool branch) {}
         public void conditionExit(int conditionId) {}
+
+        public void sequenceResult(int sequenceId, ImmutableNodeReferer result) {
+            throw new NotImplementedException();
+        }
     }
 
     // interpreter for functional expressions
@@ -419,11 +425,15 @@ namespace MetaNix {
                 // force all arguments to be calculated
                 for (int argIdx = 0; argIdx < node.children.Count - 1; argIdx++) {
                     ImmutableNodeReferer argumentNode = node.children[argIdx + 1];
+                    if( isSequence ) {
+                        tracer.sequenceElement(sequenceId, argumentNode);
+                    }
                     recursiveInterpret(interpretationContext, argumentNode);
                 }
             }
             
             if ( isSequence ) {
+                tracer.sequenceResult(sequenceId, node.children[node.children.Count-1].interpretationResult);
                 tracer.sequenceExit(sequenceId);
             }
             else if( isCondition ) {
