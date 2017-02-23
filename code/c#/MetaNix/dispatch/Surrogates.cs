@@ -3,14 +3,14 @@ using System.Collections.Generic;
 
 namespace MetaNix.dispatch {
     // dispatches a call to an function to the interpreter or JIT or native code
-    interface ISurrogate {
+    public interface ISurrogate {
         ImmutableNodeReferer dispatchCall(HiddenFunctionId functionId, IList<ImmutableNodeReferer> arguments);
         void invalidateByFunctionId(HiddenFunctionId functionId);
         void updateFunctionBody(HiddenFunctionId functionId, ImmutableNodeReferer body);
         void updateParameterNames(HiddenFunctionId functionId, IList<string> parameterNames);
     }
     
-    class FunctionalInterpreterSurrogate : ISurrogate {
+    public class FunctionalInterpreterSurrogate : ISurrogate {
         FunctionalInterpretationContext interpretationContext;
         FunctionalInterpreter interpreter;
 
@@ -57,7 +57,7 @@ namespace MetaNix.dispatch {
     }
 
     // acts as a dispatching point of the function calls to th corresponding surrogates
-    class SurrogateProvider : IHiddenDispatcher {
+    public class SurrogateProvider : IHiddenDispatcher {
         Dictionary<HiddenFunctionId, ISurrogate> surrogateByFunctionId = new Dictionary<HiddenFunctionId, ISurrogate>();
         
         public ImmutableNodeReferer dispatch(HiddenFunctionId functionId, IList<ImmutableNodeReferer> arguments) {

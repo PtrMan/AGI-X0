@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace MetaNix.dispatch {
     // observes dispatching calls
-    interface IHiddenDispatchObserver {
+    public interface IHiddenDispatchObserver {
         void dispatchEnter(HiddenFunctionId hiddenFunctionId, IList<ImmutableNodeReferer> arguments);
         void dispatchExit(HiddenFunctionId hiddenFunctionId, ImmutableNodeReferer resultOfCall);
     }
 
     // informs instrumentations about a dispatch
-    class InstrumentationHiddenDispatcher : IHiddenDispatcher {
+    public class InstrumentationHiddenDispatcher : IHiddenDispatcher {
         IHiddenDispatcher chainDispatcher;
 
         // by priority ordered observers, first ones are "closer" to the call

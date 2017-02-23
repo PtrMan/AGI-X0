@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MetaNix.dispatch {
     // used to shadow function invokations from other handlers
-    interface IShadowableDispatcher {
+    public interface IShadowableDispatcher {
         /**
          * \param wasShadowed got the call fullfilled by the implementation
          */

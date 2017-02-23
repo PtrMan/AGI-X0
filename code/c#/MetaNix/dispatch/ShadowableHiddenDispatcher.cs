@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MetaNix.dispatch {
     // dispatcher which tries to dispatch the calls to shadowable dispatchers. if no shadowable dispatcher handles a call then the call is passed to the proxy
-    class ShadowableHiddenDispatcher : IHiddenDispatcher {
+    public class ShadowableHiddenDispatcher : IHiddenDispatcher {
         IHiddenDispatcher proxy;
 
         // ordered by priority
