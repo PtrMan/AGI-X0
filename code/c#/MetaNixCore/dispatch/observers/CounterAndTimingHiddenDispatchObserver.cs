@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace MetaNix.dispatch {
-    class TimingAndCountHiddenDispatchObserver : IHiddenDispatchObserver {
+    public class TimingAndCountHiddenDispatchObserver : IHiddenDispatchObserver {
         class Instrumentation {
             public HiddenFunctionId functionId;
 

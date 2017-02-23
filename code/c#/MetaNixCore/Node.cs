@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+namespace MetaNixCore {
+
+}
+
 
 namespace MetaNix {
     /**

@@ -59,9 +59,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MetaNix\MetaNix.csproj">
-      <Project>{b346ab9a-2c42-4939-be3b-52c57eea3e29}</Project>
-      <Name>MetaNix</Name>
+    <ProjectReference Include="..\MetaNixCore\MetaNixCore.csproj">
+      <Project>{2980888f-9543-45a0-8bbc-7e7d1cf19f8f}</Project>
+      <Name>MetaNixCore</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
