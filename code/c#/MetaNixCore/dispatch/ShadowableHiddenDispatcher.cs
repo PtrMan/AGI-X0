@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using MetaNix.datastructures;
+
 namespace MetaNix.dispatch {
     // dispatcher which tries to dispatch the calls to shadowable dispatchers. if no shadowable dispatcher handles a call then the call is passed to the proxy
     public class ShadowableHiddenDispatcher : IHiddenDispatcher {

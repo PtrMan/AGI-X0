@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using MetaNix.dispatch;
 
+using MetaNix.datastructures;
+
 namespace MetaNix {
     // tries to lookup the value
     class MemoizerShadowableDispatcher : IShadowableDispatcher {

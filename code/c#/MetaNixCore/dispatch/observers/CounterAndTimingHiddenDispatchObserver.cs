@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using MetaNix.datastructures;
+
 namespace MetaNix.dispatch {
     public class TimingAndCountHiddenDispatchObserver : IHiddenDispatchObserver {
         class Instrumentation {

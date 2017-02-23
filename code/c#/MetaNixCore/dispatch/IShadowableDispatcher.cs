@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using MetaNix.datastructures;
+
 namespace MetaNix.dispatch {
     // used to shadow function invokations from other handlers
     public interface IShadowableDispatcher {

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using MetaNix.datastructures;
+
 namespace MetaNix {
     class Register {
         public long valueInt;

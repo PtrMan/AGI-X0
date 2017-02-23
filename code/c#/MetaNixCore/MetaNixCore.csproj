@@ -54,7 +54,7 @@
     <Compile Include="Memoizer.cs" />
     <Compile Include="MemoizerShadowableDispatcher.cs" />
     <Compile Include="Misc.cs" />
-    <Compile Include="Node.cs" />
+    <Compile Include="datastructures\Node.cs" />
     <Compile Include="ProgramParser.cs" />
     <Compile Include="symbolic\Stringmanipulation.cs" />
     <Compile Include="TranslateFunctionalParseTree.cs" />

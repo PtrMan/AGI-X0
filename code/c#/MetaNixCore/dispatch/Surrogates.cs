@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using MetaNix.datastructures;
+
 namespace MetaNix.dispatch {
     // dispatches a call to an function to the interpreter or JIT or native code
     public interface ISurrogate {

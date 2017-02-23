@@ -4,6 +4,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Telerik.JustMock;
 using MetaNix;
 using MetaNix.dispatch;
+using MetaNix.datastructures;
+
 
 namespace MetaNixUnittest {
     [TestClass]

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using MetaNix.datastructures;
+
 namespace MetaNix {
     public class TranslateFunctionalParseTree {
         public static NodeRefererEntry translateRecursive(Functional.ParseTreeElement entry) {

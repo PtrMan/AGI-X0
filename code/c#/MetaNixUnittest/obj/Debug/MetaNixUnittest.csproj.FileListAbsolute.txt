@@ -1,0 +1,14 @@
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.dll
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.dll
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.dll
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\MetaNixUnittest.dll
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\MetaNixUnittest.pdb
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\MetaNixCore.dll
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\Microsoft.VisualStudio.TestPlatform.TestFramework.dll
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\Microsoft.VisualStudio.TestPlatform.TestFramework.Extensions.dll
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\Telerik.JustMock.dll
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\MetaNixCore.pdb
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\bin\Debug\Telerik.JustMock.xml
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\obj\Debug\MetaNixUnittest.csprojResolveAssemblyReference.cache
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\obj\Debug\MetaNixUnittest.dll
+E:\at T20\github\AGI-X0\code\c#\MetaNixUnittest\obj\Debug\MetaNixUnittest.pdb

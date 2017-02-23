@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using MetaNix.datastructures;
+
 namespace MetaNix.dispatch {
     // observes dispatching calls
     public interface IHiddenDispatchObserver {

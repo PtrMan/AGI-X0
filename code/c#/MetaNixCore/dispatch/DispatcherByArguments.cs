@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using MetaNix.datastructures;
+
 namespace MetaNix.dispatch {
     // looks up the function which is specialized for certain parameters
     public class PublicDispatcherByArguments {
