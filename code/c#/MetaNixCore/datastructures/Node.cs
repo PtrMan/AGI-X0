@@ -232,20 +232,97 @@ namespace MetaNix.datastructures {
 
     
     // class to simplify the manipulation of the node datastructure
-    sealed class NodeRefererEntryManipulationHelper {
+    public sealed class NodeRefererEntryManipulationHelper {
         public static NodeRefererEntry makeImmutableArray(IList<Variant> values) {
             ImmutableNodeReferer entryNodeReferer = ImmutableNodeRefererManipulatorHelper.makeImmutableNodeRefererForArray(values);
             return new NodeRefererEntry(entryNodeReferer);
         }
-
         
+        public static NodeRefererEntry arrayInsert(NodeRefererEntry refererEntry, int idx, ImmutableNodeReferer insert) {
+            return arrayInsert(refererEntry, new List<Tuple<int, ImmutableNodeReferer>>{new Tuple<int, ImmutableNodeReferer>(idx, insert)} );
+        }
 
-        // TODO< add elements to array, remove, clear array >
+        /** 
+         * inserts the elements at the corresponding indices into the array referenced by "refererEntry"
+         * and returns a new NodeRefererEntry which points at the "ImmutableNodeReferer" which desribes the result array
+         * 
+         * indices must be sorted!
+         * 
+         * \param refererEntry the target where the elements are inserted into
+         * \param elementsWithIndices array of elements with indices, must be sorted by index
+         */
+        public static NodeRefererEntry arrayInsert(NodeRefererEntry refererEntry, IList<Tuple<int, ImmutableNodeReferer>> elementsWithIndices) {
+            Ensure.ensure(refererEntry.entry.isBranch);
+
+            ImmutableNodeReferer resultReferer = ImmutableNodeRefererManipulatorHelper.copy(refererEntry.entry);
+            resultReferer.parent = null;
+
+            int? previousIdx = null;
+
+            // we iterate from elements with high indices to low because we don't have to keep track of index changes
+            for (int i=elementsWithIndices.Count-1;i>=0;i--) {
+                int idx = elementsWithIndices[i].Item1;
+                ImmutableNodeReferer nodeReferer = elementsWithIndices[i].Item2;
+
+                Ensure.ensureHard(previousIdx.HasValue ? idx < previousIdx : true); // make sure the index is smaller than the previous one
+
+                resultReferer.children.Insert(idx, nodeReferer);
+
+                previousIdx = idx;
+            }
+
+            return new NodeRefererEntry(resultReferer);
+        }
+
+        public static NodeRefererEntry arrayClear(NodeRefererEntry refererEntry) {
+            Ensure.ensure(refererEntry.entry.isBranch);
+
+            ImmutableNodeReferer resultReferer = ImmutableNodeReferer.makeBranch(new List<ImmutableNodeReferer>(), refererEntry.entry.parent);
+            return new NodeRefererEntry(resultReferer);
+        }
+        
+        public static NodeRefererEntry arrayRemove(NodeRefererEntry refererEntry, int index) {
+            return arrayRemove(refererEntry, new List<int> { index });
+        }
+
+        /** 
+         * inserts the elements at the corresponding indices into the array referenced by "refererEntry"
+         * and returns a new NodeRefererEntry which points at the "ImmutableNodeReferer" which desribes the result array
+         * 
+         * indices must be sorted!
+         * 
+         * \param refererEntry the target where the elements are inserted into
+         * \param indices array of indices, must be sorted by index
+         */
+        public static NodeRefererEntry arrayRemove(NodeRefererEntry refererEntry, IList<int> indices) {
+            Ensure.ensure(refererEntry.entry.isBranch);
+
+            ImmutableNodeReferer resultReferer = ImmutableNodeRefererManipulatorHelper.copy(refererEntry.entry);
+            resultReferer.parent = null;
+
+            int? previousIdx = null;
+
+            // we iterate from elements with high indices to low because we don't have to keep track of index changes
+            for (int i = indices.Count - 1; i >= 0; i--) {
+                int idx = indices[i];
+
+                Ensure.ensureHard(previousIdx.HasValue ? idx < previousIdx : true); // make sure the index is smaller than the previous one
+
+                Ensure.ensure(idx < resultReferer.children.Count);
+                resultReferer.children.RemoveAt(idx);
+
+                previousIdx = idx;
+            }
+
+            return new NodeRefererEntry(resultReferer);
+        }
+
+        // TODO< array subarray, concatenate >
     }
 
     sealed class ImmutableNodeRefererManipulatorHelper {
         public static ImmutableNodeReferer makeImmutableNodeRefererForArray(IList<Variant> values, ImmutableNodeReferer parent = null) {
-            ImmutableNodeReferer result = ImmutableNodeReferer.makeBranch(new List<ImmutableNodeReferer>(values.Count), parent);
+            ImmutableNodeReferer result = ImmutableNodeReferer.makeBranch(new List<ImmutableNodeReferer>(new ImmutableNodeReferer[values.Count]), parent);
 
             for (int i = 0; i < values.Count; i++) {
                 result.children[i] = ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(values[i]));
@@ -261,6 +338,23 @@ namespace MetaNix.datastructures {
             result.children[0] = ImmutableNodeReferer.makeNonbranch(ValueNode.makeDatatype("string"));
             for (int i = 0; i < value.Length; i++) {
                 result.children[1+i] = ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(Variant.makeInt(value[i])));
+            }
+
+            return result;
+        }
+
+        // shallow copie of branch or just passthrough if element is nonbranch
+        // doesn't touch parent
+        public static ImmutableNodeReferer copy(ImmutableNodeReferer element) {
+            if(!element.isBranch) {
+                return element;
+            }
+
+            ImmutableNodeReferer result = ImmutableNodeReferer.makeBranch();
+
+            // copy
+            for( int i = 0; i < element.children.Count; i++ ) {
+                result.children.Add(element.children[i]);
             }
 
             return result;

@@ -39,6 +39,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Atom.cs" />
+    <Compile Include="datastructures\IDatastructureDistribution.cs" />
+    <Compile Include="datastructures\StochasticBag.cs" />
     <Compile Include="dispatch\DispatcherByArguments.cs" />
     <Compile Include="dispatch\FunctionIds.cs" />
     <Compile Include="dispatch\IHiddenDispatcher.cs" />
