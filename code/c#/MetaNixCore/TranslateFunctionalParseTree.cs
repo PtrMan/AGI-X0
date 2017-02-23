@@ -16,8 +16,7 @@ namespace MetaNix {
                 Functional.ScopeParseTreeElement castedEntry = (Functional.ScopeParseTreeElement)entry;
                 foreach(Functional.ParseTreeElement iterationChildren in castedEntry.children) {
                     ImmutableNodeReferer translatedNode = translateRecursiveInternal(iterationChildren, resultNode);
-                    translatedNode.parent = resultNode;
-                    resultNode.children.Add(translatedNode);
+                    resultNode.children = resultNode.children.Add(translatedNode);
                 }
                 
                 return resultNode;
@@ -41,14 +40,13 @@ namespace MetaNix {
 
                 ImmutableNodeReferer resultNode = ImmutableNodeReferer.makeBranch();
 
-                resultNode.children.Add(ImmutableNodeRefererManipulatorHelper.makeString("array", resultNode)); // pseudo operation "array" which indicates an array
+                resultNode.children = resultNode.children.Add(ImmutableNodeRefererManipulatorHelper.makeString("array")); // pseudo operation "array" which indicates an array
 
 
                 Functional.ArrayParseTreeElement castedEntry = (Functional.ArrayParseTreeElement)entry;
                 foreach (Functional.ParseTreeElement iterationChildren in castedEntry.children) {
                     ImmutableNodeReferer translatedNode = translateRecursiveInternal(iterationChildren, resultNode);
-                    translatedNode.parent = resultNode;
-                    resultNode.children.Add(translatedNode);
+                    resultNode.children = resultNode.children.Add(translatedNode);
                 }
                 
                 return resultNode;

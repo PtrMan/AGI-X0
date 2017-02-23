@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace MetaNix.datastructures {
@@ -124,33 +125,26 @@ namespace MetaNix.datastructures {
         public ImmutableNodeReferer interpretationResult; // is most of the time null
                                                           // is mutable too for an efficient interpretation
                                                           // PARALLELIZATION TODO< this has to be an array for an multithreaded interpretation with the # of threads because it will be changed by many threads at the same time >
-
-        public IList<ImmutableNodeReferer> children;
-        public ImmutableNodeReferer parent; // parent of the tree
-
-        /* uncommented because not used 
-        public ImmutableNodeReferer getChildrenAt(int idx) {
-            Ensure.ensureHard(children != null); // hard ensure because soft ensure can be done extrnally
-                                                 // we don't rely on the C#VM to throw an exeption on array access because the exception would be too general
-            return children[idx];
-        }*/
-
-        public static ImmutableNodeReferer makeBranch(IList<ImmutableNodeReferer> children = null, ImmutableNodeReferer parent = null) {
-            ImmutableNodeReferer result = new ImmutableNodeReferer();
-            result.children = children == null ? new List<ImmutableNodeReferer>() : children; // small trick because function parameter must be compiletime
-            result.parent = parent;
-            return result;
+        
+        public ImmutableArray<ImmutableNodeReferer> children;
+        
+        public static ImmutableNodeReferer makeBranch(IList<ImmutableNodeReferer> children = null) {
+            return new ImmutableNodeReferer(children == null ? new List<ImmutableNodeReferer>() : children);
         }
 
-        public static ImmutableNodeReferer makeNonbranch(ValueNode referencedValueNode, ImmutableNodeReferer parent = null) {
+        public static ImmutableNodeReferer makeNonbranch(ValueNode referencedValueNode) {
             ImmutableNodeReferer result = new ImmutableNodeReferer();
             result.referencedValueNode = referencedValueNode;
-            result.parent = parent;
             return result;
         }
 
         private ImmutableNodeReferer() {
+        }
 
+        private ImmutableNodeReferer(IList<ImmutableNodeReferer> children) {
+            var builder = ImmutableArray.CreateBuilder<ImmutableNodeReferer>();
+            builder.AddRange(children);
+            this.children = builder.ToImmutable();
         }
 
         public bool isBranch {
@@ -199,11 +193,11 @@ namespace MetaNix.datastructures {
             }
             
             if (a.isBranch) {
-                if (a.children.Count != b.children.Count) {
+                if (a.children.Count() != b.children.Count()) {
                     return false;
                 }
 
-                for (int i = 0; i < a.children.Count; i++) {
+                for (int i = 0; i < a.children.Count(); i++) {
                     if (!checkEquality(a.children[i], b.children[i])) {
                         return false;
                     }
@@ -256,7 +250,6 @@ namespace MetaNix.datastructures {
             Ensure.ensure(refererEntry.entry.isBranch);
 
             ImmutableNodeReferer resultReferer = ImmutableNodeRefererManipulatorHelper.copy(refererEntry.entry);
-            resultReferer.parent = null;
 
             int? previousIdx = null;
 
@@ -268,7 +261,7 @@ namespace MetaNix.datastructures {
 
                 Ensure.ensureHard(previousIdx.HasValue ? idx < previousIdx : true); // make sure the index is smaller than the previous one
 
-                resultReferer.children.Insert(idx, nodeReferer);
+                resultReferer.children = resultReferer.children.Insert(idx, nodeReferer);
 
                 previousIdx = idx;
             }
@@ -279,7 +272,7 @@ namespace MetaNix.datastructures {
         public static NodeRefererEntry arrayClear(NodeRefererEntry refererEntry) {
             Ensure.ensure(refererEntry.entry.isBranch);
 
-            ImmutableNodeReferer resultReferer = ImmutableNodeReferer.makeBranch(new List<ImmutableNodeReferer>(), refererEntry.entry.parent);
+            ImmutableNodeReferer resultReferer = ImmutableNodeReferer.makeBranch(new List<ImmutableNodeReferer>());
             return new NodeRefererEntry(resultReferer);
         }
         
@@ -300,7 +293,6 @@ namespace MetaNix.datastructures {
             Ensure.ensure(refererEntry.entry.isBranch);
 
             ImmutableNodeReferer resultReferer = ImmutableNodeRefererManipulatorHelper.copy(refererEntry.entry);
-            resultReferer.parent = null;
 
             int? previousIdx = null;
 
@@ -308,8 +300,8 @@ namespace MetaNix.datastructures {
             foreach (int idx in indices.Reverse()) {
                 Ensure.ensureHard(previousIdx.HasValue ? idx < previousIdx : true); // make sure the index is smaller than the previous one
 
-                Ensure.ensure(idx < resultReferer.children.Count);
-                resultReferer.children.RemoveAt(idx);
+                Ensure.ensure(idx < resultReferer.children.Count());
+                resultReferer.children = resultReferer.children.RemoveAt(idx);
 
                 previousIdx = idx;
             }
@@ -321,23 +313,21 @@ namespace MetaNix.datastructures {
     }
 
     sealed class ImmutableNodeRefererManipulatorHelper {
-        public static ImmutableNodeReferer makeImmutableNodeRefererForArray(IList<Variant> values, ImmutableNodeReferer parent = null) {
-            ImmutableNodeReferer result = ImmutableNodeReferer.makeBranch(new List<ImmutableNodeReferer>(new ImmutableNodeReferer[values.Count]), parent);
-
+        public static ImmutableNodeReferer makeImmutableNodeRefererForArray(IList<Variant> values) {
+            var resultChildren = new List<ImmutableNodeReferer>(new ImmutableNodeReferer[values.Count]);
             for (int i = 0; i < values.Count; i++) {
-                result.children[i] = ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(values[i]));
+                resultChildren[i] = ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(values[i]));
             }
 
-            return result;
+            return ImmutableNodeReferer.makeBranch(resultChildren);
         }
 
 
-        public static ImmutableNodeReferer makeString(string value, ImmutableNodeReferer parent = null) {
-            ImmutableNodeReferer result = ImmutableNodeReferer.makeBranch(new List<ImmutableNodeReferer>(new ImmutableNodeReferer[1 + value.Length]), parent);
-
-            result.children[0] = ImmutableNodeReferer.makeNonbranch(ValueNode.makeDatatype("string"));
+        public static ImmutableNodeReferer makeString(string value) {
+            ImmutableNodeReferer result = ImmutableNodeReferer.makeBranch();
+            result.children = result.children.Add(ImmutableNodeReferer.makeNonbranch(ValueNode.makeDatatype("string")));
             for (int i = 0; i < value.Length; i++) {
-                result.children[1+i] = ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(Variant.makeInt(value[i])));
+                result.children = result.children.Add(ImmutableNodeReferer.makeNonbranch(ValueNode.makeAtomic(Variant.makeInt(value[i]))));
             }
 
             return result;
@@ -353,8 +343,8 @@ namespace MetaNix.datastructures {
             ImmutableNodeReferer result = ImmutableNodeReferer.makeBranch();
 
             // copy
-            for( int i = 0; i < element.children.Count; i++ ) {
-                result.children.Add(element.children[i]);
+            for( int i = 0; i < element.children.Count(); i++ ) {
+                result.children = result.children.Add(element.children[i]);
             }
 
             return result;

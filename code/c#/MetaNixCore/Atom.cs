@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 using MetaNix.datastructures;
 
@@ -363,17 +364,17 @@ namespace MetaNix {
             };
 
             if( isLet ) {
-                Ensure.ensure(node.children.Count == 1+2); // let and variableAssignmentNode an executionNode
+                Ensure.ensure(node.children.Length == 1+2); // let and variableAssignmentNode an executionNode
                 ImmutableNodeReferer variableAssignmentArrayNode = node.children[1];
                 ImmutableNodeReferer executionNode = node.children[2];
 
                 Ensure.ensure(variableAssignmentArrayNode.isBranch);
 
-                Ensure.ensure(variableAssignmentArrayNode.children.Count != 0);
+                Ensure.ensure(variableAssignmentArrayNode.children.Length != 0);
                 Ensure.ensure(getNativeString(variableAssignmentArrayNode.children[0]) == "array");
 
-                Ensure.ensure((variableAssignmentArrayNode.children.Count - 1) % 2 == 0); // array minus the array prefix must have a length divisable by two
-                int numberOfAssingments = (variableAssignmentArrayNode.children.Count - 1) / 2;
+                Ensure.ensure((variableAssignmentArrayNode.children.Length - 1) % 2 == 0); // array minus the array prefix must have a length divisable by two
+                int numberOfAssingments = (variableAssignmentArrayNode.children.Length - 1) / 2;
                 for ( int assigmentI = 0; assigmentI < numberOfAssingments; assigmentI++ ) {
                     string assignmentVariableName = getNativeString(variableAssignmentArrayNode.children[(1+ assigmentI*2)]);
                     ImmutableNodeReferer assignmentNode = variableAssignmentArrayNode.children[(1 + assigmentI * 2)    + 1];
@@ -393,7 +394,7 @@ namespace MetaNix {
                 node.interpretationResult = executionNode.interpretationResult;
             }
             else if( isCondition ) {
-                Ensure.ensure(node.children.Count == 1 + 3); // "if" and conditionNode and true tode and false node
+                Ensure.ensure(node.children.Length == 1 + 3); // "if" and conditionNode and true tode and false node
 
                 ImmutableNodeReferer conditionNode = node.children[1];
                 ImmutableNodeReferer trueBranchNode = node.children[2];
@@ -425,7 +426,7 @@ namespace MetaNix {
             }
             else {
                 // force all arguments to be calculated
-                for (int argIdx = 0; argIdx < node.children.Count - 1; argIdx++) {
+                for (int argIdx = 0; argIdx < node.children.Length - 1; argIdx++) {
                     ImmutableNodeReferer argumentNode = node.children[argIdx + 1];
                     if( isSequence ) {
                         tracer.sequenceElement(sequenceId, argumentNode);
@@ -435,7 +436,7 @@ namespace MetaNix {
             }
             
             if ( isSequence ) {
-                tracer.sequenceResult(sequenceId, node.children[node.children.Count-1].interpretationResult);
+                tracer.sequenceResult(sequenceId, node.children[node.children.Length - 1].interpretationResult);
                 tracer.sequenceExit(sequenceId);
             }
             else if( isCondition ) {
@@ -444,7 +445,7 @@ namespace MetaNix {
             else if( !isSpecial ) {
                 if ( isArithmetic(callName) ) {
                     // process arguments
-                    for (int argIdx = 0; argIdx < node.children.Count - 1; argIdx++) {
+                    for (int argIdx = 0; argIdx < node.children.Length - 1; argIdx++) {
                         ImmutableNodeReferer argumentValueNode = node.children[argIdx + 1].interpretationResult;
 
                         primitiveCalcResultForAdditionalArgument(argumentValueNode.value);
@@ -453,7 +454,7 @@ namespace MetaNix {
                     }
                 }
                 else if( isBasicMathFunctionWithOneParameter(callName) ) {
-                    Ensure.ensure(node.children.Count == 1+1/* one arguments*/);
+                    Ensure.ensure(node.children.Length == 1+1/* one arguments*/);
                     ImmutableNodeReferer valueNode = node.children[1 + 0].interpretationResult;
 
                     Ensure.ensure(isCastableTo(valueNode.value, Variant.EnumType.FLOAT));
@@ -492,7 +493,7 @@ namespace MetaNix {
                     tracer.callArgument(callId, node.children[1 + 0], valueNode, 0);
                 }
                 else if( callName == "shl" || callName == "shr" || callName == "bAnd" || callName == "bOr" ) { // shift
-                    Ensure.ensure(node.children.Count == 1+2/* two arguments*/);
+                    Ensure.ensure(node.children.Length == 1+2/* two arguments*/);
                     ImmutableNodeReferer leftNode = node.children[1 + 0].interpretationResult;
                     ImmutableNodeReferer rightNode = node.children[1 + 1].interpretationResult;
                     long leftValue = leftNode.value.valueInt;
@@ -523,7 +524,7 @@ namespace MetaNix {
 
                     IList<ImmutableNodeReferer> invokeParameters = new List<ImmutableNodeReferer>();
                     // collect invoke parameters
-                    for(int i=0; i < node.children.Count-1; i++) {
+                    for(int i=0; i < node.children.Length - 1; i++) {
                         invokeParameters.Add(node.children[1 + 0].interpretationResult);
                     }
 
@@ -556,8 +557,8 @@ namespace MetaNix {
         static string getNativeString(ImmutableNodeReferer node) {
             ensureNodeIsDatatype(node.children[0], "string");
 
-            char[] charArray = new char[node.children.Count - 1];
-            for(int i = 0; i < node.children.Count-1; i++) {
+            char[] charArray = new char[node.children.Length - 1];
+            for(int i = 0; i < node.children.Length - 1; i++) {
                 charArray[i] = (char)node.children[i + 1].valueInt;
             }
 
@@ -585,7 +586,6 @@ namespace MetaNix {
         InterpretationInstruction instructionSubInteger;
         InterpretationInstruction instructionMulInteger;
 
-        InterpretationInstruction instructionDerefInteger;
 
         public PrimitiveInstructionInterpreter() {
             instructionCmpNeqInteger = new InterpreterInstructionCmpInteger(InterpreterInstructionCmpInteger.EnumComparisionType.NEQ_INT);
@@ -598,8 +598,7 @@ namespace MetaNix {
             instructionAddInteger = new InterpreterInstructionAddInteger();
             instructionSubInteger = new InterpreterInstructionSubInteger();
             instructionMulInteger = new InterpreterInstructionMulInteger();
-
-            instructionDerefInteger = new InterpreterInstructionDerefInteger();
+            
         }
 
         protected override void interpret2(PrimitiveInterpretationContext interpretationContext, ImmutableNodeReferer node, IList<ImmutableNodeReferer> arguments, IList<string> argumentNames) {
@@ -640,10 +639,7 @@ namespace MetaNix {
                 instructionMulInteger.execute(interpretationContext, node);
                 return;
 
-
-                case ValueNode.EnumType.INSTR_DEREF_INT:
-                instructionDerefInteger.execute(interpretationContext, node);
-                return;
+                
             }
         }
     }
@@ -705,8 +701,8 @@ namespace MetaNix {
 
     class InterpreterInstructionAddInteger : InterpretationInstruction {
         public void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node) {
-            Ensure.ensure(node.children.Count >= 1 + 1); // arguments have to be at least   op + target
-            int numberOfArgs = node.children.Count - 1 - 1;
+            Ensure.ensure(node.children.Length >= 1 + 1); // arguments have to be at least   op + target
+            int numberOfArgs = node.children.Length - 1 - 1;
             
             long accumulator = 0;
 
@@ -715,7 +711,7 @@ namespace MetaNix {
                 accumulator += context.registers[registerIdxIteration].valueInt;
             }
 
-            long registerIdxDest = node.children[node.children.Count - 1].valueInt;
+            long registerIdxDest = node.children[node.children.Length - 1].valueInt;
             context.registers[registerIdxDest].valueInt = accumulator;
 
             context.ip++;
@@ -724,8 +720,8 @@ namespace MetaNix {
 
     class InterpreterInstructionSubInteger : InterpretationInstruction {
         public void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node) {
-            Ensure.ensure(node.children.Count >= 1 + 1); // arguments have to be at least   op + target
-            int numberOfArgs = node.children.Count - 1 - 1;
+            Ensure.ensure(node.children.Length >= 1 + 1); // arguments have to be at least   op + target
+            int numberOfArgs = node.children.Length - 1 - 1;
 
             long accumulator = 0;
 
@@ -739,7 +735,7 @@ namespace MetaNix {
                 accumulator -= context.registers[registerIdxIteration].valueInt;
             }
 
-            long registerIdxDest = node.children[node.children.Count - 1].valueInt;
+            long registerIdxDest = node.children[node.children.Length - 1].valueInt;
             context.registers[registerIdxDest].valueInt = accumulator;
 
             context.ip++;
@@ -748,8 +744,8 @@ namespace MetaNix {
 
     class InterpreterInstructionMulInteger : InterpretationInstruction {
         public void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node) {
-            Ensure.ensure(node.children.Count >= 1 + 1); // arguments have to be at least   op + target
-            int numberOfArgs = node.children.Count - 1 - 1;
+            Ensure.ensure(node.children.Length >= 1 + 1); // arguments have to be at least   op + target
+            int numberOfArgs = node.children.Length - 1 - 1;
 
             long accumulator = 1;
 
@@ -758,34 +754,14 @@ namespace MetaNix {
                 accumulator *= context.registers[registerIdxIteration].valueInt;
             }
 
-            long registerIdxDest = node.children[node.children.Count - 1].valueInt;
+            long registerIdxDest = node.children[node.children.Length - 1].valueInt;
             context.registers[registerIdxDest].valueInt = accumulator;
 
             context.ip++;
         }
     }
 
-
-    class InterpreterInstructionDerefInteger : InterpretationInstruction {
-        public void execute(PrimitiveInterpretationContext context, ImmutableNodeReferer node) {
-            ImmutableNodeReferer pathNode = node.children[1];
-            // translate path to integer array
-            int[] path = new int[pathNode.children.Count];
-            for(int i = 0;i < pathNode.children.Count; i++) {
-                path[i] = (int)pathNode.children[i].valueInt;
-            }
-
-            ImmutableNodeReferer valueNode = NodeWalker.walk(node.parent, path);
-            long value = valueNode.valueInt;
-
-            // store into register
-            long registerIdx = node.children[2].valueInt;
-            context.registers[registerIdx].valueInt = value;
-
-            context.ip++;
-        }
-    }
-
+    
 
     // acts as an registry for function names as as an dispatcher for calls by name
     public class PublicFunctionRegistryAndDispatcher {
@@ -807,34 +783,5 @@ namespace MetaNix {
         public ImmutableNodeReferer dispatchCall(string publicFunctionName, IList<ImmutableNodeReferer> parameters) {
             return callDispatcher.dispatchCallByFunctionName(publicFunctionName, parameters);
         }
-    }
-
-
-    class NodeWalker {
-        public static ImmutableNodeReferer walk(ImmutableNodeReferer entry, int[] path, int pathStartIdx = 0) {
-            Ensure.ensure(pathStartIdx <= path.Length);
-
-            if (path.Length - pathStartIdx == 0) {
-                return entry;
-            }
-
-            int currentPathElementIdx = path[pathStartIdx];
-            Ensure.ensure(currentPathElementIdx >= -1); // -1 is go to parent and all other values is go to path
-
-            if( currentPathElementIdx == -1 ) {
-                return walk(entry.parent, path, pathStartIdx+1);
-            }
-
-            return walk(entry.children[currentPathElementIdx], path, pathStartIdx + 1);
-        }
-
-        public static void walkAndAct(ImmutableNodeReferer entry, int[] path, INodeAction action, int pathStartIdx = 0) {
-            ImmutableNodeReferer node = walk(entry, path, pathStartIdx);
-            action.act(node);
-        }
-    }
-
-    interface INodeAction {
-        void act(ImmutableNodeReferer current);
     }
 }
