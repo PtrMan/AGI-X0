@@ -5,10 +5,10 @@ using MetaNix.datastructures;
 
 namespace MetaNix.dispatch {
     // looks up the function which is specialized for certain parameters
-    public class PublicDispatcherByArguments {
+    public class ArgumentBasedDispatcher {
         IHiddenDispatcher hiddenDispatcher;
 
-        public PublicDispatcherByArguments(IHiddenDispatcher hiddenDispatcher) {
+        public ArgumentBasedDispatcher(IHiddenDispatcher hiddenDispatcher) {
             this.hiddenDispatcher = hiddenDispatcher;
         }
 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace MetaNix {
-    class Ensure {
+    public class Ensure {
         static public void ensure(bool value) {
             if(!value) {
                 throw new Exception();

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using MetaNix;
+using MetaNix.datastructures;
 using MetaNix.instrumentation;
 
 namespace MetaNix {
@@ -120,7 +122,7 @@ namespace MetaNix {
 
         static void parsedTest0() {
             Functional.ParseTreeElement parseTree = Functional.parseRecursive("(bAnd (shl value i) 1)");
-            NodeRefererEntry node = TranslateFunctionalParseTree.translateRecursive(parseTree);
+            NodeRefererEntry node = FunctionalToParseTreeTranslator.translateRecursive(parseTree);
 
             int debugHere = 1;
         }
@@ -148,15 +150,15 @@ namespace MetaNix {
             instrObserver.resetCountersAndSetEnableTimingInstrumentation(true);
             instrHiddenDispatcher.dispatchObservers.Add(instrObserver);
 
-            dispatch.PublicDispatcherByArguments publicDispatcherByArguments = new dispatch.PublicDispatcherByArguments(instrHiddenDispatcher);
+            dispatch.ArgumentBasedDispatcher publicDispatcherByArguments = new dispatch.ArgumentBasedDispatcher(instrHiddenDispatcher);
             // dispatcher which accepts function names
             dispatch.PublicCallDispatcher callDispatcher = new dispatch.PublicCallDispatcher(publicDispatcherByArguments);
             
             Functional.ParseTreeElement parseTree = Functional.parseRecursive("(let [value 4 i 1   read2 (bAnd (shl value (+ i 1)) 1)] read2)");
-            NodeRefererEntry rootNode = TranslateFunctionalParseTree.translateRecursive(parseTree);
+            NodeRefererEntry rootNode = FunctionalToParseTreeTranslator.translateRecursive(parseTree);
 
             { // set descriptor to route all public function id's 0 to hidden function id 0
-                dispatch.PublicDispatcherByArguments.FunctionDescriptor fnDescriptor = new dispatch.PublicDispatcherByArguments.FunctionDescriptor();
+                dispatch.ArgumentBasedDispatcher.FunctionDescriptor fnDescriptor = new dispatch.ArgumentBasedDispatcher.FunctionDescriptor();
                 fnDescriptor.wildcardHiddenFunctionId = dispatch.HiddenFunctionId.make(0);
                 publicDispatcherByArguments.setFunctionDescriptor(dispatch.PublicFunctionId.make(0), fnDescriptor);
             }
@@ -175,16 +177,33 @@ namespace MetaNix {
             System.Console.WriteLine(instrObserver.getInstrumentation(dispatch.HiddenFunctionId.make(0)).calltimeMinInNs);
             System.Console.WriteLine(instrObserver.getInstrumentation(dispatch.HiddenFunctionId.make(0)).calltimeSumInNs);
 
-            Statistics statistics = new Statistics(instrObserver);
-            statistics.doIt();
+            //Statistics statistics = new Statistics(instrObserver);
+            //statistics.doIt();
 
             int debugMe = 0;
         }
 
 
+        static void agentTest0() {
+            ImmutableNodeReferer orginalArray = ImmutableNodeRefererManipulatorHelper.makeImmutableNodeRefererForArray(new List<Variant> {Variant.makeInt(5),Variant.makeInt(2),Variant.makeInt(7) });
+
+            StochasticBag stochasticBag = new StochasticBag();
+            stochasticBag.propabilities = new List<float> { 0.2f, 0.6f, 0.2f };
+
+            Random random = new Random();
+
+            for(int i = 0; i < 15; i++) {
+                Console.WriteLine("choice={0}", stochasticBag.getValueByUniformRandomVariable((float)random.NextDouble()));
+
+                // TODO< manipulate array and print to console >
+            }
+
+            int deb = 0;
+        }
+
 
         static void Main(string[] args) {
-            parseInterpretSurrogateTest0();
+            agentTest0();
 
             for (;;) {
                 //double n = addX(5.0, 2.0, 3.0);

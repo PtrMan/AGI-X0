@@ -312,7 +312,7 @@ namespace MetaNix.datastructures {
         // TODO< array subarray, concatenate >
     }
 
-    sealed class ImmutableNodeRefererManipulatorHelper {
+    public sealed class ImmutableNodeRefererManipulatorHelper {
         public static ImmutableNodeReferer makeImmutableNodeRefererForArray(IList<Variant> values) {
             var resultChildren = new List<ImmutableNodeReferer>(new ImmutableNodeReferer[values.Count]);
             for (int i = 0; i < values.Count; i++) {

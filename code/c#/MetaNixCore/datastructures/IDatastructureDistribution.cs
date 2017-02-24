@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace MetaNix.datastructures {
     // used to select the element index over an distribution
     // is an unification for nars-bag and stochastic selection mechanisms of arrays
-    interface IDatastructureDistribution {
+    public interface IDatastructureDistribution {
         // \param uniformDistributionValue [0..1)
         int getIndexByUniformRandomVariable(float uniformDistributionValue, int numberOfElements);
     }

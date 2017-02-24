@@ -86,11 +86,11 @@ namespace MetaNix.dispatch {
     public class PublicCallDispatcher {
         //public SurrogateProvider surrogateProvider;
 
-        PublicDispatcherByArguments publicDispatcherByArguments;
+        ArgumentBasedDispatcher publicDispatcherByArguments;
 
         Dictionary<string, PublicFunctionId> functionIdByFunctionname = new Dictionary<string, PublicFunctionId>();
 
-        public PublicCallDispatcher(PublicDispatcherByArguments publicDispatcherByArguments) {
+        public PublicCallDispatcher(ArgumentBasedDispatcher publicDispatcherByArguments) {
             this.publicDispatcherByArguments = publicDispatcherByArguments;
         }
 
