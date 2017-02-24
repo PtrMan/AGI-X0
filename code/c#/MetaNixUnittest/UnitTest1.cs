@@ -12,7 +12,7 @@ namespace MetaNixUnittest {
     public class UnitTest1 {
         NodeRefererEntry interpretAndReturnRootnode(string functionalProgram, IList < ImmutableNodeReferer>  parameterValues = null, IList<String> parameterNames = null) {
             Functional.ParseTreeElement parseTree = Functional.parseRecursive(functionalProgram);
-            NodeRefererEntry rootnode = TranslateFunctionalParseTree.translateRecursive(parseTree);
+            NodeRefererEntry rootnode = FunctionalToParseTreeTranslator.translateRecursive(parseTree);
 
             FunctionalInterpreter functionalInterpreter = new FunctionalInterpreter();
             functionalInterpreter.tracer = new NullFunctionalInterpreterTracer();
@@ -99,7 +99,7 @@ namespace MetaNixUnittest {
             InstrumentationHiddenDispatcher instrHiddenDispatcher = new InstrumentationHiddenDispatcher(shadowableHiddenDispatcher);
 
 
-            PublicDispatcherByArguments publicDispatcherByArguments = new PublicDispatcherByArguments(instrHiddenDispatcher);
+            ArgumentBasedDispatcher publicDispatcherByArguments = new ArgumentBasedDispatcher(instrHiddenDispatcher);
 
             PublicCallDispatcher callDispatcher = new PublicCallDispatcher(publicDispatcherByArguments);
 
@@ -108,10 +108,10 @@ namespace MetaNixUnittest {
             
 
             Functional.ParseTreeElement parseTree = Functional.parseRecursive("3");
-            NodeRefererEntry rootnodeCalled = TranslateFunctionalParseTree.translateRecursive(parseTree);
+            NodeRefererEntry rootnodeCalled = FunctionalToParseTreeTranslator.translateRecursive(parseTree);
 
             { // set descriptor to route all public function id's 0 to hidden function id 0
-                PublicDispatcherByArguments.FunctionDescriptor fnDescriptor = new PublicDispatcherByArguments.FunctionDescriptor();
+                ArgumentBasedDispatcher.FunctionDescriptor fnDescriptor = new ArgumentBasedDispatcher.FunctionDescriptor();
                 fnDescriptor.wildcardHiddenFunctionId = HiddenFunctionId.make(0);
                 publicDispatcherByArguments.setFunctionDescriptor(PublicFunctionId.make(0), fnDescriptor);
             }
@@ -124,7 +124,7 @@ namespace MetaNixUnittest {
             functionalContext.publicFnRegistryAndDispatcher.addFunction("a"); // register so the dispatcher used by the interpreter knows that the function exists
 
             Functional.ParseTreeElement parseTree2 = Functional.parseRecursive("(a)");
-            NodeRefererEntry rootnodeCallee = TranslateFunctionalParseTree.translateRecursive(parseTree2);
+            NodeRefererEntry rootnodeCallee = FunctionalToParseTreeTranslator.translateRecursive(parseTree2);
 
 
             functionalInterpreter.interpret(functionalContext, rootnodeCallee.entry, new List<ImmutableNodeReferer>(), new List<string>());

@@ -6,28 +6,52 @@ namespace MetaNix.fringeAi.causal {
 
     // small simple (slow) implementation of causal set algorithm(s)
     // from 2017
+    
+    
+    public struct CausalIndirectionIndex {
+        public CausalIndirectionIndex(uint value) {
+            this.value = value;
+        }
 
-
+        public uint value;
+    }
 
     // definition of indirex indirection type
     // used to point with an index to the index of an element in the causal set
     //alias Typedef!long IdxInd;
 
-    class Node {
-        public uint[] next = new uint[0]; // points to the children elements of this element
+    public class CausalSetNode {
+        public IList<CausalIndirectionIndex> next = new List<CausalIndirectionIndex>(); // points to the children elements of this element (are indirect indices)
 
-        public CausalSystemBlock content; // embeded block, can be null
+        public CausalSetSystemBlock content; // embeded block, can be null
+
+        //public uint? index;
     }
 
     // every block has it's local own nodes and indirection array, the indices are not globally defined
-    class CausalSystemBlock {
+    public class CausalSetSystemBlock {
         // indirection to nodes 
         public IList<uint> indirectionArray = new List<uint>();
 
-        public IList<Node> nodes = new List<Node>();
+        public IList<CausalSetNode> nodes = new List<CausalSetNode>();
 
-        uint translateIndirectIndexToIndex(uint idxInd) {
-            return indirectionArray[(int)idxInd];
+        // helper for readability
+        public CausalSetNode getNodeByIndex(uint index) {
+            return nodes[(int)index];
+        }
+
+        public uint translateIndirectIndexToIndex(CausalIndirectionIndex idxInd) {
+            return indirectionArray[(int)idxInd.value];
+        }
+
+        //public void updateNodeIndices() {
+        //    for (uint i = 0; i < nodes.Count; i++) {
+        //        nodes[(int)i].index = i;
+        //    }
+        //}
+
+        public IList<CausalSetNode> getNodesWithNodeAsChildren(CausalIndirectionIndex targetIndirectionIndex) {
+            return nodes.Where(v => v.next.Contains(targetIndirectionIndex)).ToList();
         }
 
         uint indirectionCounter; // counter, doesn't reflect the # of elements in the arrays
@@ -76,8 +100,8 @@ namespace MetaNix.fringeAi.causal {
 
             followerSet.Add(entryIdx);
 
-            Node selectedNode = this.nodes[(int)entryIdx];
-            foreach (uint iFollowerIndirectionIdx in selectedNode.next) {
+            CausalSetNode selectedNode = this.nodes[(int)entryIdx];
+            foreach (CausalIndirectionIndex iFollowerIndirectionIdx in selectedNode.next) {
                 uint followerIndex = this.translateIndirectIndexToIndex(iFollowerIndirectionIdx);
                 this.getRandomFollowerSetInternalRecursive(followerIndex, followerSet, terminationPropability);
             }
@@ -98,12 +122,12 @@ namespace MetaNix.fringeAi.causal {
 
 
 
-    class Linearizer {
-        ICausalSystemBlockAccessor causalSystemBlockAccessor;
+    public class Linearizer {
+        ICausalSetSystemBlockAccessor causalSystemBlockAccessor;
 
         public Random random = new Random();
 
-        public IList<uint> linearlize(CausalSystemBlock causalSystemBlock) {
+        public IList<uint> linearlize(CausalSetSystemBlock causalSystemBlock) {
             IList<uint> linearlization = new List<uint>(); // indices of nodes of the linearlization
 
             uint[] indicesOfEntryNodes = causalSystemBlockAccessor.getEntryIndicesAsList(causalSystemBlock);
@@ -133,26 +157,26 @@ namespace MetaNix.fringeAi.causal {
         }
     }
 
-    interface ICausalSystemBlockAccessor {
-        uint[] getEntryIndicesAsList(CausalSystemBlock causalSystemBlock);
-        ISet<uint> getNextIndicesOfNodeAsSet(CausalSystemBlock causalSystemBlock, uint nodeIdx);
+    public interface ICausalSetSystemBlockAccessor {
+        uint[] getEntryIndicesAsList(CausalSetSystemBlock causalSystemBlock);
+        ISet<uint> getNextIndicesOfNodeAsSet(CausalSetSystemBlock causalSystemBlock, uint nodeIdx);
     }
 
     // implementation of CausalSystemBlockAccessor for the type "CausalSystemBlock"
-    class CausalSystemBlockAccessor : ICausalSystemBlockAccessor {
-        public uint[] getEntryIndicesAsList(CausalSystemBlock causalSystemBlock) {
+    public class CausalSetSystemBlockAccessor : ICausalSetSystemBlockAccessor {
+        public uint[] getEntryIndicesAsList(CausalSetSystemBlock causalSystemBlock) {
             return causalSystemBlock.entryIndices;
         }
 
-        public ISet<uint> getNextIndicesOfNodeAsSet(CausalSystemBlock causalSystemBlock, uint nodeIdx) {
-            uint[] nodeIndicesAsList = causalSystemBlock.nodes[(int)nodeIdx].next.Select(n => causalSystemBlock.indirectionArray[(int)n]).ToArray();
+        public ISet<uint> getNextIndicesOfNodeAsSet(CausalSetSystemBlock causalSystemBlock, uint nodeIdx) {
+            uint[] nodeIndicesAsList = causalSystemBlock.nodes[(int)nodeIdx].next.Select(n => causalSystemBlock.indirectionArray[(int)n.value]).ToArray();
             return SetHelpers.toSet(nodeIndicesAsList);
         }
     }
 
 
 
-    sealed class ArrayHelpers {
+    public sealed class ArrayHelpers {
         public static uint[] copy(uint[] arr) {
             uint[] result = new uint[arr.Length];
             for (int i = 0; i < arr.Length; i++) {
@@ -162,7 +186,7 @@ namespace MetaNix.fringeAi.causal {
         }
     }
 
-    sealed class SetHelpers {
+    public sealed class SetHelpers {
         public static ISet<uint> toSet(uint[] arr) {
             ISet<uint> result = new HashSet<uint>();
             foreach (uint iArr in arr) {
@@ -203,86 +227,56 @@ namespace MetaNix.fringeAi.causal {
 
     }
 
-    
 
-    class Program {
+    // public for unittest
+    public sealed class CausalSetNodeFuser {
+        // creates a new block with the content as the fused nodes and fuses the nodes in the "entryBlock" and returns the created "CausalSystemBlock" which contains all fused nodes on the next level
+        static public CausalSetSystemBlock fuse(CausalSetSystemBlock entryBlock, uint[] indices) {
+            CausalSetSystemBlock higherLevelBlock = new CausalSetSystemBlock();
 
+            // fill higherLevelBlock with as many nodes as required
+            for (uint i = 0; i < indices.Length; i++) {
+                higherLevelBlock.nodes.Add(new CausalSetNode());
+                higherLevelBlock.indirectionArray.Add(higherLevelBlock.getNewIndirectionNumber());
+            }
 
-        // roll one bit to the left
-        static ulong rolLeft1(ulong number) {
-            ulong carryOver = number >> (64 - 1);
-            ulong shiftedToLeft = number << 1;
-            return carryOver | shiftedToLeft;
-        }
-
-        class Obj {
-            public int a;
-            public int b;
-        }
-
-        static void Main(string[] args) {
-            //IList<Obj> input = null;
-            //IOrderedEnumerable<Obj> ordered = input.OrderBy(v => v.a);
-
-
-            /* test for old impl
-            CausalDag dag = new CausalDag();
-
-            dag.elements.Add(new CausalDagElement());
-            dag.elements.Add(new CausalDagElement());
-            dag.elements.Add(new CausalDagElement());
-
-            dag.elements[0].childrenIndices = new List<uint>{2};
-            dag.elements[0].marker = true;
-            dag.elements[1].childrenIndices = new List<uint>{2};
-            dag.elements[1].marker = true;
-
-            CausalDag resultDag = dag.fuseMarkedElements();
-
-                * 
-                */
-
-
-
-
-            CausalSystemBlock testCausalSystemBlock = new CausalSystemBlock();
-
-            // TODO< fill it >
-            testCausalSystemBlock.nodes.Add(new Node());
-            testCausalSystemBlock.indirectionArray.Add(testCausalSystemBlock.getNewIndirectionNumber());
-
-            testCausalSystemBlock.nodes.Add(new Node());
-            testCausalSystemBlock.indirectionArray.Add(testCausalSystemBlock.getNewIndirectionNumber());
-
-            testCausalSystemBlock.nodes.Add(new Node());
-            testCausalSystemBlock.indirectionArray.Add(testCausalSystemBlock.getNewIndirectionNumber());
-
-            testCausalSystemBlock.nodes.Add(new Node());
-            testCausalSystemBlock.indirectionArray.Add(testCausalSystemBlock.getNewIndirectionNumber());
-
-            testCausalSystemBlock.nodes.Add(new Node());
-            testCausalSystemBlock.indirectionArray.Add(testCausalSystemBlock.getNewIndirectionNumber());
-
-            testCausalSystemBlock.nodes[0].next = new uint[] { 1, 2 };
-
-            testCausalSystemBlock.nodes[2].next = new uint[] { 3, 4 };
-
-
-            float terminationPropability = 0.1f;
-            uint entryIdx = 0;
-            uint[] result = testCausalSystemBlock.getRandomFollowerList(entryIdx, terminationPropability);
-
-            foreach (uint i in result) {
-                Console.Write("{0},", i);
+            // translates the index in entryBlock to the index in higherLevelBlock
+            Dictionary<uint, uint> indexToElementInHigherLevelBlock = new Dictionary<uint, uint>();
+            for (uint i = 0; i < indices.Length; i++) {
+                uint redirectedIndex = indices[i];
+                indexToElementInHigherLevelBlock[redirectedIndex] = i;
             }
 
 
+            // rewire from entryBlock the subnetwork to HigherLevelBlock
+            foreach (Tuple<uint, CausalSetNode> iterationIndexAndNodePair in indices.Select(index => new Tuple<uint, CausalSetNode>(index, entryBlock.getNodeByIndex(index)))) {
+                uint higherLevelBlock_index = indexToElementInHigherLevelBlock[iterationIndexAndNodePair.Item1];
+
+                var nextValidIndicesFromIterationNode =
+                    iterationIndexAndNodePair.Item2.next
+                        .Select(nextIndirection => entryBlock.translateIndirectIndexToIndex(nextIndirection))
+                        .Where(index => indexToElementInHigherLevelBlock.ContainsKey(index)); // if the node points to an node which is not in nextLevelBlock then we ignore it
+
+                foreach (uint iterationNextValidIndexFromIterationNode in nextValidIndicesFromIterationNode) {
+                    uint higherLevelBlock_nextIndex = indexToElementInHigherLevelBlock[iterationNextValidIndexFromIterationNode];
+
+                    // make sure that the indirection is an identity
+                    // only this way we don't have to do an inverse lookup to get the CausalIndirectionIndex
+                   Ensure.ensureHard(higherLevelBlock.translateIndirectIndexToIndex(new CausalIndirectionIndex(higherLevelBlock_nextIndex)) == higherLevelBlock_nextIndex);
+
+                    higherLevelBlock.nodes[(int)higherLevelBlock_index].next.Add(new CausalIndirectionIndex(higherLevelBlock_nextIndex));
+                }
+            }
 
 
+            // now do the fuse
+            uint fuseAsIndirectionNumber = entryBlock.getNewIndirectionNumber();
+            entryBlock.fuse(indices, fuseAsIndirectionNumber);
 
-
-
-            int x = 0;
+            return higherLevelBlock;
         }
     }
+
+
+
 }
