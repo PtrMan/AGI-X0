@@ -5,6 +5,11 @@ using MetaNix;
 using MetaNix.datastructures;
 using MetaNix.instrumentation;
 
+using MetaNix.resourceManagement.compute;
+using MetaNix.report;
+using MetaNix.attention;
+using MetaNix.resourceManagement.compute;
+
 namespace MetaNix {
     class CellularAutomata {
         public static int calc(int rule, uint bits, int value) {
@@ -203,6 +208,40 @@ namespace MetaNix {
 
 
         static void Main(string[] args) {
+
+            ComputeContext computeContext = new ComputeContext();
+
+            ComputeExecutor computeExecutor = new ComputeExecutor(computeContext);
+            
+
+            computeContext.computeBudgetedTasks.list.Add(new ComputeNoOperationPerformedBugetedTask(Budget.makeByPriorityAndDecayExponent(1.0, -0.9), "testA"));
+            computeContext.computeBudgetedTasks.list.Add(new ComputeNoOperationPerformedBugetedTask(Budget.makeByPriorityAndDecayExponent(0.5, -2.4), "testB"));
+
+
+            //ComputeContextResourceRecorder computeResourceRecorder = new ComputeContextResourceRecorder(computeContext);
+
+            for(int i=0;i<40;i++) {
+                computeExecutor.run(0.1);
+            }
+
+            computeContext.computeBudgetedTasks.list.Add(new ComputeNoOperationPerformedBugetedTask(Budget.makeByPriorityAndDecayExponent(0.5, -2.4), "testCdyn"));
+
+            for (int i = 0; i < 20; i++) {
+                computeExecutor.run(0.1);
+            }
+
+            computeContext.computeBudgetedTasks.list.Add(new ComputeNoOperationPerformedBugetedTask(Budget.makeByPriorityAndDecayExponent(0.5, -2.4), "testDdyn"));
+
+            for (int i = 0; i < 50; i++) {
+                computeExecutor.run(0.1);
+            }
+
+            MathematicaReportGenerator mathematicaReportGenerator = new MathematicaReportGenerator(computeExecutor.recorder);
+            
+            
+            Console.WriteLine(mathematicaReportGenerator.generate().getContentAsString());
+
+
             agentTest0();
 
             for (;;) {

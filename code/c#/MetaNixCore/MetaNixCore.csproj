@@ -40,7 +40,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Atom.cs" />
+    <Compile Include="attention\Budget.cs" />
+    <Compile Include="datastructures\BudgetedCollection.cs" />
+    <Compile Include="datastructures\BudgetedDatastructure.cs" />
     <Compile Include="datastructures\IDatastructureDistribution.cs" />
+    <Compile Include="datastructures\HasBudget.cs" />
     <Compile Include="datastructures\StochasticBag.cs" />
     <Compile Include="dispatch\ArgumentBasedDispatcher.cs" />
     <Compile Include="dispatch\FunctionIds.cs" />
@@ -59,6 +63,17 @@
     <Compile Include="Misc.cs" />
     <Compile Include="datastructures\Node.cs" />
     <Compile Include="ProgramParser.cs" />
+    <Compile Include="report\IHumanReadableReport.cs" />
+    <Compile Include="report\HumanReadableReportGenerator.cs" />
+    <Compile Include="report\MathematicaReport.cs" />
+    <Compile Include="report\MathematicaReportGenerator.cs" />
+    <Compile Include="resourceManagement\compute\ComputeBudgetedTask.cs" />
+    <Compile Include="resourceManagement\compute\ComputeBudgetedTaskCollection.cs" />
+    <Compile Include="resourceManagement\compute\ComputeContext.cs" />
+    <Compile Include="resourceManagement\compute\ComputeContextResourceRecorder.cs" />
+    <Compile Include="resourceManagement\compute\ComputeExecutor.cs" />
+    <Compile Include="resourceManagement\compute\ComputeNoOperationPerformedBugetedTask.cs" />
+    <Compile Include="schedueler\ITask.cs" />
     <Compile Include="symbolic\Stringmanipulation.cs" />
     <Compile Include="TranslateFunctionalParseTree.cs" />
     <Compile Include="Variant.cs" />
@@ -70,5 +85,6 @@
       <HintPath>..\MetaNix\packages\System.Collections.Immutable.1.3.1\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
