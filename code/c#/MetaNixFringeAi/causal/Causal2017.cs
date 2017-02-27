@@ -358,8 +358,8 @@ namespace MetaNix.fringeAi.causal {
             var reversedSortedIndices = indices.Reverse();
             foreach ( uint iterationNodeIndex in reversedSortedIndices ) {
                 // redirect all indices pointing at the element behind the removed one to one before it
-                modifiedEntryBlock_localVar.indirectionArray = modifiedEntryBlock_localVar.indirectionArray.Select(v => v > iterationNodeIndex ? v - 1 : v).Distinct().ToList();
-
+                modifiedEntryBlock_localVar.indirectionArray = modifiedEntryBlock_localVar.indirectionArray.Select(v => v > iterationNodeIndex ? v - 1 : v).ToList();
+                
                 modifiedEntryBlock_localVar.nodes.RemoveAt((int)iterationNodeIndex);
             }
 

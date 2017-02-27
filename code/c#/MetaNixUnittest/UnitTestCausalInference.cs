@@ -300,10 +300,11 @@ namespace MetaNixUnittest {
             testCausalBlock.nodes[0].next = new CausalIndirectionIndex[] { new CausalIndirectionIndex(2) };
             testCausalBlock.nodes[2].next = new CausalIndirectionIndex[] { new CausalIndirectionIndex(1) };
 
-            CausalSetSystemBlock fused = CausalSetNodeFuser.fuse(testCausalBlock, out testCausalBlock,  new List<uint> { 1, 2 });
+            CausalSetSystemBlock afterFuse;
+            CausalSetSystemBlock fused = CausalSetNodeFuser.fuse(testCausalBlock, out afterFuse,  new List<uint> { 1, 2 });
 
-            Assert.AreEqual(testCausalBlock.nodes[0].next.Count, 1);
-            Assert.IsTrue(testCausalBlock.translateIndirectIndexToIndex(testCausalBlock.nodes[0].next[0]) == 1); // first node must point to next one, which got fused
+            Assert.AreEqual(afterFuse.nodes[0].next.Count, 1);
+            Assert.IsTrue(afterFuse.translateIndirectIndexToIndex(testCausalBlock.nodes[0].next[0]) == 1); // first node must point to next one, which got fused
         }
 
         
@@ -352,7 +353,7 @@ namespace MetaNixUnittest {
             CausalSetSystemBlock testCausalBlock = buildSystemBlock1();
 
             CausalSetSystemBlock parentAfterFuse;
-            CausalSetSystemBlock fused4 = CausalSetNodeFuser.fuse(testCausalBlock, out parentAfterFuse, new uint[] { 0, 1 });
+            CausalSetSystemBlock fused4 = CausalSetNodeFuser.fuse(testCausalBlock, out parentAfterFuse, new uint[] { 0, 2 });
 
             // should collapse to an graph 0 --> 1
             Assert.AreEqual(fused4.nodes.Count, 2);
@@ -367,7 +368,7 @@ namespace MetaNixUnittest {
             CausalSetSystemBlock testCausalBlock = buildSystemBlock1();
 
             CausalSetSystemBlock parentAfterFuse;
-            CausalSetSystemBlock fused2 = CausalSetNodeFuser.fuse(testCausalBlock, out parentAfterFuse, new uint[] { 0, 1 });
+            CausalSetSystemBlock fused2 = CausalSetNodeFuser.fuse(testCausalBlock, out parentAfterFuse, new uint[] { 2, 3 });
 
             // should collapse to an graph 0 --> 1
             Assert.AreEqual(fused2.nodes.Count, 2);
@@ -382,9 +383,9 @@ namespace MetaNixUnittest {
             CausalSetSystemBlock testCausalBlock = buildSystemBlock1();
 
             CausalSetSystemBlock parentAfterFuse;
-            CausalSetSystemBlock fused3 = CausalSetNodeFuser.fuse(testCausalBlock, out parentAfterFuse, new uint[] { 0, 1 });
-
-            // node 2 doesn't point to anything in the subgraph
+            CausalSetSystemBlock fused3 = CausalSetNodeFuser.fuse(testCausalBlock, out parentAfterFuse, new uint[] { 2 });
+            
+            // node 2 doesn't point to anythin in the subgraph
             Assert.AreEqual(fused3.nodes.Count, 1);
             Assert.AreEqual(fused3.nodes[0].next.Count, 0);
 
