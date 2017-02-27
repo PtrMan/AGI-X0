@@ -49,6 +49,20 @@ namespace MetaNix.fringeAi.causal {
             result.globalIndex = globalIndex;
             return result;
         }
+
+        public CausalSetNode copyDeep() {
+            Ensure.ensureHard(content == null);
+            CausalSetNode result = new CausalSetNode();
+            result.next = ListHelpers.copy(next);
+            result.nodeIndexInParentSystemBlock = nodeIndexInParentSystemBlock;
+            result.globalIndex = globalIndex;
+            if( content != null ) {
+                result.content = result.content.copyDeep();
+            }
+
+            return result;
+        }
+
     }
 
     // every block has it's local own nodes and indirection array, the indices are not globally defined
@@ -62,11 +76,26 @@ namespace MetaNix.fringeAi.causal {
         public CausalSetSystemBlock copyShallow() {
             CausalSetSystemBlock copyResult = new CausalSetSystemBlock();
             copyResult.indirectionArray = ArrayHelpers.copy(indirectionArray);
-            foreach( CausalSetNode iteratorNode in nodes ) {
+            copyResult.indirectionCounter = indirectionCounter;
+            copyResult.entryIndices = entryIndices != null ? ListHelpers.copy(entryIndices) : null;
+            foreach ( CausalSetNode iteratorNode in nodes ) {
                 copyResult.nodes.Add(iteratorNode.copyShallow());
             }
             return copyResult;
         }
+
+        public CausalSetSystemBlock copyDeep() {
+            CausalSetSystemBlock copyResult = new CausalSetSystemBlock();
+            copyResult.indirectionArray = ArrayHelpers.copy(indirectionArray);
+            copyResult.indirectionCounter = indirectionCounter;
+            copyResult.entryIndices = entryIndices != null ? ListHelpers.copy(entryIndices) : null;
+
+            foreach (CausalSetNode iteratorNode in nodes) {
+                copyResult.nodes.Add(iteratorNode.copyDeep());
+            }
+            return copyResult;
+        }
+
 
         // helper for readability
         public CausalSetNode getNodeByIndex(uint index) {
@@ -264,7 +293,10 @@ namespace MetaNix.fringeAi.causal {
     // public for unittest
     public sealed class CausalSetNodeFuser {
         // creates a new block with the content as the fused nodes and fuses the nodes in the "entryBlock" and returns the created "CausalSystemBlock" which contains all fused nodes on the next level
-        static public CausalSetSystemBlock fuse(CausalSetSystemBlock entryBlock, IList<uint> indices) {
+        // entryblock doesn't get modified
+        static public CausalSetSystemBlock fuse(CausalSetSystemBlock entryBlock, out CausalSetSystemBlock modifiedEntryBlock, IList<uint> indices) {
+            CausalSetSystemBlock modifiedEntryBlock_localVar = entryBlock.copyDeep();
+
             CausalSetSystemBlock higherLevelBlock = new CausalSetSystemBlock();
 
             // fill higherLevelBlock with as many nodes as required
@@ -285,12 +317,12 @@ namespace MetaNix.fringeAi.causal {
 
 
             // rewire from entryBlock the subnetwork to HigherLevelBlock
-            foreach (Tuple<uint, CausalSetNode> iterationIndexAndNodePair in indices.Select(index => new Tuple<uint, CausalSetNode>(index, entryBlock.getNodeByIndex(index)))) {
+            foreach (Tuple<uint, CausalSetNode> iterationIndexAndNodePair in indices.Select(index => new Tuple<uint, CausalSetNode>(index, modifiedEntryBlock_localVar.getNodeByIndex(index)))) {
                 uint higherLevelBlock_index = indexToElementInHigherLevelBlock[iterationIndexAndNodePair.Item1];
 
                 var nextValidIndicesFromIterationNode =
                     iterationIndexAndNodePair.Item2.next
-                        .Select(nextIndirection => entryBlock.translateIndirectIndexToIndex(nextIndirection))
+                        .Select(nextIndirection => modifiedEntryBlock_localVar.translateIndirectIndexToIndex(nextIndirection))
                         .Where(index => indexToElementInHigherLevelBlock.ContainsKey(index)); // if the node points to an node which is not in nextLevelBlock then we ignore it
 
                 foreach (uint iterationNextValidIndexFromIterationNode in nextValidIndicesFromIterationNode) {
@@ -311,26 +343,27 @@ namespace MetaNix.fringeAi.causal {
  
                 uint higherLevelBlock_index = indexToElementInHigherLevelBlock[entryBlockIndex];
 
-                higherLevelBlock.nodes[(int)higherLevelBlock_index].globalIndex = entryBlock.nodes[(int)entryBlockIndex].globalIndex;
+                higherLevelBlock.nodes[(int)higherLevelBlock_index].globalIndex = modifiedEntryBlock_localVar.nodes[(int)entryBlockIndex].globalIndex;
             }
 
             // now do the fuse
-            uint fuseAsIndirectionNumber = entryBlock.getNewIndirectionNumber();
-            entryBlock.fuse(indices, fuseAsIndirectionNumber);
+            uint fuseAsIndirectionNumber = modifiedEntryBlock_localVar.getNewIndirectionNumber();
+            modifiedEntryBlock_localVar.fuse(indices, fuseAsIndirectionNumber);
 
             // add fused node
-            entryBlock.nodes.Add(new CausalSetNode(higherLevelBlock));
+            modifiedEntryBlock_localVar.nodes.Add(new CausalSetNode(higherLevelBlock));
 
             // remove fused nodes and rewire indirectionArray accordingly
             indices.ToList().Sort();
             var reversedSortedIndices = indices.Reverse();
             foreach ( uint iterationNodeIndex in reversedSortedIndices ) {
                 // redirect all indices pointing at the element behind the removed one to one before it
-                entryBlock.indirectionArray = entryBlock.indirectionArray.Select(v => v > iterationNodeIndex ? v - 1 : v).ToList();
+                modifiedEntryBlock_localVar.indirectionArray = modifiedEntryBlock_localVar.indirectionArray.Select(v => v > iterationNodeIndex ? v - 1 : v).Distinct().ToList();
 
-                entryBlock.nodes.RemoveAt((int)iterationNodeIndex);
+                modifiedEntryBlock_localVar.nodes.RemoveAt((int)iterationNodeIndex);
             }
 
+            modifiedEntryBlock = modifiedEntryBlock_localVar;
 
             return higherLevelBlock;
         }
@@ -393,7 +426,8 @@ namespace MetaNix.fringeAi.causal {
             for(int rewriteChainIndex = 0; rewriteChainIndex < rewriteTreeElementsFromRootToChildrens.Count(); rewriteChainIndex++) {
                 RewriteTreeElement iterationRewriteTreeElement = rewriteTreeElementsFromRootToChildrens[rewriteChainIndex];
 
-                CausalSetSystemBlock afterFusion = CausalSetNodeFuser.fuse(currentTopBlock, iterationRewriteTreeElement.indicesOfParentNodesForRewrite.ToList());
+                CausalSetSystemBlock modifiedParent;
+                CausalSetSystemBlock afterFusion = CausalSetNodeFuser.fuse(currentTopBlock, out modifiedParent, iterationRewriteTreeElement.indicesOfParentNodesForRewrite.ToList());
 
                 currentTopBlock = afterFusion;
             }
@@ -529,7 +563,7 @@ namespace MetaNix.fringeAi.causal {
             unmodifiedRootSystemBlock = entryBlock;
 
             rootRewriteTreeElement = new RewriteTreeElement();
-            buildRewriteTreeRecursive(rootRewriteTreeElement, entryBlock);
+            buildRewriteTreeRecursive(rootRewriteTreeElement, entryBlock.copyDeep());
         }
 
         void buildRewriteTreeRecursive(RewriteTreeElement parentRewriteTreeElement, CausalSetSystemBlock recursedSystemBlock) {
@@ -546,7 +580,7 @@ namespace MetaNix.fringeAi.causal {
                 
 
                 // rewrite
-                rewriteTreeElementAfterRewrite.blockAfterRewrite = CausalSetNodeFuser.fuse(recursedSystemBlock, rewriteTreeElementAfterRewrite.indicesOfParentNodesForRewrite.ToList());
+                rewriteTreeElementAfterRewrite.blockAfterRewrite = CausalSetNodeFuser.fuse(recursedSystemBlock, out recursedSystemBlock, rewriteTreeElementAfterRewrite.indicesOfParentNodesForRewrite.ToList());
 
                 parentRewriteTreeElement.childrenRewrites.Add(rewriteTreeElementAfterRewrite);
             }

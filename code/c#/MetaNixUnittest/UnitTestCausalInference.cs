@@ -48,9 +48,9 @@ namespace MetaNixUnittest {
             GlobalLinearization linearization = entropyMinimizer.getBestGlobalLinearizationAndEnergy(out energyOfLinearization);
             Assert.AreEqual(energyOfLinearization, 2);
 
-            Assert.AreEqual(linearization.linearization[0], 0);
-            Assert.AreEqual(linearization.linearization[1], 1);
-            Assert.AreEqual(linearization.linearization[2], 2);
+            Assert.IsTrue(linearization.linearization[0] == 0);
+            Assert.IsTrue(linearization.linearization[1] == 1);
+            Assert.IsTrue(linearization.linearization[2] == 2);
 
             entropyMinimizer.finish();
 
@@ -94,9 +94,9 @@ namespace MetaNixUnittest {
             GlobalLinearization linearization = entropyMinimizer.getBestGlobalLinearizationAndEnergy(out energyOfLinearization);
             Assert.AreEqual(energyOfLinearization, 2);
 
-            Assert.AreEqual(linearization.linearization[0], 1);
-            Assert.AreEqual(linearization.linearization[1], 0);
-            Assert.AreEqual(linearization.linearization[2], 2);
+            Assert.IsTrue(linearization.linearization[0] == 1);
+            Assert.IsTrue(linearization.linearization[1] == 0);
+            Assert.IsTrue(linearization.linearization[2] == 2);
 
             entropyMinimizer.finish();
         }
@@ -141,10 +141,10 @@ namespace MetaNixUnittest {
 
             Assert.AreEqual(linearization.linearization[2], 0);
             if( linearization.linearization[1] == 1 ) {
-                Assert.AreEqual(linearization.linearization[0], 2);
+                Assert.IsTrue(linearization.linearization[0] == 2);
             }
             else if (linearization.linearization[1] == 2) {
-                Assert.AreEqual(linearization.linearization[0], 1);
+                Assert.IsTrue(linearization.linearization[0] == 1);
             }
             else {
                 throw new Exception("first element must be 1 or 2!");
@@ -196,10 +196,10 @@ namespace MetaNixUnittest {
 
             Assert.AreEqual(linearization.linearization[2], 0);
             if (linearization.linearization[1] == 1) {
-                Assert.AreEqual(linearization.linearization[0], 2);
+                Assert.IsTrue(linearization.linearization[0] == 2);
             }
             else if (linearization.linearization[1] == 2) {
-                Assert.AreEqual(linearization.linearization[0], 1);
+                Assert.IsTrue(linearization.linearization[0] == 1);
             }
             else {
                 throw new Exception("first element must be 1 or 2!");
@@ -267,11 +267,11 @@ namespace MetaNixUnittest {
             GlobalLinearization linearization = entropyMinimizer.getBestGlobalLinearizationAndEnergy(out energyOfLinearization);
             Assert.AreEqual(energyOfLinearization, 11);
 
-            Assert.AreEqual(linearization.linearization[0], 2);
-            Assert.AreEqual(linearization.linearization[1], 3);
-            Assert.AreEqual(linearization.linearization[2], 0);
-            Assert.AreEqual(linearization.linearization[3], 4);
-            Assert.AreEqual(linearization.linearization[4], 1);
+            Assert.IsTrue(linearization.linearization[0] == 2);
+            Assert.IsTrue(linearization.linearization[1] == 3);
+            Assert.IsTrue(linearization.linearization[2] == 0);
+            Assert.IsTrue(linearization.linearization[3] == 4);
+            Assert.IsTrue(linearization.linearization[4] == 1);
 
             entropyMinimizer.finish();
         }
@@ -300,7 +300,7 @@ namespace MetaNixUnittest {
             testCausalBlock.nodes[0].next = new CausalIndirectionIndex[] { new CausalIndirectionIndex(2) };
             testCausalBlock.nodes[2].next = new CausalIndirectionIndex[] { new CausalIndirectionIndex(1) };
 
-            CausalSetSystemBlock fused = CausalSetNodeFuser.fuse(testCausalBlock, new List<uint> { 1, 2 });
+            CausalSetSystemBlock fused = CausalSetNodeFuser.fuse(testCausalBlock, out testCausalBlock,  new List<uint> { 1, 2 });
 
             Assert.AreEqual(testCausalBlock.nodes[0].next.Count, 1);
             Assert.IsTrue(testCausalBlock.translateIndirectIndexToIndex(testCausalBlock.nodes[0].next[0]) == 1); // first node must point to next one, which got fused
@@ -336,8 +336,8 @@ namespace MetaNixUnittest {
         [TestMethod]
         public void CausalInference_FuseAsNewSystemBlock1() {
             CausalSetSystemBlock testCausalBlock = buildSystemBlock1();
-
-            CausalSetSystemBlock fused = CausalSetNodeFuser.fuse(testCausalBlock, new uint[] { 0, 1 });
+            CausalSetSystemBlock parentAfterFuse;
+            CausalSetSystemBlock fused = CausalSetNodeFuser.fuse(testCausalBlock, out parentAfterFuse, new uint[] { 0, 1 });
 
             // should collapse to an graph 0 --> 1
             Assert.AreEqual(fused.nodes.Count, 2);
@@ -351,7 +351,8 @@ namespace MetaNixUnittest {
         public void CausalInference_FuseAsNewSystemBlock2() {
             CausalSetSystemBlock testCausalBlock = buildSystemBlock1();
 
-            CausalSetSystemBlock fused4 = CausalSetNodeFuser.fuse(testCausalBlock, new uint[] { 0, 2 });
+            CausalSetSystemBlock parentAfterFuse;
+            CausalSetSystemBlock fused4 = CausalSetNodeFuser.fuse(testCausalBlock, out parentAfterFuse, new uint[] { 0, 1 });
 
             // should collapse to an graph 0 --> 1
             Assert.AreEqual(fused4.nodes.Count, 2);
@@ -365,7 +366,8 @@ namespace MetaNixUnittest {
         public void CausalInference_FuseAsNewSystemBlock3() {
             CausalSetSystemBlock testCausalBlock = buildSystemBlock1();
 
-            CausalSetSystemBlock fused2 = CausalSetNodeFuser.fuse(testCausalBlock, new uint[] { 2, 3 });
+            CausalSetSystemBlock parentAfterFuse;
+            CausalSetSystemBlock fused2 = CausalSetNodeFuser.fuse(testCausalBlock, out parentAfterFuse, new uint[] { 0, 1 });
 
             // should collapse to an graph 0 --> 1
             Assert.AreEqual(fused2.nodes.Count, 2);
@@ -379,9 +381,10 @@ namespace MetaNixUnittest {
         public void CausalInference_FuseAsNewSystemBlock4() {
             CausalSetSystemBlock testCausalBlock = buildSystemBlock1();
 
-            CausalSetSystemBlock fused3 = CausalSetNodeFuser.fuse(testCausalBlock, new uint[] { 2 });
+            CausalSetSystemBlock parentAfterFuse;
+            CausalSetSystemBlock fused3 = CausalSetNodeFuser.fuse(testCausalBlock, out parentAfterFuse, new uint[] { 0, 1 });
 
-            // node 2 doesn't point to anythin in the subgraph
+            // node 2 doesn't point to anything in the subgraph
             Assert.AreEqual(fused3.nodes.Count, 1);
             Assert.AreEqual(fused3.nodes[0].next.Count, 0);
 
