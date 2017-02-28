@@ -139,7 +139,7 @@ namespace MetaNixUnittest {
             GlobalLinearization linearization = entropyMinimizer.getBestGlobalLinearizationAndEnergy(out energyOfLinearization);
             Assert.AreEqual(energyOfLinearization, 3);
 
-            Assert.AreEqual(linearization.linearization[2], 0);
+            Assert.IsTrue(linearization.linearization[2] == 0);
             if( linearization.linearization[1] == 1 ) {
                 Assert.IsTrue(linearization.linearization[0] == 2);
             }
@@ -194,7 +194,7 @@ namespace MetaNixUnittest {
             GlobalLinearization linearization = entropyMinimizer.getBestGlobalLinearizationAndEnergy(out energyOfLinearization);
             Assert.AreEqual(energyOfLinearization, 3);
 
-            Assert.AreEqual(linearization.linearization[2], 0);
+            Assert.IsTrue(linearization.linearization[2] == 0);
             if (linearization.linearization[1] == 1) {
                 Assert.IsTrue(linearization.linearization[0] == 2);
             }

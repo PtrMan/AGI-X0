@@ -471,7 +471,7 @@ namespace MetaNix.fringeAi.causal {
                     // calculate energy from current node to next node based on linearization
                     Debug.Assert(indexInLinearization >= 0);
                     Debug.Assert(nodeIndex >= 0);
-                    int energyFromCurrentNodeToNextNode = (int)indexInLinearization - (int)nodeIndex;
+                    int energyFromCurrentNodeToNextNode = (int)indexInLinearization - (int)indexInLinearizationByIndex[nodeIndex];
 
                     // must be greater than zero else we have some really nasty bug in the code
                     Ensure.ensureHard(energyFromCurrentNodeToNextNode > 0);
