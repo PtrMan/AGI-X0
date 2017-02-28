@@ -30,8 +30,6 @@ namespace MetaNix.fringeAi.causal {
 
         public CausalSetSystemBlock content; // embeded block, can be null
 
-        //public uint? index;
-
         public uint? nodeIndexInParentSystemBlock;
 
         public uint? globalIndex; // can be null if it is a fused node
@@ -105,12 +103,6 @@ namespace MetaNix.fringeAi.causal {
         public uint translateIndirectIndexToIndex(CausalIndirectionIndex idxInd) {
             return indirectionArray[(int)idxInd.value];
         }
-
-        //public void updateNodeIndices() {
-        //    for (uint i = 0; i < nodes.Count; i++) {
-        //        nodes[(int)i].index = i;
-        //    }
-        //}
 
         public IList<CausalSetNode> getNodesWithNodeAsChildren(CausalIndirectionIndex targetIndirectionIndex) {
             return nodes.Where(v => v.next.Contains(targetIndirectionIndex)).ToList();
@@ -440,13 +432,6 @@ namespace MetaNix.fringeAi.causal {
 
             //  calculate global energy
             lastChildrenRewriteTreeElement.globalEnergyAfterRewrite = calculateEnergy(lastChildrenRewriteTreeElement.globalLinearized, modifiedRootSystemBlock);
-
-            /*
-            rewriteTreeElements[0].blockBeforeRewrite
-                .guranteeNoChildren() // make sure that there are no children Blocks
-                .deepCopy()
-                .fuse(rewriteTreeElements[0].indicesOfParentNodesForRewrite)
-                */
         }
 
         private long calculateEnergy(GlobalLinearization linearization, CausalSetSystemBlock root) {
@@ -459,19 +444,18 @@ namespace MetaNix.fringeAi.causal {
 
             long energy = 0;
             
-            for( uint i = 0; i < linearization.linearization.Count; i++) {
-                uint nodeIndex = linearization.linearization[(int)i];
+            for( uint indexInLinearization = 0; indexInLinearization < linearization.linearization.Count; indexInLinearization++) {
+                uint nodeIndex = linearization.linearization[(int)indexInLinearization];
                 
                 foreach( CausalIndirectionIndex nextNodeIndicesFromCurrentNode in unmodifiedRootSystemBlock.nodes[(int)nodeIndex].next ) {
                     uint nextNodeIndexFromCurrentNode = root.translateIndirectIndexToIndex(nextNodeIndicesFromCurrentNode);
 
                     // translate the index of the next node which follows the current node to the index in the linearization
-                    uint indexInLinearization = indexInLinearizationByIndex[nextNodeIndexFromCurrentNode];
+                    uint indexInLinearizationOfNextNode = indexInLinearizationByIndex[nextNodeIndexFromCurrentNode];
 
                     // calculate energy from current node to next node based on linearization
-                    Debug.Assert(indexInLinearization >= 0);
-                    Debug.Assert(nodeIndex >= 0);
-                    int energyFromCurrentNodeToNextNode = (int)indexInLinearization - (int)indexInLinearizationByIndex[nodeIndex];
+                    Debug.Assert(indexInLinearizationOfNextNode >= 0);
+                    int energyFromCurrentNodeToNextNode = (int)indexInLinearizationOfNextNode - (int)indexInLinearization;
 
                     // must be greater than zero else we have some really nasty bug in the code
                     Ensure.ensureHard(energyFromCurrentNodeToNextNode > 0);
@@ -574,11 +558,6 @@ namespace MetaNix.fringeAi.causal {
                 RewriteTreeElement rewriteTreeElementAfterRewrite = new RewriteTreeElement();
                 rewriteTreeElementAfterRewrite.indicesOfParentNodesForRewrite = recursedSystemBlock.getRandomFollowerAsEnumerable(fuseEntryIndex, terminationPropability);
 
-                /// uncommented, let it be null, because we don't need it
-                //rewriteTreeElementAfterRewrite.blockBeforeRewrite = recursedSystemBlock;
-
-                
-
                 // rewrite
                 rewriteTreeElementAfterRewrite.blockAfterRewrite = CausalSetNodeFuser.fuse(recursedSystemBlock, out recursedSystemBlock, rewriteTreeElementAfterRewrite.indicesOfParentNodesForRewrite.ToList());
 
@@ -605,10 +584,7 @@ namespace MetaNix.fringeAi.causal {
         class RewriteTreeElement {
             public RewriteTreeElement parent;
 
-            //uint? parentIndex; // where is the block in the parent CausalSetSystemBlock
-            //public CausalSetSystemBlock blockBeforeRewrite; // which block was used for rewrite, is before the rewrite
             public CausalSetSystemBlock blockAfterRewrite;
-
 
             
             public IEnumerable<uint> indicesOfParentNodesForRewrite;
