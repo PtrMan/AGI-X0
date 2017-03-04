@@ -214,26 +214,68 @@ namespace MetaNix {
             //Program2.interactiveTestEnumeration();
 
             Scheduler scheduler = new Scheduler();
-
-            //Observable levinSearchObservable = new Observable();
-            //levinSearchObservable.register(new AdvancedAdaptiveLevinSearchLogObserver());
-
-            //LevinSearchTask levinSearchTask = new LevinSearchTask(levinSearchObservable);
-            //scheduler.addTaskSync(levinSearchTask);
-
-            //levinSearchTask.levinSearchContext = new LevinSearchContext();
-
+            
             SparseArrayProgramDistribution sparseArrayProgramDistribution = new SparseArrayProgramDistribution();
             AdvancedAdaptiveLevinSearchTaskProvider levinSearchTaskProvider = new AdvancedAdaptiveLevinSearchTaskProvider(scheduler, sparseArrayProgramDistribution);
+
+            { // problem : append reg2 to end and reg1 to beginning
+                AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
+                levinSearchProblem.enumerationMaxProgramLength = 5;
+                levinSearchProblem.instructionsetCount = 11 + 16 * 3 + 1 - 16/*because no call*/;
+                levinSearchProblem.maxNumberOfRetiredInstructions = /*length of program*/5 */*number of elements in array*/5;
+
+                levinSearchProblem.initialInterpreterState = new InterpreterState();
+                levinSearchProblem.initialInterpreterState.registers = new int[3];
+                levinSearchProblem.initialInterpreterState.arrayState = new ArrayState();
+                levinSearchProblem.initialInterpreterState.arrayState.array = new List<int>();
+                //levinSearchProblem.initialInterpreterState.debugExecution = false;
+
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples[0].questionArray = new List<int> { };
+                levinSearchProblem.trainingSamples[0].questionRegisters = new int?[] { null, 7, 3 }; // search for 7
+                levinSearchProblem.trainingSamples[0].questionArrayIndex = 0;
+                levinSearchProblem.trainingSamples[0].answerArray = new List<int> { 7, 3 };
+                levinSearchProblem.trainingSamples[0].answerArrayIndex = 1; // result index
+
+                levinSearchProblem.trainingSamples[1].questionArray = new List<int> { 1, 2, };
+                levinSearchProblem.trainingSamples[1].questionRegisters = new int?[] { null, 7, 3 }; // search for 7
+                levinSearchProblem.trainingSamples[1].questionArrayIndex = 1;
+                levinSearchProblem.trainingSamples[1].answerArray = new List<int> { 7, 1, 2, 3 };
+                levinSearchProblem.trainingSamples[1].answerArrayIndex = 3; // result index
+
+                levinSearchProblem.trainingSamples[2].questionArray = new List<int> { };
+                levinSearchProblem.trainingSamples[2].questionRegisters = new int?[] { null, 5, 9 }; // search for 7
+                levinSearchProblem.trainingSamples[2].answerArray = new List<int> { 5, 9 };
+                levinSearchProblem.trainingSamples[2].answerArrayIndex = 1; // result index
+
+                levinSearchProblem.trainingSamples[3].questionArray = new List<int> { 1, };
+                levinSearchProblem.trainingSamples[3].questionRegisters = new int?[] { null, 5, 9 }; // search for 7
+                levinSearchProblem.trainingSamples[3].answerArray = new List<int> { 5, 1, 9 };
+                levinSearchProblem.trainingSamples[3].answerArrayIndex = 2; // result index
+
+                levinSearchTaskProvider.problems.Add(levinSearchProblem);
+
+                /* should return
+
+                	arraySetIdx 0
+	                arrayInsert reg1
+	                arraySetIdx -1
+	                arrayInsert reg2
+	                (ret)
+                 */
+            }
 
             { // problem : find value in reg1 with value in array[0] and stay with index
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
                 levinSearchProblem.enumerationMaxProgramLength = 5;
-                levinSearchProblem.instructionsetCount = 46 - 16/*because no call*/; ;
+                levinSearchProblem.instructionsetCount = 11 + 16 * 3 + 1 - 16/*because no call*/;
                 levinSearchProblem.maxNumberOfRetiredInstructions = /*length of program*/5 */*number of elements in array*/5;
 
                 levinSearchProblem.initialInterpreterState = new InterpreterState();
-                levinSearchProblem.initialInterpreterState.registers = new int[2];
+                levinSearchProblem.initialInterpreterState.registers = new int[3];
                 levinSearchProblem.initialInterpreterState.arrayState = new ArrayState();
                 levinSearchProblem.initialInterpreterState.arrayState.array = new List<int>();
                 //levinSearchProblem.initialInterpreterState.debugExecution = false;
@@ -261,16 +303,16 @@ namespace MetaNix {
                     ret                    (5)
                  */
             }
-
+            
             { // problem : remove at current array[0] position reg0 times
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
                 levinSearchProblem.enumerationMaxProgramLength = 6;
-                levinSearchProblem.instructionsetCount = 46 - 16;/*because no call*/
+                levinSearchProblem.instructionsetCount = 11+16*3+1 - 16;/*because no call*/
                 
                 levinSearchProblem.maxNumberOfRetiredInstructions = /*length of program*/5 */*number of elements in array*/5;
 
                 levinSearchProblem.initialInterpreterState = new InterpreterState();
-                levinSearchProblem.initialInterpreterState.registers = new int[2];
+                levinSearchProblem.initialInterpreterState.registers = new int[3];
                 levinSearchProblem.initialInterpreterState.arrayState = new ArrayState();
                 levinSearchProblem.initialInterpreterState.arrayState.array = new List<int>();
                 //levinSearchProblem.initialInterpreterState.debugExecution = false;
@@ -321,6 +363,8 @@ namespace MetaNix {
                     ret
                 */
             }
+
+            
 
             levinSearchTaskProvider.submitFirstTask();
             
