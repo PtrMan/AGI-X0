@@ -19,10 +19,24 @@ namespace MetaNix.scheduler {
          *
          */
         public void process() {
-            foreach (ITask iterationTask in tasks ) {
+            IList<ITask> finishedTasks = new List<ITask>();
+
+            // remeber # of tasks to not process the tasks which are added by tasks
+            int numberOfTasksToProcess = tasks.Count;
+            for(int taskI = 0; taskI < numberOfTasksToProcess; taskI++) {
+                ITask iterationTask = tasks[taskI];
+
                 EnumTaskStates taskState;
                 // TODO< tune timeschedule
                 iterationTask.processTask(this, 0.1, out taskState);
+                if (taskState == EnumTaskStates.FINISHED) {
+                    finishedTasks.Add(iterationTask);
+                }
+            }
+            
+            // remove all finished tasks
+            foreach(ITask iterationFinishedTask in finishedTasks) {
+                tasks.Remove(iterationFinishedTask);
             }
         }
 

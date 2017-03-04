@@ -450,12 +450,11 @@ namespace MetaNix.search.levin2 {
                 case 3: return "compareArray reg0";
                 case 4: return "compareArray reg1";
                 case 5: return "ret";
-                case 6: return "nop";
             }
 
             // if we are here we have instrution with hardcoded parameters
 
-            const int baseInstruction = 6;
+            const int baseInstruction = 5;
             Debug.Assert(instruction > baseInstruction);
             int currentBaseInstruction = baseInstruction;
 
@@ -491,16 +490,7 @@ namespace MetaNix.search.levin2 {
                 return String.Format("jmpIfNotFlag {0}", jumpDelta);
             }
             currentBaseInstruction += 16;
-
-            // jump if flag set
-            if (instruction <= currentBaseInstruction + 16) {
-                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
-                int jumpDelta = subInstruction - 8;
-                return String.Format("jmpIfFlag {0}", jumpDelta);
-            }
-            currentBaseInstruction += 16;
-
-
+            
             // call
             if (instruction <= currentBaseInstruction + 16) {
                 int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
@@ -542,12 +532,11 @@ namespace MetaNix.search.levin2 {
                 case 3: InductionOperationsString.compareArrayWithRegister(interpreterState, 0, out success); return;
                 case 4: InductionOperationsString.compareArrayWithRegister(interpreterState, 1, out success); return;
                 case 5: InductionOperationsString.return_(interpreterState, out success); return;
-                case 6: success = true; return; // NOP
             }
 
             // if we are here we have instrution with hardcoded parameters
 
-            const int baseInstruction = 6;
+            const int baseInstruction = 5;
             Debug.Assert(instruction > baseInstruction);
             int currentBaseInstruction = baseInstruction;
 
@@ -595,18 +584,7 @@ namespace MetaNix.search.levin2 {
                 return;
             }
             currentBaseInstruction += 16;
-
-            // jump if flag is set
-            if (instruction <= currentBaseInstruction + 16) {
-                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
-                int jumpDelta = subInstruction - 8;
-                InductionOperationsString.jumpIfFlag(interpreterState, jumpDelta);
-                success = true;
-                return;
-            }
-            currentBaseInstruction += 16;
-
-
+            
             // call
             if (instruction <= currentBaseInstruction + 16) {
                 int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
@@ -702,6 +680,7 @@ namespace MetaNix.search.levin2 {
     public class TrainingSample {
         public IList<int> questionArray; // disabled if null
         public int?[] questionRegisters;
+        public int? questionArrayIndex;
 
         public IList<int> answerArray; // disabled if null
         public int? answerArrayIndex; // which array index should the array have whe the function returns, disabled if null
@@ -713,6 +692,7 @@ namespace MetaNix.search.levin2 {
     public class LevinSearchContext {
         public void searchIteration(out bool searchCompleted) {
             searchCompleted = false;
+            searchIterations++;
 
             uint[] sampledProgram = programSampler.sampleProgram((int)numberOfInstructionsToEnumerate);
             // copy
@@ -736,6 +716,10 @@ namespace MetaNix.search.levin2 {
                 interpreterArguments.interpreterState.arrayState.array.Clear();
                 for (int i = 0; i < currentTrainingSample.questionArray.Count; i++) {
                     interpreterArguments.interpreterState.arrayState.array.Add(currentTrainingSample.questionArray[i]);
+                }
+
+                if(currentTrainingSample.questionArrayIndex.HasValue) {
+                    interpreterArguments.interpreterState.arrayState.index = currentTrainingSample.questionArrayIndex.Value;
                 }
 
                 bool
@@ -780,6 +764,9 @@ namespace MetaNix.search.levin2 {
 
         // 
         public void initiateSearch(SparseArrayProgramDistribution programDistribution, uint enumerationMaxProgramLength) {
+            searchIterations = 0;
+
+            this.programDistribution = programDistribution;
             this.enumerationMaxProgramLength = enumerationMaxProgramLength;
 
             privateNumberOfInstructions = 1+/* with RET*/1; // with RET  (int)numberOfInstructions;
@@ -788,19 +775,11 @@ namespace MetaNix.search.levin2 {
 
             programSampler = new ProgramSampler(programDistribution, numberOfInstructionsToEnumerate, instructionsetCount);
             programSampler.setInstructionsetCount(instructionsetCount);
-
-            // TODO< -1 depends on if we add an RET by default or not >
-            //Ensure.ensureHard(numberOfInstructions >= 1); // depends on if we add an ret or not, TODO< add condition >
-            //uint enumeratedProgramLength = (uint)numberOfInstructions - 1;
-
+            
             uint programMaxSize = 512;
             program = new uint[programMaxSize];
             interpreterArguments.program = program;
-
-            //Ensure.ensureHard(numberOfInstructions >= 1);
-            //interpreterArguments.lengthOfProgram = (uint)numberOfInstructions;
-
-            //remainingIterationsForCurrentProgramLength = (long)(exhausiveSearchFactor * Math.Pow(instructionsetCount, enumeratedProgramLength));
+            
             reinintateSearch();
         }
 
@@ -833,6 +812,8 @@ namespace MetaNix.search.levin2 {
             }
         }
 
+        public ulong searchIterations; // how many iterations were done for this search already?
+
         public uint instructionsetCount;
 
         public double exhausiveSearchFactor = 2.0; // hown many times do we try a program at maximum till we give up based on the # of combinations
@@ -847,15 +828,25 @@ namespace MetaNix.search.levin2 {
 
         Interpreter interpreter = new Interpreter();
         ProgramSampler programSampler;
+        SparseArrayProgramDistribution programDistribution;
         public long remainingIterationsForCurrentProgramLength;
 
         public IList<TrainingSample> trainingSamples = new List<TrainingSample>();
+
+        internal void biasSearchTowardProgram() {
+            uint[] effectiveProgram = new uint[numberOfInstructions - 1];
+            for (int i = 0; i < numberOfInstructions - 1; i++) {
+                effectiveProgram[i] = program[i];
+            }
+
+            programDistribution.addProgram(effectiveProgram);
+        }
     }
 
     public class LevinSearchTask : MetaNix.scheduler.ITask {
         // /param doneObserable will be notified when the search is done or failed
         public LevinSearchTask(Observable obserable) {
-            this.obserable = obserable;
+            this.observable = obserable;
         }
 
         public void processTask(Scheduler scheduler, double softTimelimitInSeconds, out EnumTaskStates taskState) {
@@ -878,6 +869,8 @@ namespace MetaNix.search.levin2 {
         }
 
         void timingIteration(out bool searchCompleted) {
+            string taskname = "?";
+
             searchCompleted = false;
 
             for (int timingIterationCounter = 0; timingIterationCounter < iterationGranularity; timingIterationCounter++) {
@@ -886,26 +879,31 @@ namespace MetaNix.search.levin2 {
                     // current length done
 
                     if(levinSearchContext.canIncreaseProgramsize()) {
-                        obserable.notify("increaseProgramsize", levinSearchContext.numberOfInstructions, this);
+                        observable.notify("increaseProgramsize", this, taskname);
                         levinSearchContext.increaseProgramsizeAndReinitiate();
                         return;
                     }
                     else {
                         // search failed
                         searchCompleted = true;
-                        obserable.notify("failed", this);
+                        observable.notify("failed", this, taskname);
                         return;
                     }
                 }
 
                 levinSearchContext.searchIteration(out searchCompleted);
                 if (searchCompleted) {
-                    obserable.notify("success", this);
+                    biasSearchTowardProgram();
+                    observable.notify("success", this, taskname);
                     return;
                 }
             }
         }
-        
+
+        private void biasSearchTowardProgram() {
+            levinSearchContext.biasSearchTowardProgram();
+        }
+
         public LevinSearchContext levinSearchContext;
 
 
@@ -913,7 +911,7 @@ namespace MetaNix.search.levin2 {
         public uint iterationGranularity = 50000; // how many iterations are done after we check for the soft timelimit
         Stopwatch executiontimeSchedulingStopwatch = new Stopwatch();
 
-        private Observable obserable;
+        private Observable observable;
     }
 
     

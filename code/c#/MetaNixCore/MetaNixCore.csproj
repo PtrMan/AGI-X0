@@ -77,6 +77,8 @@
     <Compile Include="resourceManagement\compute\ComputeNoOperationPerformedBugetedTask.cs" />
     <Compile Include="scheduler\Scheduler.cs" />
     <Compile Include="scheduler\Task.cs" />
+    <Compile Include="search\levin2\AdvancedAdaptiveLevinSearchLogObserver.cs" />
+    <Compile Include="search\levin2\AdvancedAdaptiveLevinSearchTaskProvider.cs" />
     <Compile Include="search\levin2\Levin2.cs" />
     <Compile Include="symbolic\Stringmanipulation.cs" />
     <Compile Include="TranslateFunctionalParseTree.cs" />
