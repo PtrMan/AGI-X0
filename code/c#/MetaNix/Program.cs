@@ -9,6 +9,9 @@ using MetaNix.resourceManagement.compute;
 using MetaNix.report;
 using MetaNix.attention;
 using MetaNix.resourceManagement.compute;
+using MetaNix.search.levin2;
+using MetaNix.scheduler;
+using MetaNix.search.levin2;
 
 namespace MetaNix {
     class CellularAutomata {
@@ -208,6 +211,54 @@ namespace MetaNix {
 
 
         static void Main(string[] args) {
+            // test Levin search
+
+            //Program2.interactiveTestEnumeration();
+
+            Scheduler scheduler = new Scheduler();
+
+            Observable levinSearchObservable = new Observable();
+
+            LevinSearchTask levinSearchTask = new LevinSearchTask(levinSearchObservable);
+            scheduler.addTaskSync(levinSearchTask);
+
+            levinSearchTask.levinSearchContext = new LevinSearchContext();
+
+            levinSearchTask.levinSearchContext.interpreterArguments.maxNumberOfRetiredInstructions = 50;
+            levinSearchTask.levinSearchContext.interpreterArguments.interpreterState = new InterpreterState();
+            levinSearchTask.levinSearchContext.interpreterArguments.interpreterState.registers = new int[2];
+            levinSearchTask.levinSearchContext.interpreterArguments.interpreterState.arrayState = new ArrayState();
+            levinSearchTask.levinSearchContext.interpreterArguments.interpreterState.arrayState.array = new List<int>();
+            levinSearchTask.levinSearchContext.interpreterArguments.debugExecution = false;
+
+            levinSearchTask.levinSearchContext.instructionsetCount = 54 + 16 + 1 + 1 - 16/*because no call*/;
+
+
+            levinSearchTask.levinSearchContext.trainingSamples.Add(new TrainingSample());
+            levinSearchTask.levinSearchContext.trainingSamples.Add(new TrainingSample());
+            levinSearchTask.levinSearchContext.trainingSamples[0].questionArray = new List<int> { 5, 8, 3, 7 };
+            levinSearchTask.levinSearchContext.trainingSamples[0].questionRegisters = new int?[] { 7, null }; // search for 7
+            levinSearchTask.levinSearchContext.trainingSamples[0].answerArray = new List<int> { 5, 8, 3, 7 }; // don't change array
+            levinSearchTask.levinSearchContext.trainingSamples[0].answerArrayIndex = 3; // result index must be 3
+
+            levinSearchTask.levinSearchContext.trainingSamples[1].questionArray = new List<int> { 7, 8, 3, 2 };
+            levinSearchTask.levinSearchContext.trainingSamples[1].questionRegisters = new int?[] { 7, null }; // search for 7
+            levinSearchTask.levinSearchContext.trainingSamples[1].answerArray = new List<int> { 7, 8, 3, 2 }; // don't change array
+            levinSearchTask.levinSearchContext.trainingSamples[1].answerArrayIndex = 0; // result index must be 3
+
+            SparseArrayProgramDistribution sparseArrayProgramDistribution = new SparseArrayProgramDistribution();
+            uint enumerationMaxProgramLength = 5;
+            levinSearchTask.levinSearchContext.initiateSearch(sparseArrayProgramDistribution, enumerationMaxProgramLength);
+
+            for(;;) {
+                scheduler.process();
+            }
+
+
+
+
+
+
 
             ComputeContext computeContext = new ComputeContext();
 

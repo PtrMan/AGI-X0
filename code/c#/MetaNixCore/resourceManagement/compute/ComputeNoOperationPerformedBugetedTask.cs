@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MetaNix.attention;
+using MetaNix.scheduler;
 
 namespace MetaNix.resourceManagement.compute {
     // used for testing the schedueler and management code
@@ -11,8 +12,9 @@ namespace MetaNix.resourceManagement.compute {
         public ComputeNoOperationPerformedBugetedTask(Budget startBudget, string humanReadableUniqueName) : base(startBudget, humanReadableUniqueName) {
         }
 
-        public override void processTask() {
+        public override void processTask(Scheduler scheduler, double softTimelimitInSeconds, out EnumTaskStates taskState) {
             // do nothing
+            taskState = EnumTaskStates.WAITNEXTFRAME;
         }
     }
 }

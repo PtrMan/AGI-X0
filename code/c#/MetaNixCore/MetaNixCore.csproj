@@ -43,6 +43,7 @@
     <Compile Include="attention\Budget.cs" />
     <Compile Include="datastructures\BudgetedCollection.cs" />
     <Compile Include="datastructures\BudgetedDatastructure.cs" />
+    <Compile Include="datastructures\compact\CompressedTable.cs" />
     <Compile Include="datastructures\IDatastructureDistribution.cs" />
     <Compile Include="datastructures\HasBudget.cs" />
     <Compile Include="datastructures\StochasticBag.cs" />
@@ -58,6 +59,7 @@
     <Compile Include="Ensure.cs" />
     <Compile Include="FunctionalParser.cs" />
     <Compile Include="instrumentation\Statistics.cs" />
+    <Compile Include="Observer.cs" />
     <Compile Include="Memoizer.cs" />
     <Compile Include="MemoizerShadowableDispatcher.cs" />
     <Compile Include="Misc.cs" />
@@ -73,7 +75,9 @@
     <Compile Include="resourceManagement\compute\ComputeContextResourceRecorder.cs" />
     <Compile Include="resourceManagement\compute\ComputeExecutor.cs" />
     <Compile Include="resourceManagement\compute\ComputeNoOperationPerformedBugetedTask.cs" />
-    <Compile Include="schedueler\ITask.cs" />
+    <Compile Include="scheduler\Scheduler.cs" />
+    <Compile Include="scheduler\Task.cs" />
+    <Compile Include="search\levin2\Levin2.cs" />
     <Compile Include="symbolic\Stringmanipulation.cs" />
     <Compile Include="TranslateFunctionalParseTree.cs" />
     <Compile Include="Variant.cs" />

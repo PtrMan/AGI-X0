@@ -1,6 +1,6 @@
 ﻿using MetaNix.attention;
 using MetaNix.datastructures;
-using MetaNix.schedueler;
+using MetaNix.scheduler;
 
 namespace MetaNix.resourceManagement.compute {
     abstract public class ComputeBudgetedTask : HasBudget, ITask {
@@ -13,7 +13,7 @@ namespace MetaNix.resourceManagement.compute {
             return privateBudget;
         }
 
-        public abstract void processTask();
+        public abstract void processTask(Scheduler scheduler, double softTimelimitInSeconds, out EnumTaskStates taskState);
 
         Budget privateBudget;
         internal string humanReadableUniqueName;
