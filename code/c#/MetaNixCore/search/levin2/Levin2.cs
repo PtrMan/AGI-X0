@@ -306,7 +306,7 @@ namespace MetaNix.search.levin2 {
             success = true;
         }
 
-        public static void compareArrayWithRegister(InterpreterState state, uint register, out bool success) {
+        public static void arrayCompareWithRegister(InterpreterState state, uint register, out bool success) {
             if (state.arrayState == null || !state.arrayState.isIndexValid) {
                 success = false;
                 return;
@@ -357,6 +357,14 @@ namespace MetaNix.search.levin2 {
             state.instructionPointer++;
         }
 
+        // add by checking flag
+        public static void addFlag(InterpreterState state, uint register, int value) {
+            if( state.comparisionFlag ) {
+                state.registers[register] += value;
+            }
+            state.instructionPointer++;
+        }
+
         internal static void arrayInsert(InterpreterState state, uint register, out bool success) {
             if (state.arrayState == null ) {
                 success = false;
@@ -387,6 +395,40 @@ namespace MetaNix.search.levin2 {
             else {
                 state.arrayState.index = index;
             }
+
+            state.instructionPointer++;
+            success = true;
+        }
+
+        // moves the array index by delta and stores in the flag if the index is still in bound after moving
+        internal static void arrayIdxFlag(InterpreterState state, uint array, int delta, out bool success) {
+            if (state.arrayState == null) {
+                success = false;
+                return;
+            }
+
+            if( array == 0 ) {
+                state.arrayState.index += delta;
+                state.comparisionFlag = state.arrayState.isIndexValid; // store the validity of the arrayIndex in flag
+            }
+            else {
+                success = false;
+                return;
+            }
+
+
+            state.instructionPointer++;
+            success = true;
+        }
+
+        // /param array is the index of the array (currently ignored)
+        internal static void arrayValid(InterpreterState state, int array, out bool success) {
+            if (state.arrayState == null) {
+                success = false;
+                return;
+            }
+
+            state.comparisionFlag = state.arrayState.isIndexValid;
 
             state.instructionPointer++;
             success = true;
@@ -477,23 +519,37 @@ namespace MetaNix.search.levin2 {
 
 
     sealed public class InstructionInfo {
-        public static string getMemonic(uint instruction) {
-            switch (instruction) {
-                case 0: return "arrayIdx -1";
-                case 1: return "arrayIdx +1";
-                case 2: return "arrayRemove";
-                case 3: return "compareArray reg0";
-                case 4: return "compareArray reg1";
-                case 5: return "ret";
-                case 6: return "arrayInsert reg1";
-                case 7: return "arrayInsert reg2";
-                case 8: return "arraySetIdx 0";
-                case 9: return "arraySetIdx -1";
-            }
+        static string[] hardcodedSingleInstructions = {
+            "arrayIdx -1",
+            "arrayIdx +1",
+            "arrayRemove",
+            "arrayCompare reg0",
+            "arrayCompare reg1",
+            "ret",
+            "arrayInsert reg1",
+            "arrayInsert reg2",
+            "arraySetIdx 0",
+            "arraySetIdx -1",
+            "arrayIdxFlag arr0 +1",
+            "arrayValid arr0",
+        };
 
+        public static uint getNumberOfHardcodedSingleInstructions() {
+            return (uint)hardcodedSingleInstructions.Length;
+        }
+
+        public static uint getNumberOfInstructions() {
+            return (uint)hardcodedSingleInstructions.Length + 1 + 1 + 1 + 3 * 16 + 1;
+        }
+
+        public static string getMemonic(uint instruction) {
+            if( instruction <= hardcodedSingleInstructions.Length ) {
+                return hardcodedSingleInstructions[(int)instruction];
+            }
+            
             // if we are here we have instrution with hardcoded parameters
 
-            const int baseInstruction = 9;
+            int baseInstruction = hardcodedSingleInstructions.Length;
             Debug.Assert(instruction > baseInstruction);
             int currentBaseInstruction = baseInstruction;
 
@@ -509,6 +565,14 @@ namespace MetaNix.search.levin2 {
             if (instruction <= currentBaseInstruction + 1) {
                 // currently just compare reg0 with zero
                 return "add reg0 -1";
+            }
+
+            currentBaseInstruction += 1;
+
+            // addFlag reg0 constant
+            if (instruction <= currentBaseInstruction + 1) {
+                // currently just add 1 to reg0
+                return "addFlag reg0 1";
             }
 
             currentBaseInstruction += 1;
@@ -568,20 +632,22 @@ namespace MetaNix.search.levin2 {
                 case 0: InductionOperationsString.arrayMove(interpreterState, -1); success = true; return;
                 case 1: InductionOperationsString.arrayMove(interpreterState, 1); success = true; return;
                 case 2: InductionOperationsString.arrayRemove(interpreterState, out success); return;
-                case 3: InductionOperationsString.compareArrayWithRegister(interpreterState, 0, out success); return;
-                case 4: InductionOperationsString.compareArrayWithRegister(interpreterState, 1, out success); return;
+                case 3: InductionOperationsString.arrayCompareWithRegister(interpreterState, 0, out success); return;
+                case 4: InductionOperationsString.arrayCompareWithRegister(interpreterState, 1, out success); return;
                 case 5: InductionOperationsString.return_(interpreterState, out success); return;
                 case 6: InductionOperationsString.arrayInsert(interpreterState, /*reg*/1, out success); return;
                 case 7: InductionOperationsString.arrayInsert(interpreterState, /*reg*/2, out success); return;
                 case 8: InductionOperationsString.arraySetIdx(interpreterState, 0, out success); return;
                 case 9: InductionOperationsString.arraySetIdx(interpreterState, -1, out success); return; // -1 is end of array
+                case 10: InductionOperationsString.arrayIdxFlag(interpreterState, 0, 1, out success); return; // TODO< should be an intrinsic command which gets added by default >
+                case 11: InductionOperationsString.arrayValid(interpreterState, /*array*/0, out success); return;
             }
 
             // if we are here we have instrution with hardcoded parameters
 
-            const int baseInstruction = 9;
-            Debug.Assert(instruction > baseInstruction);
-            int currentBaseInstruction = baseInstruction;
+            uint baseInstruction = InstructionInfo.getNumberOfHardcodedSingleInstructions();
+            Debug.Assert(instruction >= baseInstruction);
+            int currentBaseInstruction = (int)baseInstruction;
 
             // compare constant
             if (instruction <= currentBaseInstruction + 1) {
@@ -598,6 +664,16 @@ namespace MetaNix.search.levin2 {
             if (instruction <= currentBaseInstruction + 1) {
                 // currently just compare reg0 with zero
                 InductionOperationsString.add(interpreterState, /*register*/0, -1);
+                success = true;
+                return;
+            }
+
+            currentBaseInstruction += 1;
+
+            // addFlag reg0 constant
+            if (instruction <= currentBaseInstruction + 1) {
+                // currently just compare reg0 with zero
+                InductionOperationsString.addFlag(interpreterState, /*register*/0, 1);
                 success = true;
                 return;
             }
@@ -727,6 +803,8 @@ namespace MetaNix.search.levin2 {
 
         public IList<int> answerArray; // disabled if null
         public int? answerArrayIndex; // which array index should the array have whe the function returns, disabled if null
+        public int?[] answerRegisters;
+        public bool? answerFlag;
     }
 
     // keeps track of how many iterations to try for the iteration
@@ -788,7 +866,7 @@ namespace MetaNix.search.levin2 {
 
                 // compare result
                 if (
-                    currentTrainingSample.answerArray != null &
+                    currentTrainingSample.answerArray != null &&
                     !ListHelpers.isSame(interpreterArguments.interpreterState.arrayState.array, currentTrainingSample.answerArray)
                 ) {
                     trainingSamplesTestedSuccessful = false;
@@ -796,6 +874,20 @@ namespace MetaNix.search.levin2 {
                 }
 
                 if (currentTrainingSample.answerArrayIndex.HasValue && interpreterArguments.interpreterState.arrayState.index != currentTrainingSample.answerArrayIndex) {
+                    trainingSamplesTestedSuccessful = false;
+                    break;
+                }
+
+                if( currentTrainingSample.answerRegisters != null ) {
+                    for(int i = 0; i < currentTrainingSample.answerRegisters.Length; i++ ) {
+                        if(currentTrainingSample.answerRegisters[i].HasValue && currentTrainingSample.answerRegisters[i] != interpreterArguments.interpreterState.registers[i] ) {
+                            trainingSamplesTestedSuccessful = false;
+                            break;
+                        }
+                    }
+                }
+
+                if(currentTrainingSample.answerFlag.HasValue && currentTrainingSample.answerFlag != interpreterArguments.interpreterState.comparisionFlag) {
                     trainingSamplesTestedSuccessful = false;
                     break;
                 }

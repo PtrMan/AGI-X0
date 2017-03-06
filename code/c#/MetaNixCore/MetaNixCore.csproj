@@ -59,6 +59,7 @@
     <Compile Include="Ensure.cs" />
     <Compile Include="FunctionalParser.cs" />
     <Compile Include="instrumentation\Statistics.cs" />
+    <Compile Include="misc\Logo.cs" />
     <Compile Include="Observer.cs" />
     <Compile Include="Memoizer.cs" />
     <Compile Include="MemoizerShadowableDispatcher.cs" />
