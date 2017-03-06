@@ -85,6 +85,12 @@
     <Compile Include="TranslateFunctionalParseTree.cs" />
     <Compile Include="Variant.cs" />
     <Compile Include="VariantRange.cs" />
+    <Compile Include="weakAi\restrictedBoltzmannMachine\ActivationFunctions.cs" />
+    <Compile Include="weakAi\restrictedBoltzmannMachine\Distributions.cs" />
+    <Compile Include="weakAi\restrictedBoltzmannMachine\Interfaces.cs" />
+    <Compile Include="weakAi\restrictedBoltzmannMachine\Matrix.cs" />
+    <Compile Include="weakAi\restrictedBoltzmannMachine\RBM.cs" />
+    <Compile Include="weakAi\restrictedBoltzmannMachine\Vector.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
