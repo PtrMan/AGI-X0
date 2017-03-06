@@ -218,7 +218,57 @@ namespace MetaNix {
             SparseArrayProgramDistribution sparseArrayProgramDistribution = new SparseArrayProgramDistribution();
             AdvancedAdaptiveLevinSearchTaskProvider levinSearchTaskProvider = new AdvancedAdaptiveLevinSearchTaskProvider(scheduler, sparseArrayProgramDistribution);
 
-            if(false) { // add one to reg0 if reg1 appear in array at current position, advance
+            // linked list problem
+            if (true) { // append one element in reg1 to linked list, precondition is that the array index is already past the end of the array
+                AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
+                levinSearchProblem.enumerationMaxProgramLength = 6;
+                levinSearchProblem.instructionsetCount = InstructionInfo.getNumberOfInstructions() - 16;/*because no call*/
+
+                levinSearchProblem.maxNumberOfRetiredInstructions = /*length of program*/6 + 1/* might be off by one*/;
+
+                levinSearchProblem.initialInterpreterState = new InterpreterState();
+                levinSearchProblem.initialInterpreterState.registers = new int[3];
+                levinSearchProblem.initialInterpreterState.arrayState = new ArrayState();
+                levinSearchProblem.initialInterpreterState.arrayState.array = new List<int>();
+                //levinSearchProblem.initialInterpreterState.debugExecution = false;
+
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+
+                // append
+                levinSearchProblem.trainingSamples[0].questionArray = new List<int> { };
+                levinSearchProblem.trainingSamples[0].questionRegisters = new int?[] { null, 6 };
+                levinSearchProblem.trainingSamples[0].questionArrayIndex = 0;
+                levinSearchProblem.trainingSamples[0].answerRegisters = new int?[] { null, null };
+                levinSearchProblem.trainingSamples[0].answerArray = new List<int> { 2, 6 };
+
+                levinSearchProblem.trainingSamples[1].questionArray = new List<int> { 2, 6 };
+                levinSearchProblem.trainingSamples[1].questionRegisters = new int?[] { null, 5 };
+                levinSearchProblem.trainingSamples[1].questionArrayIndex = 2;
+                levinSearchProblem.trainingSamples[1].answerRegisters = new int?[] { null, null };
+                levinSearchProblem.trainingSamples[1].answerArray = new List<int> { 2, 6, 4, 5 };
+
+                levinSearchProblem.trainingSamples[2].questionArray = new List<int> { 3, 6, 9 };
+                levinSearchProblem.trainingSamples[2].questionRegisters = new int?[] { null, 7 };
+                levinSearchProblem.trainingSamples[2].questionArrayIndex = 3;
+                levinSearchProblem.trainingSamples[2].answerRegisters = new int?[] { null, null };
+                levinSearchProblem.trainingSamples[2].answerArray = new List<int> { 3, 6, 9, 5, 7 };
+
+                levinSearchProblem.trainingSamples[3].questionArray = new List<int> { 3, 6, 9, 5, 8 };
+                levinSearchProblem.trainingSamples[3].questionRegisters = new int?[] { null, 10 };
+                levinSearchProblem.trainingSamples[3].questionArrayIndex = 5;
+                levinSearchProblem.trainingSamples[3].answerRegisters = new int?[] { null, null };
+                levinSearchProblem.trainingSamples[3].answerArray = new List<int> { 3, 6, 9, 5, 8, 7, 10 };
+
+
+                levinSearchTaskProvider.problems.Add(levinSearchProblem);
+
+
+            }
+
+            if (false) { // add one to reg0 if reg1 appear in array at current position, advance
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
                 levinSearchProblem.enumerationMaxProgramLength = 6;
                 levinSearchProblem.instructionsetCount = InstructionInfo.getNumberOfInstructions() - 16;/*because no call*/

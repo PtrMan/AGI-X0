@@ -433,6 +433,24 @@ namespace MetaNix.search.levin2 {
             state.instructionPointer++;
             success = true;
         }
+
+        // behaves as NOP, TODO
+        internal static void arrayRead(InterpreterState state, int v1, int v2, out bool success) {
+            state.instructionPointer++;
+            success = true;
+        }
+
+        internal static void arrayIdx2Reg(InterpreterState state, uint array, uint register, out bool success) {
+            if (state.arrayState == null) {
+                success = false;
+                return;
+            }
+
+            state.registers[register] = state.arrayState.index;
+
+            state.instructionPointer++;
+            success = true;
+        }
     }
 
     public class CallStack {
@@ -526,12 +544,15 @@ namespace MetaNix.search.levin2 {
             "arrayCompare reg0",
             "arrayCompare reg1",
             "ret",
+            "arrayInsert reg0",
             "arrayInsert reg1",
             "arrayInsert reg2",
             "arraySetIdx 0",
             "arraySetIdx -1",
             "arrayIdxFlag arr0 +1",
             "arrayValid arr0",
+            "arrayRead arr0, reg0",
+            "arrayIdx2Reg arr0 reg0",
         };
 
         public static uint getNumberOfHardcodedSingleInstructions() {
@@ -561,13 +582,20 @@ namespace MetaNix.search.levin2 {
 
             currentBaseInstruction += 1;
 
-            // add reg0 constant
-            if (instruction <= currentBaseInstruction + 1) {
-                // currently just compare reg0 with zero
-                return "add reg0 -1";
+            // add register constant
+            if (instruction <= currentBaseInstruction + 2) {
+                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the pool
+
+                if( subInstruction == 0 ) {
+                    return "add reg0 -1";
+                }
+                else if (subInstruction == 1) {
+                    return "add reg0 2";
+                }
+
             }
 
-            currentBaseInstruction += 1;
+            currentBaseInstruction += 2;
 
             // addFlag reg0 constant
             if (instruction <= currentBaseInstruction + 1) {
@@ -636,12 +664,15 @@ namespace MetaNix.search.levin2 {
                 case 3: InductionOperationsString.arrayCompareWithRegister(interpreterState, 0, out success); return;
                 case 4: InductionOperationsString.arrayCompareWithRegister(interpreterState, 1, out success); return;
                 case 5: InductionOperationsString.return_(interpreterState, out success); return;
-                case 6: InductionOperationsString.arrayInsert(interpreterState, /*reg*/1, out success); return;
-                case 7: InductionOperationsString.arrayInsert(interpreterState, /*reg*/2, out success); return;
-                case 8: InductionOperationsString.arraySetIdx(interpreterState, 0, out success); return;
-                case 9: InductionOperationsString.arraySetIdx(interpreterState, -1, out success); return; // -1 is end of array
-                case 10: InductionOperationsString.arrayIdxFlag(interpreterState, 0, 1, out success); return; // TODO< should be an intrinsic command which gets added by default >
-                case 11: InductionOperationsString.arrayValid(interpreterState, /*array*/0, out success); return;
+                case 6: InductionOperationsString.arrayInsert(interpreterState, /*reg*/0, out success); return;
+                case 7: InductionOperationsString.arrayInsert(interpreterState, /*reg*/1, out success); return;
+                case 8: InductionOperationsString.arrayInsert(interpreterState, /*reg*/2, out success); return;
+                case 9: InductionOperationsString.arraySetIdx(interpreterState, 0, out success); return;
+                case 10: InductionOperationsString.arraySetIdx(interpreterState, -1, out success); return; // -1 is end of array
+                case 11: InductionOperationsString.arrayIdxFlag(interpreterState, 0, 1, out success); return; // TODO< should be an intrinsic command which gets added by default >
+                case 12: InductionOperationsString.arrayValid(interpreterState, /*array*/0, out success); return;
+                case 13: InductionOperationsString.arrayRead(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 14: InductionOperationsString.arrayIdx2Reg(interpreterState, /*array*/0, /*register*/0, out success); return;
             }
 
             // if we are here we have instrution with hardcoded parameters
@@ -661,15 +692,24 @@ namespace MetaNix.search.levin2 {
             currentBaseInstruction += 1;
 
 
-            // add reg0 constant
-            if (instruction <= currentBaseInstruction + 1) {
-                // currently just compare reg0 with zero
-                InductionOperationsString.add(interpreterState, /*register*/0, -1);
-                success = true;
-                return;
+
+
+
+            // add register constant
+            if (instruction <= currentBaseInstruction + 2) {
+                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the pool
+
+                if (subInstruction == 0) {
+                    InductionOperationsString.add(interpreterState, /*register*/0, -1);
+                }
+                else if (subInstruction == 1) {
+                    InductionOperationsString.add(interpreterState, /*register*/0, 2);
+                }
+
             }
 
-            currentBaseInstruction += 1;
+            currentBaseInstruction += 2;
+
 
             // addFlag reg0 constant
             if (instruction <= currentBaseInstruction + 1) {
