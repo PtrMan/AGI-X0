@@ -578,6 +578,7 @@ namespace MetaNix.search.levin2 {
             currentBaseInstruction += 1;
 
 
+
             // jump
             if (instruction <= currentBaseInstruction + 16) {
                 int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?

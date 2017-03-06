@@ -290,7 +290,48 @@ namespace MetaNix {
                 */
             }
 
-            { // append reg0 times reg1
+            // append reg1 to array[0]
+            if(false) {
+                AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
+                levinSearchProblem.enumerationMaxProgramLength = 6;
+                levinSearchProblem.instructionsetCount = InstructionInfo.getNumberOfInstructions() - 16;/*because no call*/
+
+                levinSearchProblem.maxNumberOfRetiredInstructions = /*length of program*/6 + 1/* might be off by one*/;
+
+                levinSearchProblem.initialInterpreterState = new InterpreterState();
+                levinSearchProblem.initialInterpreterState.registers = new int[3];
+                levinSearchProblem.initialInterpreterState.arrayState = new ArrayState();
+                levinSearchProblem.initialInterpreterState.arrayState.array = new List<int>();
+                //levinSearchProblem.initialInterpreterState.debugExecution = false;
+
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+
+                levinSearchProblem.trainingSamples[0].questionArray = new List<int> { };
+                levinSearchProblem.trainingSamples[0].questionRegisters = new int?[] { null, 0 };
+                levinSearchProblem.trainingSamples[0].answerArray = new List<int> { 0 };
+                levinSearchProblem.trainingSamples[0].answerRegisters = new int?[] { null, null };
+                levinSearchProblem.trainingSamples[0].answerArrayIndex = 0;
+
+                levinSearchProblem.trainingSamples[1].questionArray = new List<int> { 4};
+                levinSearchProblem.trainingSamples[1].questionRegisters = new int?[] { null, 1 };
+                levinSearchProblem.trainingSamples[1].answerArray = new List<int> { 4, 1 };
+                levinSearchProblem.trainingSamples[1].answerRegisters = new int?[] { null, null };
+                levinSearchProblem.trainingSamples[1].answerArrayIndex = 1;
+
+                levinSearchProblem.trainingSamples[2].questionArray = new List<int> { 9, 3};
+                levinSearchProblem.trainingSamples[2].questionRegisters = new int?[] { null, 2 };
+                levinSearchProblem.trainingSamples[2].answerArray = new List<int> { 9, 3, 2 };
+                levinSearchProblem.trainingSamples[2].answerRegisters = new int?[] { null, null };
+                levinSearchProblem.trainingSamples[2].answerArrayIndex = 2;
+
+                levinSearchTaskProvider.problems.Add(levinSearchProblem);
+            }
+
+            // disabled because too complicated without bias
+            // we need to use another program here
+            if(false) { // append reg0 times reg1
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
                 levinSearchProblem.enumerationMaxProgramLength = 6;
                 levinSearchProblem.instructionsetCount = InstructionInfo.getNumberOfInstructions() - 16;/*because no call*/
@@ -341,6 +382,20 @@ namespace MetaNix {
                 levinSearchProblem.trainingSamples[5].answerRegisters = new int?[] { null, null };
 
                 levinSearchTaskProvider.problems.Add(levinSearchProblem);
+
+                /*
+                **(too complicated without bias)**
+
+                    ```
+                    arraySetIdx - 1
+                    cmp reg0 0
+                    jumpNotFlag 1
+                    ret                 5
+                    arrayInsert reg1    6
+                    sub reg0 1
+                    jmp - 7
+                    ```
+                */
             }
 
             if(false) { // problem : append reg2 to end and reg1 to beginning
