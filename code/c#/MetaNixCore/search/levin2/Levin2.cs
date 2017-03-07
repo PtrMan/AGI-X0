@@ -451,6 +451,23 @@ namespace MetaNix.search.levin2 {
             state.instructionPointer++;
             success = true;
         }
+
+        internal static void mov(InterpreterState state, int register, int value, out bool success) {
+            state.registers[register] = value;
+
+            state.instructionPointer++;
+            success = true;
+        }
+
+        internal static void arrayMovToArray(InterpreterState state, uint array, uint register, out bool success) {
+            if (state.arrayState == null || !state.arrayState.isIndexValid) {
+                success = false;
+                return;
+            }
+            state.arrayState.array[state.arrayState.index] = state.registers[register];
+            state.instructionPointer++;
+            success = true;
+        }
     }
 
     public class CallStack {
@@ -551,8 +568,12 @@ namespace MetaNix.search.levin2 {
             "arraySetIdx -1",
             "arrayIdxFlag arr0 +1",
             "arrayValid arr0",
-            "arrayRead arr0, reg0",
+            "arrayRead arr0 reg0",
             "arrayIdx2Reg arr0 reg0",
+            "mov reg0, 0",
+            "mov reg0, 1",
+            "mov reg0, 3",
+            "arrayMov arr0 reg0",
         };
 
         public static uint getNumberOfHardcodedSingleInstructions() {
@@ -673,6 +694,10 @@ namespace MetaNix.search.levin2 {
                 case 12: InductionOperationsString.arrayValid(interpreterState, /*array*/0, out success); return;
                 case 13: InductionOperationsString.arrayRead(interpreterState, /*array*/0, /*register*/0, out success); return;
                 case 14: InductionOperationsString.arrayIdx2Reg(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 15: InductionOperationsString.mov(interpreterState, /*register*/0, 0, out success); return;
+                case 16: InductionOperationsString.mov(interpreterState, /*register*/0, 1, out success); return;
+                case 17: InductionOperationsString.mov(interpreterState, /*register*/0, 3, out success); return;
+                case 18: InductionOperationsString.arrayMovToArray(interpreterState, /*array*/0, /*register*/0, out success); return;
             }
 
             // if we are here we have instrution with hardcoded parameters
@@ -861,6 +886,16 @@ namespace MetaNix.search.levin2 {
             sampledProgram.CopyTo(program, 0);
             program[privateNumberOfInstructions - 1] = 5; // overwrite last instruction with ret so it terminates always
 
+            /*
+            uint[] program2 = new uint[5];
+            program2[0] = 1;
+            program2[1] = 15;
+            program2[2] = 18;
+            program2[3] = 0;
+            program2[4] = 5;
+            program2.CopyTo(program, 0);
+            interpreterArguments.lengthOfProgram = 5;
+            */
 
             bool trainingSamplesTestedSuccessful = true;
 

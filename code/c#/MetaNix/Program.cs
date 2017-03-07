@@ -219,7 +219,7 @@ namespace MetaNix {
             AdvancedAdaptiveLevinSearchTaskProvider levinSearchTaskProvider = new AdvancedAdaptiveLevinSearchTaskProvider(scheduler, sparseArrayProgramDistribution);
 
             // linked list problem
-            if (true) { // append one element in reg1 to linked list, precondition is that the array index is already past the end of the array
+            if (false) { // append one element in reg1 to linked list, precondition is that the array index is already past the end of the array
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
                 levinSearchProblem.enumerationMaxProgramLength = 6;
                 levinSearchProblem.instructionsetCount = InstructionInfo.getNumberOfInstructions() - 16;/*because no call*/
@@ -242,25 +242,96 @@ namespace MetaNix {
                 levinSearchProblem.trainingSamples[0].questionRegisters = new int?[] { null, 6 };
                 levinSearchProblem.trainingSamples[0].questionArrayIndex = 0;
                 levinSearchProblem.trainingSamples[0].answerRegisters = new int?[] { null, null };
-                levinSearchProblem.trainingSamples[0].answerArray = new List<int> { 2, 6 };
+                levinSearchProblem.trainingSamples[0].answerArray = new List<int> { 3, 1, 6 };
 
-                levinSearchProblem.trainingSamples[1].questionArray = new List<int> { 2, 6 };
+                levinSearchProblem.trainingSamples[1].questionArray = new List<int> { 3, 1, 6 };
                 levinSearchProblem.trainingSamples[1].questionRegisters = new int?[] { null, 5 };
-                levinSearchProblem.trainingSamples[1].questionArrayIndex = 2;
+                levinSearchProblem.trainingSamples[1].questionArrayIndex = 3;
                 levinSearchProblem.trainingSamples[1].answerRegisters = new int?[] { null, null };
-                levinSearchProblem.trainingSamples[1].answerArray = new List<int> { 2, 6, 4, 5 };
+                levinSearchProblem.trainingSamples[1].answerArray = new List<int> { 3, 1, 6, 3, 1, 5 };
 
-                levinSearchProblem.trainingSamples[2].questionArray = new List<int> { 3, 6, 9 };
+                levinSearchProblem.trainingSamples[2].questionArray = new List<int> { 3, 1, 6, 9 };
                 levinSearchProblem.trainingSamples[2].questionRegisters = new int?[] { null, 7 };
-                levinSearchProblem.trainingSamples[2].questionArrayIndex = 3;
+                levinSearchProblem.trainingSamples[2].questionArrayIndex = 4;
                 levinSearchProblem.trainingSamples[2].answerRegisters = new int?[] { null, null };
-                levinSearchProblem.trainingSamples[2].answerArray = new List<int> { 3, 6, 9, 5, 7 };
+                levinSearchProblem.trainingSamples[2].answerArray = new List<int> { 3, 1, 6, 9, 3, 1, 7 };
 
-                levinSearchProblem.trainingSamples[3].questionArray = new List<int> { 3, 6, 9, 5, 8 };
+                levinSearchProblem.trainingSamples[3].questionArray = new List<int> { 4, 1, 6, 9, 3, 1, 7 };
                 levinSearchProblem.trainingSamples[3].questionRegisters = new int?[] { null, 10 };
-                levinSearchProblem.trainingSamples[3].questionArrayIndex = 5;
+                levinSearchProblem.trainingSamples[3].questionArrayIndex = 7;
                 levinSearchProblem.trainingSamples[3].answerRegisters = new int?[] { null, null };
-                levinSearchProblem.trainingSamples[3].answerArray = new List<int> { 3, 6, 9, 5, 8, 7, 10 };
+                levinSearchProblem.trainingSamples[3].answerArray = new List<int> { 4, 1, 6, 9, 3, 1, 7, 3, 1, 10 };
+
+
+                levinSearchTaskProvider.problems.Add(levinSearchProblem);
+
+
+            }
+
+            // linked list problem
+            if (true) { // disable/free element in linked list, precondition is that the array index is already pointing at the element
+                AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
+                levinSearchProblem.enumerationMaxProgramLength = 5;
+                levinSearchProblem.instructionsetCount = InstructionInfo.getNumberOfInstructions() - 16;/*because no call*/
+
+                levinSearchProblem.maxNumberOfRetiredInstructions = /*length of program*/6 + 1/* might be off by one*/;
+
+                levinSearchProblem.initialInterpreterState = new InterpreterState();
+                levinSearchProblem.initialInterpreterState.registers = new int[3];
+                levinSearchProblem.initialInterpreterState.arrayState = new ArrayState();
+                levinSearchProblem.initialInterpreterState.arrayState.array = new List<int>();
+                //levinSearchProblem.initialInterpreterState.debugExecution = false;
+
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+                levinSearchProblem.trainingSamples.Add(new TrainingSample());
+
+                // append
+                levinSearchProblem.trainingSamples[0].questionArray = new List<int> { 3, 1, 6 };
+                levinSearchProblem.trainingSamples[0].questionRegisters = new int?[] { 42, 11 };
+                levinSearchProblem.trainingSamples[0].questionArrayIndex = 0;
+                levinSearchProblem.trainingSamples[0].answerRegisters = new int?[] { null, 11 };
+                levinSearchProblem.trainingSamples[0].answerArray = new List<int> { 3, 0, 6 };
+                levinSearchProblem.trainingSamples[0].answerArrayIndex = 0;
+                
+                levinSearchProblem.trainingSamples[1].questionArray = new List<int> { 3, 1, 6, 3, 1, 5 };
+                levinSearchProblem.trainingSamples[1].questionRegisters = new int?[] { 42, 11 };
+                levinSearchProblem.trainingSamples[1].questionArrayIndex = 0;
+                levinSearchProblem.trainingSamples[1].answerRegisters = new int?[] { null, 11 };
+                levinSearchProblem.trainingSamples[1].answerArray = new List<int> { 3, 0, 6, 3, 1, 5 };
+                levinSearchProblem.trainingSamples[1].answerArrayIndex = 0;
+
+                levinSearchProblem.trainingSamples[2].questionArray = new List<int> { 3, 1, 6, 3, 1, 5 };
+                levinSearchProblem.trainingSamples[2].questionRegisters = new int?[] { 42, 11 };
+                levinSearchProblem.trainingSamples[2].questionArrayIndex = 3;
+                levinSearchProblem.trainingSamples[2].answerRegisters = new int?[] { null, 11 };
+                levinSearchProblem.trainingSamples[2].answerArray = new List<int> { 3, 1, 6, 3, 0, 5 };
+                levinSearchProblem.trainingSamples[2].answerArrayIndex = 3;
+
+                
+                levinSearchProblem.trainingSamples[3].questionArray = new List<int> { 4, 1, 6, 9, 3, 1, 7, 3, 1, 10 };
+                levinSearchProblem.trainingSamples[3].questionRegisters = new int?[] { 42, 11 };
+                levinSearchProblem.trainingSamples[3].questionArrayIndex = 7;
+                levinSearchProblem.trainingSamples[3].answerRegisters = new int?[] { null, 11 };
+                levinSearchProblem.trainingSamples[3].answerArray = new List<int> { 4, 1, 6, 9, 3, 1, 7, 3, 0, 10 };
+                levinSearchProblem.trainingSamples[3].answerArrayIndex = 7;
+
+                levinSearchProblem.trainingSamples[4].questionArray = new List<int> { 4, 1, 6, 9, 3, 1, 7, 3, 1, 10 };
+                levinSearchProblem.trainingSamples[4].questionRegisters = new int?[] { 42, 11 };
+                levinSearchProblem.trainingSamples[4].questionArrayIndex = 0;
+                levinSearchProblem.trainingSamples[4].answerRegisters = new int?[] { null, 11 };
+                levinSearchProblem.trainingSamples[4].answerArray = new List<int> { 4, 0, 6, 9, 3, 1, 7, 3, 1, 10 };
+                levinSearchProblem.trainingSamples[4].answerArrayIndex = 0;
+
+                levinSearchProblem.trainingSamples[5].questionArray = new List<int> { 4, 1, 6, 9, 3, 1, 7, 3, 1, 10 };
+                levinSearchProblem.trainingSamples[5].questionRegisters = new int?[] { 42, 11 };
+                levinSearchProblem.trainingSamples[5].questionArrayIndex = 4;
+                levinSearchProblem.trainingSamples[5].answerRegisters = new int?[] { null, 11 };
+                levinSearchProblem.trainingSamples[5].answerArray = new List<int> { 4, 1, 6, 9, 3, 0, 7, 3, 1, 10 };
+                levinSearchProblem.trainingSamples[5].answerArrayIndex = 4;
 
 
                 levinSearchTaskProvider.problems.Add(levinSearchProblem);
