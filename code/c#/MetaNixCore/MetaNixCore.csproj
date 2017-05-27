@@ -41,6 +41,10 @@
   <ItemGroup>
     <Compile Include="Atom.cs" />
     <Compile Include="attention\Budget.cs" />
+    <Compile Include="common\Blackboard.cs" />
+    <Compile Include="control\levinProgramSearch\AdvancedAdaptiveLevinSearchProgramDatabase.cs" />
+    <Compile Include="control\levinProgramSearch\LevinSearchControl.cs" />
+    <Compile Include="control\levinProgramSearch\SearchTask.cs" />
     <Compile Include="datastructures\BudgetedCollection.cs" />
     <Compile Include="datastructures\BudgetedDatastructure.cs" />
     <Compile Include="datastructures\compact\CompressedTable.cs" />
@@ -60,7 +64,7 @@
     <Compile Include="FunctionalParser.cs" />
     <Compile Include="instrumentation\Statistics.cs" />
     <Compile Include="misc\Logo.cs" />
-    <Compile Include="Observer.cs" />
+    <Compile Include="common\Observer.cs" />
     <Compile Include="Memoizer.cs" />
     <Compile Include="MemoizerShadowableDispatcher.cs" />
     <Compile Include="Misc.cs" />
@@ -85,6 +89,11 @@
     <Compile Include="TranslateFunctionalParseTree.cs" />
     <Compile Include="Variant.cs" />
     <Compile Include="VariantRange.cs" />
+    <Compile Include="weakAi\behaviorTree\decorator\Repeater.cs" />
+    <Compile Include="weakAi\behaviorTree\EntityContext.cs" />
+    <Compile Include="weakAi\behaviorTree\Parallel.cs" />
+    <Compile Include="weakAi\behaviorTree\Sequence.cs" />
+    <Compile Include="weakAi\behaviorTree\Task.cs" />
     <Compile Include="weakAi\restrictedBoltzmannMachine\ActivationFunctions.cs" />
     <Compile Include="weakAi\restrictedBoltzmannMachine\Distributions.cs" />
     <Compile Include="weakAi\restrictedBoltzmannMachine\Interfaces.cs" />

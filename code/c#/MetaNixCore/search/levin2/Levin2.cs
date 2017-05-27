@@ -886,6 +886,11 @@ namespace MetaNix.search.levin2 {
             sampledProgram.CopyTo(program, 0);
             program[privateNumberOfInstructions - 1] = 5; // overwrite last instruction with ret so it terminates always
 
+            // append parent program if there is one
+            if( parentProgram != null ) {
+                parentProgram.CopyTo(program, privateNumberOfInstructions);
+            }
+
             /*
             uint[] program2 = new uint[5];
             program2[0] = 1;
@@ -1049,6 +1054,7 @@ namespace MetaNix.search.levin2 {
         public long remainingIterationsForCurrentProgramLength;
 
         public IList<TrainingSample> trainingSamples = new List<TrainingSample>();
+        public uint[] parentProgram; // can be null
 
         internal void biasSearchTowardProgram() {
             uint[] effectiveProgram = new uint[numberOfInstructions - 1];

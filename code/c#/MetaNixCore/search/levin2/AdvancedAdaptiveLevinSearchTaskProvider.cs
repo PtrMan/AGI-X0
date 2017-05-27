@@ -62,6 +62,7 @@ namespace MetaNix.search.levin2 {
             levinSearchTask.levinSearchContext.interpreterArguments.interpreterState = problem.initialInterpreterState;
             levinSearchTask.levinSearchContext.instructionsetCount = problem.instructionsetCount;
             levinSearchTask.levinSearchContext.trainingSamples = problem.trainingSamples;
+            levinSearchTask.levinSearchContext.parentProgram = problem.parentProgram;
             levinSearchTask.levinSearchContext.initiateSearch(sparseArrayProgramDistribution, problem.enumerationMaxProgramLength);
         }
 
@@ -73,6 +74,28 @@ namespace MetaNix.search.levin2 {
 
     // describes an problem which has to been solved with levinsearch
     public class AdvancedAdaptiveLevinSearchProblem {
+        public AdvancedAdaptiveLevinSearchProblem shallowCopy() {
+            AdvancedAdaptiveLevinSearchProblem copied = new AdvancedAdaptiveLevinSearchProblem();
+            copied.initialInterpreterState = initialInterpreterState;
+            copied.trainingSamples = trainingSamples;
+            copied.enumerationMaxProgramLength = enumerationMaxProgramLength;
+            copied.instructionsetCount = instructionsetCount;
+            copied.maxNumberOfRetiredInstructions = maxNumberOfRetiredInstructions;
+            copied.parentProgram = parentProgram;
+            copied.humanReadableHints = humanReadableHints;
+            return copied;
+        }
+
+        public AdvancedAdaptiveLevinSearchProblem setEnumerationMaxProgramLength(uint length) {
+            enumerationMaxProgramLength = length;
+            return this;
+        }
+
+        public AdvancedAdaptiveLevinSearchProblem setParentProgram(uint[] parentProgram) {
+            this.parentProgram = parentProgram;
+            return this;
+        }
+
         public InterpreterState initialInterpreterState;
         public IList<TrainingSample> trainingSamples = new List<TrainingSample>();
 
@@ -81,5 +104,11 @@ namespace MetaNix.search.levin2 {
 
         public uint instructionsetCount;
         public uint maxNumberOfRetiredInstructions;
+
+        // program which can be called by the current program
+        public uint[] parentProgram; // can be null
+
+        public IList<string> humanReadableHints = new List<string>(); // are search hints which are/were used for searching related programs
+                                                                      // programs with the same hints do approximatly solve the same problem
     }
 }
