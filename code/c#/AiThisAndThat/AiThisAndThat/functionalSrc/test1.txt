@@ -1,0 +1,21 @@
+﻿@match{
+	##a
+	
+	@tuple2{
+		{a}
+		@seq{
+			"ptrn.append" "." { "printB"; };
+
+			"printA";
+			"printA";
+		}
+	}
+	
+	@tuple2{
+		{b}
+		@seq{
+			"printB";
+			"printA";
+		}
+	}
+}

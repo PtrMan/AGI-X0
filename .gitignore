@@ -1,19 +1,10 @@
-﻿################################################################################
-# Diese .gitignore-Datei wurde von Microsoft(R) Visual Studio automatisch erstellt.
-################################################################################
+﻿/code/c#/**/bin/
+/code/c#/**/bin/Debug
+/code/c#/**/obj/
+/code/c#/**/obj/Debug
+/code/c#/**/.vs/*
+/code/c#/**/packages
+/code/c#/**/*.csproj.user
 
-/code/c#/MetaNixCore/bin/Debug
-/code/c#/MetaNixCore/obj/Debug
-/code/c#/MetaNixCore/obj/Debug
-/code/c#/MetaNixUnittest
-/code/c#/MetaNixUnittest/obj/Debug/TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs
-/code/c#/MetaNixUnittest/obj/Debug/TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs
-/code/c#/MetaNixUnittest/obj/Debug/TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs
-/code/c#/MetaNixUnittest/obj/Debug/MetaNixUnittest.pdb
-/code/c#/MetaNixUnittest/obj/Debug/MetaNixUnittest.dll
-/code/c#/MetaNixUnittest/obj/Debug/MetaNixUnittest.csprojResolveAssemblyReference.cache
-/code/c#/MetaNixUnittest/obj/Debug/MetaNixUnittest.csproj.FileListAbsolute.txt
-/code/c#/MetaNixUnittest/obj/Debug/DesignTimeResolveAssemblyReferencesInput.cache
-/code/c#/MetaNixUnittest/obj/Debug/CoreCompileInputs.cache
-/code/c#/MetaNixUnittest/obj/Debug
-/code/c#/MetaNix/.vs/MetaNix/v15
+# reports
+/code/c#/**/*.vspx

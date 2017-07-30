@@ -1,0 +1,3 @@
+﻿@match{
+	"ptrn-append" "." { "printB"; };
+}

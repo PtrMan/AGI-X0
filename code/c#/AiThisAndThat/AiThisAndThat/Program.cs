@@ -759,14 +759,17 @@ class Program {
 
         // read file
         {
-            List <string> uriParts = new List<string>(PathHelper.AssemblyDirectory.Uri.Segments);
-            uriParts.RemoveAt(0); // remove first "/"
-            uriParts.RemoveRange(uriParts.Count - 4, 4);
+            string absoluteUri = PathHelper.AssemblyDirectory.Uri.AbsoluteUri;
+            string absoluteUriWithoutFile = absoluteUri.Substring(8);
 
-            uriParts.Add("functionalSrc/");
-            uriParts.Add(filename);
+            List<string> pathsElements = new List<string>(absoluteUriWithoutFile.Split(new char[]{'/'}));
 
-            string path = string.Join("", uriParts).Replace('/', '\\').Replace("%20", " ");
+            pathsElements.RemoveRange(pathsElements.Count - 4, 4);
+
+            pathsElements.Add("functionalSrc/");
+            pathsElements.Add(filename);
+
+            string path = string.Join("/", pathsElements).Replace('/', '\\').Replace("%20", " ");
 
             content = System.IO.File.ReadAllText(path);
         }

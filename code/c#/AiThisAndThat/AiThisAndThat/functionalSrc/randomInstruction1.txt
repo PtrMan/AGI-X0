@@ -1,0 +1,52 @@
+﻿@seq {
+	@seq {
+		"random.uniform.long" 0 3 ##rand0;
+
+		@match {
+			##rand0
+
+			@tuple2 {
+				0
+				"ptrn.append" "../../../1" { "printA"; };
+			}
+
+			@tuple2 {
+				1
+				"ptrn.append" "../../../1" { "printB"; };
+			}
+
+			@tuple2 {
+				2
+				"ptrn.append" "../../../1" { "printC"; };
+			}
+		}
+
+
+
+		"random.uniform.long" 0 3 ##rand1;
+
+		@match {
+			##rand1
+
+			@tuple2 {
+				0
+				"ptrn.append" "../../../1" { "printA"; };
+			}
+
+			@tuple2 {
+				1
+				"ptrn.append" "../../../1" { "printB"; };
+			}
+
+			@tuple2 {
+				2
+				"ptrn.append" "../../../1" { "printC"; };
+			}
+
+		}
+
+		--"recur" ##rand1;
+	}
+
+	@seq{}
+}
