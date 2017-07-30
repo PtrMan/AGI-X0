@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 
-namespace AiThisAndThat.lang {
+namespace MetaNix.framework.lang {
     public abstract class Lexer {
         public enum EnumLexerCode {
             OK,

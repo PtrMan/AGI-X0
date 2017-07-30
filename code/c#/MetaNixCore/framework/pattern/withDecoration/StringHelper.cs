@@ -1,11 +1,11 @@
-﻿using AiThisAndThat.patternMatching;
+﻿using MetaNix.framework.pattern;
 using System.Diagnostics;
 
-namespace AiThisAndThat.framework.pattern.withDecoration {
+namespace MetaNix.framework.pattern.withDecoration {
     // convert a string to a decorated pattern
     public static class StringHelper {
         public static Pattern<Decoration> convert(string str, ulong patternUniqueId) {
-            Pattern<Decoration> result = Pattern<AiThisAndThat.patternMatching.Decoration>.makeBranch(patternUniqueId);
+            Pattern<Decoration> result = Pattern<Decoration>.makeBranch(patternUniqueId);
             result.decoration = new Decoration();
             result.decoration.type = Decoration.EnumType.STRING;
             result.referenced = new Pattern<Decoration>[str.Length];

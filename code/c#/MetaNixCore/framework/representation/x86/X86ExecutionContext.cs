@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AiThisAndThat.representation.x86 {
+namespace MetaNix.framework.representation.x86 {
     public class X86ExecutionContext {
         public X86ExecutionContext(int numberOfIntegerRegisters, int numberOfVectorRegisters) {
             integerRegisters = new int[numberOfIntegerRegisters];

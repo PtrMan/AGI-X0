@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace AiThisAndThat.patternMatching {
+namespace MetaNix.framework.pattern {
     public class MatchArguments<DecorationType> where DecorationType : IDecoration<DecorationType> {
 	    public Pattern<DecorationType> templatePattern, matchingPattern;
 	    public bool bidirectional;

@@ -1,4 +1,4 @@
-﻿namespace AiThisAndThat.representation.x86 {
+﻿namespace MetaNix.framework.representation.x86 {
     public class X86Instruction {
         public enum EnumInstructionType {
             NOP,

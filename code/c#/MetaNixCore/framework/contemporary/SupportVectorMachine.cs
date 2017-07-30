@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Test0 {
+namespace MetaNix.framework.contempary {
     public class SupportVectorMachine {
         public struct ConstructorParameters {
             public uint maximumNumberOfIterations;

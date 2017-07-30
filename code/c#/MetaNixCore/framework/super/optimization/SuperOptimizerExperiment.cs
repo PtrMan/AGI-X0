@@ -1,12 +1,13 @@
-﻿using AiThisAndThat.representation.x86;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+
+using MetaNix.framework.representation.x86;
 
 // just a small experiment of a superoptimizer for a simple X86 like target machine
 // this is because we can easily emit "real" X86 programs for these programs
 
-namespace AiThisAndThat.super.optimization {
+namespace MetaNix.framework.super.optimization {
     
     public class EnumerationContext {
         X86Instruction[] targetProgram; // program which has to be optimized

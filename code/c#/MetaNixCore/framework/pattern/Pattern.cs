@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace AiThisAndThat.patternMatching {
+namespace MetaNix.framework.pattern {
     public class Pattern<DecorationType> where DecorationType : IDecoration<DecorationType> {
 	    public DecorationType decoration;
 

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace AiThisAndThat.lang {
+namespace MetaNix.framework.lang {
     class Line {
         public IList<Token> Tokens = new List<Token>();
     }

@@ -1,4 +1,4 @@
-﻿namespace AiThisAndThat.framework.misc {
+﻿namespace MetaNix.framework.misc {
     public interface IDeepCopyable<Type> {
         Type deepCopy();
     }

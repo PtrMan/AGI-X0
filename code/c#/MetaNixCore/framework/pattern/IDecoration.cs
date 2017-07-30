@@ -1,6 +1,6 @@
-﻿using AiThisAndThat.framework.misc;
+﻿using MetaNix.framework.misc;
 
-namespace AiThisAndThat.patternMatching {
+namespace MetaNix.framework.pattern {
     public interface IDecoration<DecorationType> : IDeepCopyable<DecorationType> {
         bool checkEqualValue(DecorationType other);
     }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace AiThisAndThat.framework.reslilentDatatypes {
+namespace MetaNix.framework.reslilentDatatypes {
     // double with build in error detection (and possibly correction)
     // used for long term storage (possibly on corruptable media)
     /* commented because not in use

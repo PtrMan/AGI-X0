@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-using AiThisAndThat.framework.misc;
+using PatternWithDecoration = MetaNix.framework.pattern.Pattern<MetaNix.framework.pattern.Decoration>;
+using MetaNix.framework.pattern.withDecoration;
 
-using PatternWithDecoration = AiThisAndThat.patternMatching.Pattern<AiThisAndThat.patternMatching.Decoration>;
-using AiThisAndThat.framework.pattern.withDecoration;
-
-namespace AiThisAndThat.patternMatching {
+namespace MetaNix.framework.pattern {
     
     public class Decoration : IDecoration<Decoration> {
 	    public enum EnumType {

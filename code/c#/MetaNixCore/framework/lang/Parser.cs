@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AiThisAndThat.lang {
+namespace MetaNix.framework.lang {
     public class ParsingException : Exception {
         public ParsingException(string message) {
             this.message = message;

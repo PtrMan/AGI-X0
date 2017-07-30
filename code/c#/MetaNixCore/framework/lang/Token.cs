@@ -1,5 +1,5 @@
 ﻿
-namespace AiThisAndThat.lang {
+namespace MetaNix.framework.lang {
     public class Token {
         public enum EnumType {
             NUMBER = 0,
