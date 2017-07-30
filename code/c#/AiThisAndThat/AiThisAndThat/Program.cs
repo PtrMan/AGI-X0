@@ -8,6 +8,15 @@ using System.Linq;
 using execution.functional;
 using treeTransducer;
 using execution.translateFunctionalToLowlevel;
+using AiThisAndThat.super.optimization;
+using AiThisAndThat.lowlevel;
+using AiThisAndThat.patternMatching;
+using AiThisAndThat.representation.x86;
+using AiThisAndThat.executionBridges;
+using AiThisAndThat.languages.functional2;
+using AiThisAndThat;
+using AiThisAndThat.framework.pattern.withDecoration;
+using AiThisAndThat.framework.misc;
 
 
 
@@ -703,11 +712,534 @@ class Program {
         //testBitvectorInduction(); // TODO< build unittest from this >
         //testBitvectorInductionSequence1();
 
+
+        /*
         testTreeTransducer();
 
         execution.lowLevel.LowLevelCodegenTest.test();
 
         neural.ConvolutionalTriggerNetwork.test();
+        */
+
+
+        // EnumTest.SuperOptimizer1;
+        EnumTest test = EnumTest.ReadFunctionalAndParseAndExecute1;
+
+        if( test == EnumTest.SuperOptimizer1 ) {
+            EnumerationContext ctx = new EnumerationContext();
+            ctx.test();
+        }
+        else if( test == EnumTest.Native1 ) {
+            Native.test();
+        }
+        else if( test == EnumTest.Matching1 ) {
+            testMatching1();
+        }
+        else if( test == EnumTest.PatternInterpreter1) {
+            testPatternInterpreter1();
+        }
+        else if( test == EnumTest.PatternInterpreterExec1 ) {
+            Program program = new Program();
+            program.testPatternInterpreterExec1();
+        }
+        else if( test == EnumTest.FunctionalParserTest1 ) {
+            testFunctionaParsing1();
+        }
+        else if( test == EnumTest.ReadFunctionalAndParseAndExecute1 ) {
+            Program program = new Program();
+            program.testReadFunctionalAndParseAndExecute("randomInstruction1.txt");
+        }
+    }
+
+    PatternSymbolContext patternSymbolContext;
+
+    // tests to read a functional program from a file and executes it
+    private void testReadFunctionalAndParseAndExecute(string filename) {
+        string content;
+
+        // read file
+        {
+            List <string> uriParts = new List<string>(PathHelper.AssemblyDirectory.Uri.Segments);
+            uriParts.RemoveAt(0); // remove first "/"
+            uriParts.RemoveRange(uriParts.Count - 4, 4);
+
+            uriParts.Add("functionalSrc/");
+            uriParts.Add(filename);
+
+            string path = string.Join("", uriParts).Replace('/', '\\').Replace("%20", " ");
+
+            content = System.IO.File.ReadAllText(path);
+        }
+        
+
+
+        Pattern<Decoration> rootPattern = null;
+
+        // lex and parse
+        {
+            Lexer lexer = new Lexer();
+
+            lexer.setSource(content);
+
+            // used to keep track of symbols and uniqueId of Patterns
+            patternSymbolContext = new PatternSymbolContext();
+
+            Functional2LexerAndParser parser = new Functional2LexerAndParser(patternSymbolContext);
+            parser.lexer = lexer;
+
+            parser.parse();
+
+            rootPattern = parser.rootPattern;
+        }
+
+
+
+
+
+        InterpretationContext interpretationCtx = new InterpretationContext();
+
+        // add hardcoded pattern as a variable to match against
+        /*
+        Tuple<ulong, ulong> symbolAndUniqueIdOfValue = patternSymbolContext.lookupOrCreateSymbolIdAndUniqueIdForName("a");
+        ulong symbolIdOfValue = symbolAndUniqueIdOfValue.Item1;
+        ulong uniqueIdOfValue = symbolAndUniqueIdOfValue.Item2;
+        Pattern<Decoration> testMatchingValue = Pattern<Decoration>.makeSymbol(symbolIdOfValue, uniqueIdOfValue);
+        Pattern<Decoration> testMatchingPattern = Pattern<Decoration>.makeBranch(patternSymbolContext.returnNewUniqueId(), new Pattern<Decoration>[1]{testMatchingValue });
+
+        interpretationCtx.valueByVariable[patternSymbolContext.lookupUniqueIdForVariable("a")] = testMatchingPattern;
+        */
+
+        interpretationCtx.functionTable["printA"] = function_PrintA;
+        interpretationCtx.functionTable["printB"] = function_PrintB;
+        interpretationCtx.functionTable["printC"] = function_PrintC;
+
+        interpretationCtx.functionTable["ptrn.append"] = function_patternAppend;
+
+        interpretationCtx.functionTable["random.uniform.long"] = function_randomUniformLong;
+
+        InterpretationResult interpretationResult = new InterpretationResult();
+
+        Interpreter.interpretationDispatch(rootPattern, interpretationCtx, interpretationResult);
+
+
+
+        int debugHere = 5;
+
+    }
+
+    // tests the parsing of small functional programs
+    private static void testFunctionaParsing1() {
+        Lexer lexer = new Lexer();
+
+        lexer.setSource("@match{##a @tuple2{ {a} @seq{ printA;  } }     @tuple2{ {b} @seq{ printB;  } }      }");
+
+        // used to keep track of symbols and uniqueId of Patterns
+        PatternSymbolContext patternSymbolContext = new PatternSymbolContext();
+
+        Functional2LexerAndParser parser = new Functional2LexerAndParser(patternSymbolContext);
+        parser.lexer = lexer;
+
+        parser.parse();
+
+        int debugHere0 = 1;
+    }
+
+    // "interactive"(from the programmer) test
+    static void testMatching1() {
+        
+        //MatchArguments<TestPatternDecoration> arguments = new MatchArguments<TestPatternDecoration>();
+        //arguments.bidirectional = true;
+        //arguments.matchingPattern = Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/0, 0);
+        //arguments.templatePattern = Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/0, 0);
+
+
+        
+        MatchArguments<TestPatternDecoration> arguments = new MatchArguments<TestPatternDecoration>();
+        if( false ) {
+            arguments.bidirectional = true;
+            arguments.templatePattern = Pattern<TestPatternDecoration>.makeBranch(
+                20,
+                new Pattern<TestPatternDecoration>[]{
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 0),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1)}
+                );
+	        arguments.matchingPattern = Pattern<TestPatternDecoration>.makeBranch(
+                21,
+                new Pattern<TestPatternDecoration>[]{
+                    Pattern<TestPatternDecoration>.makeVariable(2),
+                    Pattern<TestPatternDecoration>.makeVariable(2)}
+                );
+        }
+        else if( true ) {
+            arguments.bidirectional = false;
+            arguments.templatePattern = Pattern<TestPatternDecoration>.makeBranch(
+                20,
+                new Pattern<TestPatternDecoration>[]{
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/0, 0),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/0, 0),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 1),}
+                );
+	        arguments.matchingPattern = Pattern<TestPatternDecoration>.makeBranch(
+                21,
+                new Pattern<TestPatternDecoration>[]{
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/0, 10),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 11),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 12),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 13),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 14),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 15),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 16),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 17),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 18),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 19),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/0, 10),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 11),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 12),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 13),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 14),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 15),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 16),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 17),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/1, 18),
+                    Pattern<TestPatternDecoration>.makeSymbol(/*SymbolType*/0, 19),}
+                );
+        }
+        
+
+
+
+        IDictionary<ulong, Pattern<TestPatternDecoration>> matches = new Dictionary<ulong, Pattern<TestPatternDecoration>>();
+        bool isSame;
+
+
+
+        bool isMatching = Matcher<TestPatternDecoration>.match(arguments, matches, out isSame);
+
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
+        
+        for( int i = 0; i < 1000; i++ ) {
+            isMatching = Matcher<TestPatternDecoration>.match(arguments, matches, out isSame);
+        }
+
+        sw.Stop();
+
+        double microseconds = sw.Elapsed.TotalMilliseconds * 1000.0;
+
+        Console.WriteLine("{0}", microseconds);
+
+        Console.ReadKey();
+
+        int debugHere = 5;
+
+    }
+
+    // test interpreter
+    static void testPatternInterpreter1() {
+        Pattern<AiThisAndThat.patternMatching.Decoration> patternWithDeco = new Pattern<AiThisAndThat.patternMatching.Decoration>();
+
+        patternWithDeco.decoration = new Decoration();
+        patternWithDeco.decoration.type = Decoration.EnumType.VARIABLETEMPLATEMATCHING;
+
+        patternWithDeco.type = Pattern<Decoration>.EnumType.BRANCH;
+
+        Pattern<AiThisAndThat.patternMatching.Decoration> toMatched = Pattern<Decoration>.makeSymbol(0, 0);
+        Pattern<AiThisAndThat.patternMatching.Decoration> matchTuple2_0, matchTuple2_1;
+        matchTuple2_0 = new Pattern<Decoration>();
+        matchTuple2_0.decoration = new Decoration();
+        matchTuple2_0.decoration.type = Decoration.EnumType.TUPLE2;
+        matchTuple2_0.type = Pattern<Decoration>.EnumType.BRANCH;
+        matchTuple2_0.referenced = new Pattern<Decoration>[] {
+            Pattern<Decoration>.makeSymbol(1, 1),
+            Pattern<Decoration>.makeSymbol(42, 42),
+        };
+
+        matchTuple2_1 = new Pattern<Decoration>();
+        matchTuple2_1.decoration = new Decoration();
+        matchTuple2_1.decoration.type = Decoration.EnumType.TUPLE2;
+        matchTuple2_1.type = Pattern<Decoration>.EnumType.BRANCH;
+        matchTuple2_1.referenced = new Pattern<Decoration>[] {
+            Pattern<Decoration>.makeSymbol(0, 2),
+            Pattern<Decoration>.makeSymbol(43, 43),
+        };
+        
+
+
+        patternWithDeco.referenced = new Pattern<Decoration>[] {
+            toMatched,
+            matchTuple2_0,
+            matchTuple2_1,
+        };
+
+        InterpretationContext interpretationCtx = new InterpretationContext();
+        InterpretationResult interpretationResult = new InterpretationResult();
+
+        Interpreter.interpretationDispatch(patternWithDeco, interpretationCtx, interpretationResult);
+    }
+
+    // test execution interpretation
+    void testPatternInterpreterExec1() {
+        // setup program
+
+        brigdeFor_Add2Float.instructions = new X86Instruction[1];
+        brigdeFor_Add2Float.instructions[0] = new X86Instruction();
+        brigdeFor_Add2Float.instructions[0].type = X86Instruction.EnumInstructionType.ADD_FLOATVECTOR4;
+        brigdeFor_Add2Float.instructions[0].dest = 0;
+        brigdeFor_Add2Float.instructions[0].a = 1;
+
+        brigdeFor_Sub2Float.instructions = new X86Instruction[1];
+        brigdeFor_Sub2Float.instructions[0] = new X86Instruction();
+        brigdeFor_Sub2Float.instructions[0].type = X86Instruction.EnumInstructionType.SUB_FLOATVECTOR4;
+        brigdeFor_Sub2Float.instructions[0].dest = 0;
+        brigdeFor_Sub2Float.instructions[0].a = 1;
+
+        brigdeFor_Mul2Float.instructions = new X86Instruction[1];
+        brigdeFor_Mul2Float.instructions[0] = new X86Instruction();
+        brigdeFor_Mul2Float.instructions[0].type = X86Instruction.EnumInstructionType.MUL_FLOATVECTOR4;
+        brigdeFor_Mul2Float.instructions[0].dest = 0;
+        brigdeFor_Mul2Float.instructions[0].a = 1;
+
+        brigdeFor_Div2Float.instructions = new X86Instruction[1];
+        brigdeFor_Div2Float.instructions[0] = new X86Instruction();
+        brigdeFor_Div2Float.instructions[0].type = X86Instruction.EnumInstructionType.DIV_FLOATVECTOR4;
+        brigdeFor_Div2Float.instructions[0].dest = 0;
+        brigdeFor_Div2Float.instructions[0].a = 1;
+
+
+
+
+
+
+        Pattern<AiThisAndThat.patternMatching.Decoration> patternWithDeco = new Pattern<AiThisAndThat.patternMatching.Decoration>();
+        patternWithDeco.decoration = new Decoration();
+        patternWithDeco.decoration.type = Decoration.EnumType.EXEC;
+
+        patternWithDeco.type = Pattern<Decoration>.EnumType.BRANCH;
+        patternWithDeco.referenced = new Pattern<Decoration>[4];
+
+        patternWithDeco.referenced[0] = StringHelper.convert("add2Float", 45);
+
+        patternWithDeco.referenced[1] = new Pattern<AiThisAndThat.patternMatching.Decoration>();
+        patternWithDeco.referenced[1].type = Pattern<Decoration>.EnumType.VARIABLE;
+        patternWithDeco.referenced[1].symbol = 0;
+
+        patternWithDeco.referenced[2] = new Pattern<AiThisAndThat.patternMatching.Decoration>();
+        patternWithDeco.referenced[2].decoration = new Decoration();
+        patternWithDeco.referenced[2].decoration.type = Decoration.EnumType.VALUE;
+        patternWithDeco.referenced[2].decoration.value = (float)0.5f;
+
+        // result variable
+        patternWithDeco.referenced[3] = new Pattern<AiThisAndThat.patternMatching.Decoration>();
+        patternWithDeco.referenced[3].type = Pattern<Decoration>.EnumType.VARIABLE;
+        patternWithDeco.referenced[3].symbol = 1;
+
+        interpretationCtx = new InterpretationContext();
+
+        interpretationCtx.functionTable["add2Float"] = function_Add2Float;
+        interpretationCtx.functionTable["sub2Float"] = function_Sub2Float;
+        interpretationCtx.functionTable["mul2Float"] = function_Mul2Float;
+        interpretationCtx.functionTable["div2Float"] = function_Div2Float;
+
+        interpretationCtx.valueByVariable[0] = new Pattern<Decoration>();
+        interpretationCtx.valueByVariable[0].decoration = new Decoration();
+        interpretationCtx.valueByVariable[0].decoration.type = Decoration.EnumType.VALUE;
+        interpretationCtx.valueByVariable[0].decoration.value = (float)2.0f;
+
+        InterpretationResult interpretationResult = new InterpretationResult();
+
+        Interpreter.interpretationDispatch(patternWithDeco, interpretationCtx, interpretationResult);
+    }
+
+    InterpretationContext interpretationCtx;
+
+    BridgePatternToX86InstructionsForFloat brigdeFor_Add2Float = new BridgePatternToX86InstructionsForFloat();
+    void function_Add2Float(InterpretationContext context, IList<Pattern<AiThisAndThat.patternMatching.Decoration>> arguments, Pattern<Decoration> callerSite) {
+        brigdeFor_Add2Float.call(interpretationCtx, arguments);
+    }
+
+    BridgePatternToX86InstructionsForFloat brigdeFor_Sub2Float = new BridgePatternToX86InstructionsForFloat();
+    void function_Sub2Float(InterpretationContext context, IList<Pattern<AiThisAndThat.patternMatching.Decoration>> arguments, Pattern<Decoration> callerSite) {
+        brigdeFor_Sub2Float.call(interpretationCtx, arguments);
+    }
+
+    BridgePatternToX86InstructionsForFloat brigdeFor_Mul2Float = new BridgePatternToX86InstructionsForFloat();
+    void function_Mul2Float(InterpretationContext context, IList<Pattern<AiThisAndThat.patternMatching.Decoration>> arguments, Pattern<Decoration> callerSite) {
+        brigdeFor_Mul2Float.call(interpretationCtx, arguments);
+    }
+
+    BridgePatternToX86InstructionsForFloat brigdeFor_Div2Float = new BridgePatternToX86InstructionsForFloat();
+    void function_Div2Float(InterpretationContext context, IList<Pattern<AiThisAndThat.patternMatching.Decoration>> arguments, Pattern<Decoration> callerSite) {
+        brigdeFor_Div2Float.call(interpretationCtx, arguments);
+    }
+
+
+    // for testing
+    void function_PrintA(InterpretationContext context, IList<Pattern<AiThisAndThat.patternMatching.Decoration>> arguments, Pattern<Decoration> callerSite) {
+        Console.WriteLine("a");
+    }
+
+    void function_PrintB(InterpretationContext context, IList<Pattern<AiThisAndThat.patternMatching.Decoration>> arguments, Pattern<Decoration> callerSite) {
+        Console.WriteLine("b");
+    }
+
+    void function_PrintC(InterpretationContext context, IList<Pattern<AiThisAndThat.patternMatching.Decoration>> arguments, Pattern<Decoration> callerSite) {
+        Console.WriteLine("c");
+    }
+
+
+
+    // pattern manipulation append
+    void function_patternAppend(InterpretationContext context, IList<Pattern<AiThisAndThat.patternMatching.Decoration>> arguments, Pattern<Decoration> callerSite) {
+        Interpreter.vmAssert(arguments.Count == 2, false, "(function entry)  pattern.append must have two arguments, the path and the source-pattern");
+        
+        Pattern<Decoration>
+            pathPattern = arguments[0],
+            manipulatedPattern = callerSite.parent;
+        
+        string path = StringHelper.convertPatternToString(pathPattern);
+        int pathStringIndex = 0;
+
+        // hardcoded because it's way faster than lexing the text
+        string returnNextTokenOfPath() {
+            Debug.Assert(pathStringIndex <= path.Length);
+            if( path.Length <= pathStringIndex )   return null;
+
+            bool lookahead1Possible = pathStringIndex + 1 < path.Length;
+            bool lookahead2Possible = pathStringIndex + 2 < path.Length;
+
+            string nextToken = "";
+            char currentSign = path[pathStringIndex];
+            if( currentSign == '.' && lookahead1Possible && path[pathStringIndex+1] == '.' ) {
+                // ignore terminating "/"
+                if( lookahead2Possible && path[pathStringIndex+2] == '/' ) {
+                    pathStringIndex++;
+                }
+
+                pathStringIndex += 2;
+                return "..";
+            }
+            else if( currentSign == '.' ) {
+                // ignore terminating "/"
+                if( lookahead1Possible && path[pathStringIndex+1] == '/' ) {
+                    pathStringIndex++;
+                }
+
+                pathStringIndex++;
+                return ".";
+            }
+            // else we are here
+
+            for(;;) {
+                if( path.Length <= pathStringIndex )   return nextToken;
+
+                currentSign = path[pathStringIndex];
+                if( currentSign == '/' ) {
+                    pathStringIndex++;
+                    return nextToken;
+                }
+
+                nextToken += currentSign;
+
+                pathStringIndex++;
+            }
+        }
+
+        // interpret and walk path
+        for(;;) {
+            string nextTokenOfPath = returnNextTokenOfPath();
+            
+            if( nextTokenOfPath == null )   break;
+            else if( nextTokenOfPath == "." ) {}
+            else if( nextTokenOfPath == ".." ) {
+                Interpreter.vmAssert(manipulatedPattern.parent != null, false, "(traversal)  Must have parent to be traversed with \"..\"");
+                manipulatedPattern = manipulatedPattern.parent;
+            }
+            else {
+                // interpret the string of the path as a number which is the index into the children
+
+                Interpreter.vmAssert(manipulatedPattern.isBranch, false, "(traversal)  Must be branch to be traversal!");
+
+                int index;
+                bool wasParsingSuccessful = int.TryParse(nextTokenOfPath, out index);
+                Interpreter.vmAssert(wasParsingSuccessful, false, "(traversal)  Children-Index must be number");
+                Interpreter.vmAssert(index >= 0 && index < manipulatedPattern.referenced.Length, false, "(traversal)  Children-Index out of bounds!");
+
+                manipulatedPattern = manipulatedPattern.referenced[index];
+            }
+        }
+
+        Interpreter.vmAssert(arguments[1].isBranch, false, "Argument[1] must be branch!");
+        Interpreter.vmAssert(arguments[1].referenced.Length == 1, false, "Argument[1] must be branch with one children!");
+        
+        Pattern<Decoration> sourcePattern = arguments[1].referenced[0];
+
+        PatternManipulation.append(manipulatedPattern, sourcePattern.deepCopy());
+    }
+
+
+
+    Random randomForFunctions = new Random();
+    // integer random function
+    void function_randomUniformLong(InterpretationContext context, IList<Pattern<AiThisAndThat.patternMatching.Decoration>> arguments, Pattern<Decoration> callerSite) {
+        Interpreter.vmAssert(arguments.Count == 3, false, "(function entry)  random.uniform.long must have three arguments, range-start, exclusive-range-end, output-variable");
+        
+        // TODO< retrive variables if arguments are variables >
+
+        long rangeStart = Interpreter.retriveLong(arguments[0]);
+        long rangeEndExclusive = Interpreter.retriveLong(arguments[1]);
+
+        Interpreter.vmAssert(Math.Abs(rangeStart) < int.MaxValue && Math.Abs(rangeEndExclusive) < int.MaxValue, false, "(arguments) must be in range of int");
+        long randomNumber = randomForFunctions.Next((int)rangeStart, (int)rangeEndExclusive);
+
+        Interpreter.vmAssert(arguments[2].@is(Pattern<Decoration>.EnumType.VARIABLE), false, "(arguments)[2] must be variable!");
+
+        ulong uniqueId = patternSymbolContext.returnNewUniqueId();
+
+        Pattern<Decoration> resultPattern = Pattern<Decoration>.makeDecoratedValue(uniqueId);
+        resultPattern.decoration = new Decoration();
+        resultPattern.decoration.type = Decoration.EnumType.VALUE;
+        resultPattern.decoration.value = (long)randomNumber;
+        context.valueByVariable[arguments[2].variableId] = resultPattern;
+    }
+
+    
+
+
+    class TestPatternDecoration : AiThisAndThat.patternMatching.IDecoration<TestPatternDecoration> {
+        public bool checkEqualValue(TestPatternDecoration other) {
+            throw new NotImplementedException();
+        }
+
+        public TestPatternDecoration deepCopy() {
+            throw new NotImplementedException();
+        }
+    }
+
+    enum EnumTest {
+        SuperOptimizer1,
+        Native1,
+        Matching1,
+        PatternInterpreter1,
+        PatternInterpreterExec1,
+        FunctionalParserTest1,
+        ReadFunctionalAndParseAndExecute1,
     }
 }
 

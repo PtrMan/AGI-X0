@@ -10,6 +10,7 @@ using MetaNix.report;
 using MetaNix.attention;
 using MetaNix.search.levin2;
 using MetaNix.scheduler;
+using MetaNix.nars;
 
 namespace MetaNix {
     class CellularAutomata {
@@ -209,6 +210,15 @@ namespace MetaNix {
 
 
         static void Main(string[] args) {
+            ReasonerInstanceConfiguration configuration = new ReasonerInstanceConfiguration();
+            configuration.k = 1.0f; // TODO< select right value >
+            configuration.maximalTermComplexity = 20; // TODO< select right value >
+
+            // test nars
+            ReasonerInstance reasoner = new ReasonerInstance(configuration);
+
+
+
             // test Levin search
 
             //Program2.interactiveTestEnumeration();

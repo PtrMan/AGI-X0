@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1BC2EF6E-F88B-4D7C-948B-EA59768A35EE}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>WhiteSphereEngine</RootNamespace>
+    <AssemblyName>WhiteSphereEngine</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX, Version=3.1.1.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>packages\SharpDX.3.1.1\lib\net45\SharpDX.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.DirectSound, Version=3.1.1.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>packages\SharpDX.DirectSound.3.1.1\lib\net45\SharpDX.DirectSound.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ai\command\INonPreemptiveTask.cs" />
+    <Compile Include="ai\command\NonPreemptiveCommandCLASSES.cs" />
+    <Compile Include="builder\GameObjectBuilder.cs" />
+    <Compile Include="celestial\CelestialObject.cs" />
+    <Compile Include="celestial\CelestialObjectWithPosition.cs" />
+    <Compile Include="celestial\mathematics\Constants.cs" />
+    <Compile Include="celestial\mathematics\Orbit.cs" />
+    <Compile Include="ColliderComponent.cs" />
+    <Compile Include="demo\DemoObjectSerializer.cs" />
+    <Compile Include="entity\Entity.cs" />
+    <Compile Include="entity\EntityManager.cs" />
+    <Compile Include="gameLogic\ai\command\VehicleCommandsCLASSES.cs" />
+    <Compile Include="gameLogic\EntityController.cs" />
+    <Compile Include="gameLogic\PlayerShipControlInputHandler.cs" />
+    <Compile Include="game\DefaultCollisionHandler.cs" />
+    <Compile Include="game\entityComponents\InteractionEntityComponentCLASSES.cs" />
+    <Compile Include="game\entityComponents\ProximityDetectorComponent.cs" />
+    <Compile Include="game\responsibilities\AttitudeAndAccelerationControlResponsibility.cs" />
+    <Compile Include="game\responsibilities\EffectResponsibility.cs" />
+    <Compile Include="game\PhysicsObjectIdToSolidClusterMapping.cs" />
+    <Compile Include="game\responsibilities\ThrusterResponsibility.cs" />
+    <Compile Include="game\SolidCluster.cs" />
+    <Compile Include="game\responsibilities\SolidResponsibility.cs" />
+    <Compile Include="game\entityComponents\VehicleControllerComponent.cs" />
+    <Compile Include="geometry\Area.cs" />
+    <Compile Include="geometry\MeshAttributeCLASSES.cs" />
+    <Compile Include="geometry\Mesh.cs" />
+    <Compile Include="geometry\PlatonicFactory.cs" />
+    <Compile Include="geometry\Pluecker.cs" />
+    <Compile Include="geometry\ProjectedArea.cs" />
+    <Compile Include="geometry\TransformedMesh.cs" />
+    <Compile Include="entity\IComponent.cs" />
+    <Compile Include="geometry\VerticesWithComponents.cs" />
+    <Compile Include="input\DummyKeyboardInputHandler.cs" />
+    <Compile Include="input\IKeyboardInputHandler.cs" />
+    <Compile Include="input\KeyboardInputRemapper.cs" />
+    <Compile Include="input\KeyboardInputRouter.cs" />
+    <Compile Include="input\KeyCodes.cs" />
+    <Compile Include="math\algorithms\GaussElimination.cs" />
+    <Compile Include="math\Constants.cs" />
+    <Compile Include="math\control\Pid.cs" />
+    <Compile Include="math\control\QuaternionFeedbackRegulatorForSpacecraft.cs" />
+    <Compile Include="math\Math.cs" />
+    <Compile Include="math\Matrix.cs" />
+    <Compile Include="math\Matrix44.cs" />
+    <Compile Include="math\MatrixUtilities.cs" />
+    <Compile Include="math\NewtonsMethod.cs" />
+    <Compile Include="math\Quaternion.cs" />
+    <Compile Include="math\RungeKutta4.cs" />
+    <Compile Include="math\solvers\SimplexSolver.cs" />
+    <Compile Include="math\SpatialVectorUtilities.cs" />
+    <Compile Include="MeshComponent.cs" />
+    <Compile Include="misc\ChangeCallback.cs" />
+    <Compile Include="misc\ChangeCallbackCalculateInverse.cs" />
+    <Compile Include="physics\microTimestepSimulation\SimpleFracturing.cs" />
+    <Compile Include="physics\rigidBody\Angular.cs" />
+    <Compile Include="physics\rigidBody\AttachedForce.cs" />
+    <Compile Include="physics\boundingVolume\KDop.cs" />
+    <Compile Include="geometry\Plane.cs" />
+    <Compile Include="physics\rigidBody\FracturedParticleTranslator.cs" />
+    <Compile Include="physics\rigidBody\ICollisionHandler.cs" />
+    <Compile Include="physics\rigidBody\InertiaHelper.cs" />
+    <Compile Include="physics\intersectionTest\RayPolyhedron.cs" />
+    <Compile Include="physics\rigidBody\PhysicsComponent.cs" />
+    <Compile Include="physics\rigidBody\PhysicsComponentAndCollidersPair.cs" />
+    <Compile Include="physics\rigidBody\PhysicsEngineUtilities.cs" />
+    <Compile Include="physics\rigidBody\ProximityDetector.cs" />
+    <Compile Include="physics\solid\Material.cs" />
+    <Compile Include="physics\solid\Solid.cs" />
+    <Compile Include="serialization\GameObjectTemplate.cs" />
+    <Compile Include="subsystemCommon\PhysicsComponentAndMeshPair.cs" />
+    <Compile Include="physics\rigidBody\PhysicsEngine.cs" />
+    <Compile Include="physics\rigidBody\RayHitDescriptor.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="math\SpatialVector.cs" />
+    <Compile Include="subsystems\gui\AbstractReactingToMouse.cs" />
+    <Compile Include="subsystems\gui\BasicInterfacesCLASSES.cs" />
+    <Compile Include="subsystems\gui\ClosedLoop.cs" />
+    <Compile Include="subsystems\gui\Color.cs" />
+    <Compile Include="subsystems\gui\GuiElementCLASSES.cs" />
+    <Compile Include="subsystems\gui\GuiRendererCLASSES.cs" />
+    <Compile Include="subsystems\gui\GuiScreenCLASSES.cs" />
+    <Compile Include="subsystems\gui\input\KeyboardEventRouterOfGui.cs" />
+    <Compile Include="subsystems\gui\ReactingToKeyboard.cs" />
+    <Compile Include="subsystems\gui\SelectionInteraction.cs" />
+    <Compile Include="subsystems\gui\SelectionTracker.cs" />
+    <Compile Include="subsystems\renderer\AbstractDecoratedMesh.cs" />
+    <Compile Include="subsystems\renderer\AbstractRenderer.cs" />
+    <Compile Include="subsystems\renderer\common\font\Hershey.cs" />
+    <Compile Include="subsystems\renderer\common\Frustum.cs" />
+    <Compile Include="subsystems\renderer\prototypeFormRenderer\gui\SoftwareGuiRenderingCLASSES.cs" />
+    <Compile Include="subsystems\renderer\prototypeFormRenderer\PrototypeForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="subsystems\renderer\prototypeFormRenderer\PrototypeForm.Designer.cs">
+      <DependentUpon>PrototypeForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="subsystems\renderer\prototypeFormRenderer\SoftwareRenderer.cs" />
+    <Compile Include="subsystems\renderer\prototypeFormRenderer\SoftwareRendererUtilities.cs" />
+    <Compile Include="subsystems\sound\DirectSoundPlayback.cs" />
+    <Compile Include="subsystems\sound\DirectSoundSoundEngine.cs" />
+    <Compile Include="subsystems\sound\FastOscilator.cs" />
+    <Compile Include="subsystems\sound\ISoundEngine.cs" />
+    <Compile Include="subsystems\sound\ScaledAdditionFilter.cs" />
+    <Compile Include="subsystems\sound\StatelessSoundEffects.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="subsystems\renderer\prototypeFormRenderer\PrototypeForm.resx">
+      <DependentUpon>PrototypeForm.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="renderer\prototypeFormRenderer\gui\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
