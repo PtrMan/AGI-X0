@@ -141,45 +141,7 @@ namespace MetaNix.framework.super.optimization {
 
             if( false )  Console.WriteLine("enumBefore  {0} {1} {2} {3}     {4} {5} {6} {7}  ", instructionEnumeration[0], instructionEnumeration[1], instructionEnumeration[2], instructionEnumeration[3], instructionEnumeration[4], instructionEnumeration[5], instructionEnumeration[6], instructionEnumeration[7] );
 
-
-            /* commented because buggy and broken
-            var typeOfFistInstruction = decodeInstructionType(instructionEnumeration[1]);
             
-            // special case to speed up search
-            // we do this to not enumerate the immediat2 value of the first instruction
-            if( Instruction.doesInstructionNeedImmediate2(typeOfFistInstruction) ) {
-                instructionEnumeration[0]++;
-            }
-            else {
-                instructionEnumeration[0] = maximalValue[0];
-            }
-            
-            
-            for (int enumerationIdx = 0; enumerationIdx < instructionEnumeration.Length; enumerationIdx++) {
-                if (instructionEnumeration[enumerationIdx] >= maximalValue[enumerationIdx]) {
-                    instructionEnumeration[enumerationIdx] = 0;
-                    instructionEnumeration[enumerationIdx + 1]++;
-
-                    int idxOfNextEncoding = (enumerationIdx + 1);
-                    bool nextEncodingIsImmediate2 = (idxOfNextEncoding % widthOfInstructionEncoding) == 0; // is the enumeration encoding a immediate2
-                    var typeOfInstructionOfNextEncoding = decodeInstructionType(instructionEnumeration[idxOfNextEncoding + 1]);
-
-                    if( nextEncodingIsImmediate2 ) {
-                        // we do this because we have to speed up the search over the immediate2 values for encodings which don't use it (which are the mayority of instructions)
-
-                        if( Instruction.doesInstructionNeedImmediate2(typeOfInstructionOfNextEncoding) ) {
-                            instructionEnumeration[idxOfNextEncoding]++;
-                        }
-                        else {
-                            instructionEnumeration[idxOfNextEncoding] = maximalValue[idxOfNextEncoding];
-                        }
-                    }
-                }
-                else {
-                    break;
-                }
-            }*/
-
             for( int instructionIdx = 0; instructionIdx < 3; instructionIdx++ ) {
                 int enumerationIdx = instructionIdx * widthOfInstructionEncoding;
 

@@ -248,9 +248,7 @@ namespace MetaNix.framework.lang {
         public  Lexer lexer;
 
         public bool debug = true;
-
-        //private uint LineCounter = 0;
-
+        
         private IList<Line> lines = new List<Line>();
         private uint currentLineNumber = 0;
     }

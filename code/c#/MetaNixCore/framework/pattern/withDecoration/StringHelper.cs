@@ -1,5 +1,4 @@
-﻿using MetaNix.framework.pattern;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace MetaNix.framework.pattern.withDecoration {
     // convert a string to a decorated pattern

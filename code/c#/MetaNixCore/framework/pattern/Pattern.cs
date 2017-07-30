@@ -68,12 +68,7 @@ namespace MetaNix.framework.pattern {
 	    public bool @is(EnumType other) {
 		    return type == other;
 	    }
-
-	    /* commented because not needed
-	    final @property bool isLeaf() pure {
-		    return !isBranch;
-	    }
-	    */
+        
 
 	    // used for fast matching
 	    // VARIABLE must have the same variableId

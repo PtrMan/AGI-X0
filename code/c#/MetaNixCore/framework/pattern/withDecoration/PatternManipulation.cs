@@ -1,5 +1,4 @@
-﻿using MetaNix.framework.pattern;
-using System;
+﻿using System;
 using System.Diagnostics;
 
 namespace MetaNix.framework.pattern.withDecoration {
