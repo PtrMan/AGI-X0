@@ -279,7 +279,10 @@ namespace MetaNix {
             }
 
             // linked list problem
-            if (true) { // disable/free element in linked list, precondition is that the array index is already pointing at the element
+            if (true) {
+                // disable/free element in linked list, precondition is that the array index is already pointing at the element
+                // the length of an element is encoded as the first integer of a element, followed by a free flag
+                
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
                 levinSearchProblem.enumerationMaxProgramLength = 5;
                 levinSearchProblem.instructionsetCount = InstructionInfo.getNumberOfInstructions() - 16;/*because no call*/
