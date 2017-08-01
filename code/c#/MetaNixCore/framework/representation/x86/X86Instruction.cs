@@ -1,5 +1,7 @@
 ﻿namespace MetaNix.framework.representation.x86 {
     public class X86Instruction {
+        public static int NUMBEROFINSTRUCTIONS = 15;
+
         public enum EnumInstructionType {
             NOP,
             ADD_INTCONST,
@@ -30,6 +32,10 @@
             // _mm_round_ps   SSE4.1  rounding
         }
 
+        public X86Instruction(EnumInstructionType type = default(EnumInstructionType)) {
+            this.type = type;
+        }
+ 
         public EnumInstructionType type;
 
         public int a, dest;
