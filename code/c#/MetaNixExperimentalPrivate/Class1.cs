@@ -137,13 +137,7 @@ namespace MetaNixExperimentalPrivate {
             createdInstruction.dest = 1; // for testing constant
             createdInstruction.a = 1; // for testing constant
             createdChangeRecordAdd.instructionToAdd = createdInstruction;
-
-            /*
-            changeRecords10.arr.Add(new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.ADD));
-            changeRecords10.arr[0].instructionToAdd = new X86Instruction((X86Instruction.EnumInstructionType)rng.Next(0, X86Instruction.NUMBEROFINSTRUCTIONS));
-            changeRecords10.arr[0].instructionToAdd.dest = 0;
-            changeRecords10.arr[0].instructionToAdd.a = 1;
-            */
+            
 
             IArchitectureRecoverable recoverableProgramChange = new X86ArchRecoverableProgramChange(mutatedProgram, changeRecords);
             childrenPropabilityChangeAndNode.Add(
@@ -178,39 +172,7 @@ namespace MetaNixExperimentalPrivate {
 
             ///---
             // create and add root UtilityTreeElement
-
-            /*
-            var changeRecords0 = new X86ArchRecoverableProgramChange.ChangeRecords();
-            changeRecords0.arr.Add(new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.ADD));
-            changeRecords0.arr[0].instructionToAdd = new X86Instruction(X86Instruction.EnumInstructionType.ADD_INT);
-            changeRecords0.arr[0].instructionToAdd.dest = 0;
-            changeRecords0.arr[0].instructionToAdd.a = 1;
             
-            var recoverableProgramChange0 = new X86ArchRecoverableProgramChange(mutatedProgram, changeRecords0);
-
-            var changeRecords1 = new X86ArchRecoverableProgramChange.ChangeRecords();
-            changeRecords1.arr.Add(new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.ADD));
-            changeRecords1.arr[0].instructionToAdd = new X86Instruction(X86Instruction.EnumInstructionType.ADD_INTCONST);
-            changeRecords1.arr[0].instructionToAdd.dest = 0;
-            changeRecords1.arr[0].instructionToAdd.a = 5;
-            
-
-            var recoverableProgramChange1 = new X86ArchRecoverableProgramChange(mutatedProgram, changeRecords1);
-
-            ProgramChangeBranchUtilityTreeElement treeElementRoot = new ProgramChangeBranchUtilityTreeElement(
-                1.0, // propability
-                new List<Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>>{
-                    new Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>(
-                        0.5, recoverableProgramChange0, treeElementChildren
-                    ),
-
-                    new Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>(
-                        0.5, recoverableProgramChange1, treeElementChildren
-                    ),
-
-                }
-            );
-            */
 
             childrenPropabilityChangeAndNode = new List<Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>>();
 
