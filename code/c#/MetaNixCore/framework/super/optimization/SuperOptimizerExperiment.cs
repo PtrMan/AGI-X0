@@ -46,18 +46,15 @@ namespace MetaNix.framework.super.optimization {
             targetProgram[3].dest = 1;
             targetProgram[3].a = 0;
             */
-            targetProgram[0] = new X86Instruction();
-            targetProgram[0].type = X86Instruction.EnumInstructionType.MUL_FLOATVECTOR4;
+            targetProgram[0] = new X86Instruction(X86Instruction.EnumInstructionType.MUL_FLOATVECTOR4);
             targetProgram[0].dest = 0;
             targetProgram[0].a = 0;
 
-            targetProgram[1] = new X86Instruction();
-            targetProgram[1].type = X86Instruction.EnumInstructionType.HORIZONTALADD_FLOATVECTOR4;
+            targetProgram[1] = new X86Instruction(X86Instruction.EnumInstructionType.HORIZONTALADD_FLOATVECTOR4);
             targetProgram[1].dest = 0;
             targetProgram[1].a = 0;
 
-            targetProgram[2] = new X86Instruction();
-            targetProgram[2].type = X86Instruction.EnumInstructionType.HORIZONTALADD_FLOATVECTOR4;
+            targetProgram[2] = new X86Instruction(X86Instruction.EnumInstructionType.HORIZONTALADD_FLOATVECTOR4);
             targetProgram[2].dest = 0;
             targetProgram[2].a = 0;
 

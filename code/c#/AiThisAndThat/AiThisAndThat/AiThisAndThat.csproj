@@ -89,6 +89,7 @@
     <Compile Include="misc\Gaussian.cs" />
     <Compile Include="neural\ConvolutionalTriggerNetwork.cs" />
     <Compile Include="PatternSymbolContext.cs" />
+    <Compile Include="ProgramLaptop.cs" />
     <Compile Include="prototyping\UtilityFunction.cs" />
     <Compile Include="prototyping\UtilityFunctionPROTO.cs" />
     <Compile Include="reinforcementLearning\successStoryAlgorithm\Checkpoint.cs" />

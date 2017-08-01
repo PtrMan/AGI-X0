@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using AiThisAndThat.lang;
-using AiThisAndThat.patternMatching;
-using AiThisAndThat.framework.pattern.withDecoration;
+using MetaNix.framework.lang;
+using MetaNix.framework.pattern;
+using MetaNix.framework.pattern.withDecoration;
 
-namespace AiThisAndThat.languages.functional2 {
+namespace MetaNix.framework.languages.functional2 {
     enum EnumToken {
         AT = 0, // @
         DOUBLENUMBERSIGN, // ##
@@ -15,7 +15,7 @@ namespace AiThisAndThat.languages.functional2 {
         SEMICOLON, // ;
     }
 
-    class Lexer : AiThisAndThat.lang.Lexer {
+    class Lexer : lang.Lexer {
         protected override Token createToken(int ruleIndex, string matchedString) {
             Token token = new Token();
 
@@ -70,7 +70,7 @@ namespace AiThisAndThat.languages.functional2 {
         }
     }
 
-    class Functional2LexerAndParser : AiThisAndThat.lang.Parser {
+    class Functional2LexerAndParser : lang.Parser {
         public Functional2LexerAndParser(PatternSymbolContext patternSymbolContext) : base() {
             this.patternSymbolContext = patternSymbolContext;
         }
@@ -171,10 +171,10 @@ namespace AiThisAndThat.languages.functional2 {
             topPatternStack.Clear();
         }
 
-        void callbackNothing(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackNothing(Parser parser, Token currentToken) {
         }
 
-        void callbackSetRuleType(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackSetRuleType(Parser parser, Token currentToken) {
             string tokenText = currentToken.contentString;
             
             if( tokenText == "match" ) {
@@ -194,13 +194,13 @@ namespace AiThisAndThat.languages.functional2 {
             }
         }
 
-        void callbackEnterInterpretationPattern(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackEnterInterpretationPattern(Parser parser, Token currentToken) {
             ulong uniqueId = patternSymbolContext.returnNewUniqueId();
 
-            Pattern<AiThisAndThat.patternMatching.Decoration> interpretationPattern = Pattern<AiThisAndThat.patternMatching.Decoration>.makeBranch(uniqueId);
+            Pattern<pattern.Decoration> interpretationPattern = Pattern<pattern.Decoration>.makeBranch(uniqueId);
             interpretationPattern.decoration = new Decoration();
 
-            interpretationPattern.referenced = new Pattern<AiThisAndThat.patternMatching.Decoration>[0];
+            interpretationPattern.referenced = new Pattern<pattern.Decoration>[0];
 
             if( ruleType == EnumRuleType.MATCH ) {
                 interpretationPattern.decoration.type = Decoration.EnumType.VARIABLETEMPLATEMATCHING;
@@ -230,26 +230,26 @@ namespace AiThisAndThat.languages.functional2 {
             topPatternStack.Add(interpretationPattern); // TODO< rewrite to push >
         }
 
-        void callbackExitInterpretationPatternOrPattern(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackExitInterpretationPatternOrPattern(Parser parser, Token currentToken) {
             // don't remove the root element
             if( topPatternStack.Count > 1 )   topPatternStack.RemoveAt(topPatternStack.Count-1); // TODO< rewrite to pop >
         }
 
-        void callbackAddVariable(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackAddVariable(Parser parser, Token currentToken) {
             string variableName = currentToken.contentString;
 
             ulong uniqueId = patternSymbolContext.lookupOrCreateUniqueIdForVariable(variableName);
 
-            Pattern<AiThisAndThat.patternMatching.Decoration> variablePattern = Pattern<AiThisAndThat.patternMatching.Decoration>.makeVariable(uniqueId);
+            Pattern<pattern.Decoration> variablePattern = Pattern<pattern.Decoration>.makeVariable(uniqueId);
             
             PatternManipulation.append(topPattern, variablePattern);
         }
 
-        void callbackEnterPattern(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackEnterPattern(Parser parser, Token currentToken) {
             ulong uniqueId = patternSymbolContext.returnNewUniqueId();
 
-            Pattern<AiThisAndThat.patternMatching.Decoration> interpretationPattern = Pattern<AiThisAndThat.patternMatching.Decoration>.makeBranch(uniqueId);
-            interpretationPattern.referenced = new Pattern<AiThisAndThat.patternMatching.Decoration>[0];
+            Pattern<pattern.Decoration> interpretationPattern = Pattern<pattern.Decoration>.makeBranch(uniqueId);
+            interpretationPattern.referenced = new Pattern<pattern.Decoration>[0];
 
             PatternManipulation.append(topPattern, interpretationPattern);
 
@@ -260,28 +260,28 @@ namespace AiThisAndThat.languages.functional2 {
         //    topPatternStack.RemoveAt(topPatternStack.Count-1); // TODO< rewrite to pop >
         //}
 
-        void callbackAddSymbol(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackAddSymbol(Parser parser, Token currentToken) {
             string symbolName = currentToken.contentString;
 
             Tuple<ulong, ulong> symbolIdAndUniqueId = patternSymbolContext.lookupOrCreateSymbolIdAndUniqueIdForName(symbolName);
             ulong symbolId = symbolIdAndUniqueId.Item1;
             ulong uniqueId = symbolIdAndUniqueId.Item2;
 
-            Pattern<AiThisAndThat.patternMatching.Decoration> symbolPattern = Pattern<AiThisAndThat.patternMatching.Decoration>.makeSymbol(symbolId, uniqueId);
+            Pattern<pattern.Decoration> symbolPattern = Pattern<pattern.Decoration>.makeSymbol(symbolId, uniqueId);
             
             PatternManipulation.append(topPattern, symbolPattern);
         }
 
 
-        void callbackEnterInstructionAndInstructionName(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackEnterInstructionAndInstructionName(Parser parser, Token currentToken) {
             string calledFunctionName = currentToken.contentString;
 
             ulong uniqueId = patternSymbolContext.returnNewUniqueId();
 
-            Pattern<AiThisAndThat.patternMatching.Decoration> instructionPattern = Pattern<AiThisAndThat.patternMatching.Decoration>.makeBranch(uniqueId);
+            Pattern<pattern.Decoration> instructionPattern = Pattern<pattern.Decoration>.makeBranch(uniqueId);
             instructionPattern.decoration = new Decoration();
             instructionPattern.decoration.type = Decoration.EnumType.EXEC;
-            instructionPattern.referenced = new Pattern<AiThisAndThat.patternMatching.Decoration>[1];
+            instructionPattern.referenced = new Pattern<pattern.Decoration>[1];
 
             ulong functionNamePatternUniqueId = patternSymbolContext.returnNewUniqueId();
 
@@ -293,23 +293,23 @@ namespace AiThisAndThat.languages.functional2 {
             topPatternStack.Add(instructionPattern); // TODO< rewrite to push >
         }
 
-        void callbackExitInstruction(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackExitInstruction(Parser parser, Token currentToken) {
             topPatternStack.RemoveAt(topPatternStack.Count-1); // TODO< rewrite to pop >
         }
 
-        void callbackInstructionParameterString(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackInstructionParameterString(Parser parser, Token currentToken) {
             string stringContent = currentToken.contentString;
 
             ulong uniqueId = patternSymbolContext.returnNewUniqueId();
-            Pattern<AiThisAndThat.patternMatching.Decoration> stringPattern = StringHelper.convert(stringContent, uniqueId);
+            Pattern<pattern.Decoration> stringPattern = StringHelper.convert(stringContent, uniqueId);
             
             PatternManipulation.append(topPattern, stringPattern);
         }
 
-        void callbackAddLong(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackAddLong(Parser parser, Token currentToken) {
             ulong uniqueId = patternSymbolContext.returnNewUniqueId();
 
-            Pattern<AiThisAndThat.patternMatching.Decoration> numberPattern = Pattern<AiThisAndThat.patternMatching.Decoration>.makeDecoratedValue(uniqueId);
+            Pattern<pattern.Decoration> numberPattern = Pattern<pattern.Decoration>.makeDecoratedValue(uniqueId);
             numberPattern.decoration = new Decoration();
             numberPattern.decoration.type = Decoration.EnumType.VALUE;
             numberPattern.decoration.value = (long)currentToken.contentNumber;
@@ -317,7 +317,7 @@ namespace AiThisAndThat.languages.functional2 {
             PatternManipulation.append(topPattern, numberPattern);
         }
 
-        void callbackAddString(AiThisAndThat.lang.Parser parser, Token currentToken) {
+        void callbackAddString(Parser parser, Token currentToken) {
             string @string = currentToken.contentString;
 
             ulong stringUniqueId = patternSymbolContext.returnNewUniqueId();
@@ -340,16 +340,16 @@ namespace AiThisAndThat.languages.functional2 {
 
         EnumRuleType? ruleType;
 
-        IList< Pattern<AiThisAndThat.patternMatching.Decoration> > topPatternStack = new List< Pattern<AiThisAndThat.patternMatching.Decoration> >();
+        IList< Pattern<pattern.Decoration> > topPatternStack = new List< Pattern<pattern.Decoration> >();
         
-        public Pattern<AiThisAndThat.patternMatching.Decoration> rootPattern {
+        public Pattern<pattern.Decoration> rootPattern {
             get {
                 Debug.Assert(topPatternStack.Count == 1); // must be the only element on stack else something while parsing gone wrong
                 return topPatternStack[0];
             }
         }
 
-        private Pattern<AiThisAndThat.patternMatching.Decoration> topPattern {
+        private Pattern<pattern.Decoration> topPattern {
             get {
                 return topPatternStack[topPatternStack.Count-1];
             }

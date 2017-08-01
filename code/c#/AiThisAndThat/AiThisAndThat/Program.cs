@@ -689,7 +689,7 @@ class Program {
     }
 
     
-    static void Main(string[] args) {
+    /*static void Main(string[] args) {
         // TestInverseGraphicsCompressor.testImageCompressor();
 
         //LevinTest1.entry();
@@ -705,13 +705,13 @@ class Program {
         //testBitvectorInductionSequence1();
 
 
-        /*
+        /
         testTreeTransducer();
 
         execution.lowLevel.LowLevelCodegenTest.test();
 
         neural.ConvolutionalTriggerNetwork.test();
-        */
+        *
 
 
         // EnumTest.SuperOptimizer1;
@@ -719,7 +719,7 @@ class Program {
         
         UtilityFunctionPROTO instance = new UtilityFunctionPROTO();
         instance.test();
-    }
+    }*/
     
 
     enum EnumTest {

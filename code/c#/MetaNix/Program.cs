@@ -208,23 +208,16 @@ namespace MetaNix {
             int deb = 0;
         }
 
-
+        
         static void Main(string[] args) {
-            ReasonerInstanceConfiguration configuration = new ReasonerInstanceConfiguration();
-            configuration.k = 1.0f; // TODO< select right value >
-            configuration.maximalTermComplexity = 20; // TODO< select right value >
-
-            // test nars
-            ReasonerInstance reasoner = new ReasonerInstance(configuration);
-
 
 
             // test Levin search
 
-            //Program2.interactiveTestEnumeration();
+            Program2.interactiveTestEnumeration();
 
             Scheduler scheduler = new Scheduler();
-            
+
             SparseArrayProgramDistribution sparseArrayProgramDistribution = new SparseArrayProgramDistribution();
             AdvancedAdaptiveLevinSearchTaskProvider levinSearchTaskProvider = new AdvancedAdaptiveLevinSearchTaskProvider(scheduler, sparseArrayProgramDistribution);
 
