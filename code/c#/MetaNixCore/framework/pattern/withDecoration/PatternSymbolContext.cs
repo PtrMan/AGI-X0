@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AiThisAndThat {
+namespace MetaNix.framework.pattern.withDecoration {
     // used to store the names of the symbols
     public class PatternSymbolContext {
         public Tuple<ulong, ulong> lookupOrCreateSymbolIdAndUniqueIdForName(string humanReadableName) {
