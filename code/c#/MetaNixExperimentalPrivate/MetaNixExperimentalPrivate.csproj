@@ -33,13 +33,18 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class1.cs" />
+    <Compile Include="IrcEntry.cs" />
     <Compile Include="TestPowerplay.cs" />
     <Compile Include="TestSlimRnn.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="ChatSharp, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\MetaNix\packages\ChatSharp.1.0.1\lib\net451\ChatSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>

@@ -1,11 +1,14 @@
 ﻿using AiThisAndThat.prototyping;
+using MetaNix.framework.logging;
 using MetaNix.framework.misc;
 using MetaNix.framework.representation.x86;
+using MetaNix.instrumentation;
 using MetaNix.nars;
 using MetaNix.nars.entity;
 using MetaNix.nars.inference;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace MetaNixExperimentalPrivate {
     class Class1 {
@@ -111,14 +114,72 @@ namespace MetaNixExperimentalPrivate {
             return 1;
         }
 
+        bool wasPrepared;
+        void prepare() {
+            if( wasPrepared )   return;
+            wasPrepared = true;
+            
+            
+            FileLogger fileLogger = new FileLogger();
+            fileLogger.open("log.txt");
+
+            logger.sinks.Add(fileLogger);
+        }
+
+        void joinIrc1() {
+            prepare();
+
+            IrcEntry ircEntry = new IrcEntry();
+            ircEntry.entry2(logger);
+        }
+
         Random rng = new Random();
 
+        MultiSinkLogger logger = new MultiSinkLogger();
+
+        CounterInstrumentation utilityCounter = new CounterInstrumentation(); // counter for the calls to utility calculation
+
+        Stopwatch
+            systemTime, // the time since the start of the system
+            utilityAndSearchCpuTime;
+
+        void log(string origin, string message) {
+            Logged logged = new Logged();
+            logged.notifyConsole = Logged.EnumNotifyConsole.YES;
+            
+            logged.message = string.Format("t={0,20:###.0000_0000}, t.expectedUtilityMaximization={1,20:###.0000_0000}: {2}",
+                systemTime.Elapsed.TotalSeconds,
+                utilityAndSearchCpuTime.Elapsed.TotalSeconds,
+
+                message
+            );
+            logged.origin = new string[] { origin };
+            logged.serverity = Logged.EnumServerity.INFO;
+
+            logger.write(logged);
+        }
 
 
         // tests the "expected utility maximization" tree walk and code manipulation
 
         // one descision tree node adds instructions and the second node (which is the child) adds and remove instructions
         void testUtilityAndSearch1() {
+            prepare();
+
+            joinIrc1();
+
+
+            // instrumentation
+            utilityCounter.reset();
+            
+            systemTime = new Stopwatch();
+
+            systemTime.Start();
+
+            utilityAndSearchCpuTime = new Stopwatch();
+
+            utilityAndSearchCpuTime.Start();
+
             mutatedProgram = new X86Program();
 
             // set the utility function to one which calculates how useful the change of the mutated program is
@@ -129,27 +190,53 @@ namespace MetaNixExperimentalPrivate {
 
             var childrenPropabilityChangeAndNode = new List<Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>>();
 
-            var changeRecords = new X86ArchRecoverableProgramChange.ChangeRecords();
-            var createdChangeRecordAdd = new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.ADD);
+
+            IArchitectureRecoverable recoverableProgramChange;
+
+
+            int numberOfAddedInstrCandidates = 1000; // how many (randomly chose) candidate instructions are selected for this node and this run
+
+            for (int iAddedInstrCandidate = 0; iAddedInstrCandidate < numberOfAddedInstrCandidates; iAddedInstrCandidate++) {
+                var changeRecords = new X86ArchRecoverableProgramChange.ChangeRecords();
+                var createdChangeRecordAdd = new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.ADD);
+                changeRecords.arr.Add(createdChangeRecordAdd);
+
+                int constMaxValue = 64;
+
+                X86Instruction createdInstruction = new X86Instruction((X86Instruction.EnumInstructionType)rng.Next(0, X86Instruction.NUMBEROFINSTRUCTIONS));
+                createdInstruction.dest = rng.Next(0, 8); // for testing constant
+                createdInstruction.a = rng.Next(0, constMaxValue); // for testing constant
+                createdChangeRecordAdd.instructionToAdd = createdInstruction;
+
+                recoverableProgramChange = new X86ArchRecoverableProgramChange(mutatedProgram, changeRecords);
+                childrenPropabilityChangeAndNode.Add(
+                    new Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>(
+                        0.5, // TODO< calculate relative propability
+                        recoverableProgramChange,
+                        new NullUtilityTreeElement() // children of node
+                    )
+                );
+            }
+
+
+
+
+
+
+
+
+            /*
             changeRecords.arr.Add(createdChangeRecordAdd);
 
             X86Instruction createdInstruction = new X86Instruction((X86Instruction.EnumInstructionType)rng.Next(0, X86Instruction.NUMBEROFINSTRUCTIONS));
             createdInstruction.dest = 1; // for testing constant
             createdInstruction.a = 1; // for testing constant
             createdChangeRecordAdd.instructionToAdd = createdInstruction;
+            */
             
 
-            IArchitectureRecoverable recoverableProgramChange = new X86ArchRecoverableProgramChange(mutatedProgram, changeRecords);
-            childrenPropabilityChangeAndNode.Add(
-                new Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>(
-                    0.5, // TODO< calculate relative propability
-                    recoverableProgramChange,
-                    new NullUtilityTreeElement() // children of node
-                )
-            );
-
             if( false ) { // do we want to add DELETE changes
-                changeRecords = new X86ArchRecoverableProgramChange.ChangeRecords();
+                var changeRecords = new X86ArchRecoverableProgramChange.ChangeRecords();
                 changeRecords.arr.Add(new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.REMOVE));
                 changeRecords.arr[0].idxSource = 0;
 
@@ -176,17 +263,17 @@ namespace MetaNixExperimentalPrivate {
 
             childrenPropabilityChangeAndNode = new List<Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>>();
 
-
-            int numberOfAddedInstrCandidates = 1000; // how many (randomly chose) candidate instructions are selected for this node and this run
-
+            
             for( int iAddedInstrCandidate = 0; iAddedInstrCandidate < numberOfAddedInstrCandidates; iAddedInstrCandidate++ ) {
-                changeRecords = new X86ArchRecoverableProgramChange.ChangeRecords();
-                createdChangeRecordAdd = new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.ADD);
+                var changeRecords = new X86ArchRecoverableProgramChange.ChangeRecords();
+                var createdChangeRecordAdd = new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.ADD);
                 changeRecords.arr.Add(createdChangeRecordAdd);
 
-                createdInstruction = new X86Instruction((X86Instruction.EnumInstructionType)rng.Next(0, X86Instruction.NUMBEROFINSTRUCTIONS));
-                createdInstruction.dest = 1; // for testing constant
-                createdInstruction.a = 1; // for testing constant
+                int constMaxValue = 64;
+
+                X86Instruction createdInstruction = new X86Instruction((X86Instruction.EnumInstructionType)rng.Next(0, X86Instruction.NUMBEROFINSTRUCTIONS));
+                createdInstruction.dest = rng.Next(0, 8); // for testing constant
+                createdInstruction.a = rng.Next(0, constMaxValue); // for testing constant
                 createdChangeRecordAdd.instructionToAdd = createdInstruction;
 
                 recoverableProgramChange = new X86ArchRecoverableProgramChange(mutatedProgram, changeRecords);
@@ -218,8 +305,9 @@ namespace MetaNixExperimentalPrivate {
                 int[] path = iPathWithPropability.Item1;
                 double propability = iPathWithPropability.Item2;
 
-                // TODO< log to log >
-                if( false )   Console.WriteLine(string.Join(",", path));
+                if( false )  {
+                    log("expectedUtilityMaximization", string.Join(",", path));
+                }
 
                 double expectedUtility = propability * calcUtilityFunction(path, returnUtility(path));
                 if (pathOfHighestExpectedUtility == null || expectedUtility > highestExpectedUtility) {
@@ -228,11 +316,15 @@ namespace MetaNixExperimentalPrivate {
                 }
             }
 
-            if( pathOfHighestExpectedUtility != null ) {
-                Console.WriteLine("found path with an highest utility!");
+            if (true) {
+                log("expectedUtilityMaximization.instrumentation.counter", "=" + utilityCounter.count.ToString());
             }
 
+            if ( pathOfHighestExpectedUtility != null ) {
+                log("expectedUtilityMaximization", "path found with the highest utility");
+            }
 
+            int debugHere = 5;
             
         }
 
@@ -270,6 +362,7 @@ namespace MetaNixExperimentalPrivate {
             // in branch 0 we simulate the self defection of the agent with pressing the offswitch for itself
             EnumExistence selfExistence = /*path[0] == 0*/ false ? EnumExistence.SOFTDEATH : EnumExistence.ALIVE;
 
+            utilityCounter.increment();
             double utility = calcUtility(path);
 
             if (selfExistence == EnumExistence.ALIVE) return utility;

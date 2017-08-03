@@ -70,6 +70,7 @@
     <Compile Include="framework\lang\Line.cs" />
     <Compile Include="framework\lang\Parser.cs" />
     <Compile Include="framework\lang\Token.cs" />
+    <Compile Include="framework\logging\LoggingCLASSESINTERFACES.cs" />
     <Compile Include="framework\misc\IDeepCopyable.cs" />
     <Compile Include="framework\misc\PathHelper.cs" />
     <Compile Include="framework\misc\RecoverableINTERFACES.cs" />
@@ -88,6 +89,7 @@
     <Compile Include="framework\utility\UtilityFunction.cs" />
     <Compile Include="framework\utility\UtilityFunctionPROTO.cs" />
     <Compile Include="FunctionalParser.cs" />
+    <Compile Include="instrumentation\CounterInstrumentation.cs" />
     <Compile Include="instrumentation\Statistics.cs" />
     <Compile Include="math\MathMisc.cs" />
     <Compile Include="misc\ArrayUtilities.cs" />
