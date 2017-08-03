@@ -210,11 +210,10 @@ namespace MetaNix {
 
         
         static void Main(string[] args) {
-
-
             // test Levin search
 
-            Program2.interactiveTestEnumeration();
+            throw new NotImplementedException(); // TODO< create and pass logger in >
+            Program2.interactiveTestEnumeration(null);
 
             Scheduler scheduler = new Scheduler();
 

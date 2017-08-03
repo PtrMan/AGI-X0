@@ -6,6 +6,7 @@ using MetaNix.instrumentation;
 using MetaNix.nars;
 using MetaNix.nars.entity;
 using MetaNix.nars.inference;
+using MetaNix.search.levin2;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -46,7 +47,7 @@ namespace MetaNixExperimentalPrivate {
         void start() {
             EntryType entry = null;
 
-            entry = testUtilityAndSearch1;
+            entry = testALS; //testUtilityAndSearch1;
 
             entry();
         }
@@ -160,6 +161,16 @@ namespace MetaNixExperimentalPrivate {
         }
 
 
+
+        void testALS() {
+            prepare();
+            
+            joinIrc1();
+
+            Program2.interactiveTestEnumeration(logger);
+        }
+
+
         // tests the "expected utility maximization" tree walk and code manipulation
 
         // one descision tree node adds instructions and the second node (which is the child) adds and remove instructions
@@ -197,8 +208,11 @@ namespace MetaNixExperimentalPrivate {
             int numberOfAddedInstrCandidates = 1000; // how many (randomly chose) candidate instructions are selected for this node and this run
 
             for (int iAddedInstrCandidate = 0; iAddedInstrCandidate < numberOfAddedInstrCandidates; iAddedInstrCandidate++) {
-                var changeRecords = new X86ArchRecoverableProgramChange.ChangeRecords();
-                var createdChangeRecordAdd = new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.ADD);
+                var changeRecords = new RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>.ChangeRecords();
+                var createdChangeRecordAdd =
+                    new RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>
+                    .ChangeRecord(
+                        RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>.ChangeRecord.EnumType.ADD);
                 changeRecords.arr.Add(createdChangeRecordAdd);
 
                 int constMaxValue = 64;
@@ -208,7 +222,7 @@ namespace MetaNixExperimentalPrivate {
                 createdInstruction.a = rng.Next(0, constMaxValue); // for testing constant
                 createdChangeRecordAdd.instructionToAdd = createdInstruction;
 
-                recoverableProgramChange = new X86ArchRecoverableProgramChange(mutatedProgram, changeRecords);
+                recoverableProgramChange = new RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>(mutatedProgram, changeRecords);
                 childrenPropabilityChangeAndNode.Add(
                     new Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>(
                         0.5, // TODO< calculate relative propability
@@ -236,11 +250,13 @@ namespace MetaNixExperimentalPrivate {
             
 
             if( false ) { // do we want to add DELETE changes
-                var changeRecords = new X86ArchRecoverableProgramChange.ChangeRecords();
-                changeRecords.arr.Add(new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.REMOVE));
+                var changeRecords = new RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>.ChangeRecords();
+                changeRecords.arr.Add(new RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>.ChangeRecord(RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>.ChangeRecord.EnumType.REMOVE));
                 changeRecords.arr[0].idxSource = 0;
 
-                recoverableProgramChange = new X86ArchRecoverableProgramChange(mutatedProgram, changeRecords);
+                recoverableProgramChange =
+                    new RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>(
+                        mutatedProgram, changeRecords);
                 childrenPropabilityChangeAndNode.Add(
                     new Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>(
                         0.5, // TODO< calculate relative propability
@@ -265,8 +281,11 @@ namespace MetaNixExperimentalPrivate {
 
             
             for( int iAddedInstrCandidate = 0; iAddedInstrCandidate < numberOfAddedInstrCandidates; iAddedInstrCandidate++ ) {
-                var changeRecords = new X86ArchRecoverableProgramChange.ChangeRecords();
-                var createdChangeRecordAdd = new X86ArchRecoverableProgramChange.ChangeRecord(X86ArchRecoverableProgramChange.ChangeRecord.EnumType.ADD);
+                var changeRecords = new RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>.ChangeRecords();
+                var createdChangeRecordAdd =
+                    new RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>.
+                    ChangeRecord(
+                        RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>.ChangeRecord.EnumType.ADD);
                 changeRecords.arr.Add(createdChangeRecordAdd);
 
                 int constMaxValue = 64;
@@ -276,7 +295,7 @@ namespace MetaNixExperimentalPrivate {
                 createdInstruction.a = rng.Next(0, constMaxValue); // for testing constant
                 createdChangeRecordAdd.instructionToAdd = createdInstruction;
 
-                recoverableProgramChange = new X86ArchRecoverableProgramChange(mutatedProgram, changeRecords);
+                recoverableProgramChange = new RecoverableProgramChangeWithRecords<X86Instruction, X86Program, X86ExecutionContext>(mutatedProgram, changeRecords);
                 childrenPropabilityChangeAndNode.Add(
                     new Tuple<double, IArchitectureRecoverable, IUtilityTreeElement>(
                         0.5, // TODO< calculate relative propability

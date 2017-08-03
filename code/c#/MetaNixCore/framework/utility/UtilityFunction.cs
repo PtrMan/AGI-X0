@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 using MetaNix.framework.misc;
 using MetaNix.framework.representation.x86;
+using MetaNix.datastructures;
 
 namespace AiThisAndThat.prototyping {
     // calculates the utility
@@ -62,8 +63,18 @@ namespace AiThisAndThat.prototyping {
         protected ChangeRecordType changeRecords;
     }
 
+    public abstract class AbstractProgram<InstructionType, ExecutionContextType> {
+        public MutableArray<InstructionType> instructions = new MutableArray<InstructionType>();
+
+        public abstract void interpret(ExecutionContextType ctx);
+    }
+
     // used to hold the information of a change to a X86Program and roll it back
-    public class X86ArchRecoverableProgramChange : RecoverableProgramChange<X86Program, X86ArchRecoverableProgramChange.ChangeRecords> {
+    public class RecoverableProgramChangeWithRecords<InstructionType, ProgramType, ExecutionContextType>
+    : RecoverableProgramChange<ProgramType, RecoverableProgramChangeWithRecords<InstructionType, ProgramType, ExecutionContextType>.ChangeRecords>
+    where ProgramType : AbstractProgram<InstructionType, ExecutionContextType>
+    {
+    
         public class ChangeRecords {
             public IList<ChangeRecord> arr = new List<ChangeRecord>();
         }
@@ -81,12 +92,12 @@ namespace AiThisAndThat.prototyping {
 
             public EnumType type;
             public int idxDest, idxSource; // index at which the operation takes place
-            public X86Instruction instructionToAdd = null;
+            public InstructionType instructionToAdd = default(InstructionType);
 
-            public X86Instruction storedInstruction; // used for rollback
+            public InstructionType storedInstruction; // used for rollback
         }
 
-        public X86ArchRecoverableProgramChange(X86Program mutatedProgram, ChangeRecords changeRecords) : base(mutatedProgram, changeRecords) {}
+        public RecoverableProgramChangeWithRecords(ProgramType mutatedProgram, ChangeRecords changeRecords) : base(mutatedProgram, changeRecords) {}
 
         public override void commit() {
             foreach( var iChangeRecord in changeRecords.arr ) {
@@ -98,7 +109,7 @@ namespace AiThisAndThat.prototyping {
                     mutatedProgram.instructions.removeAt(iChangeRecord.idxDest);
                 }
                 else if( iChangeRecord.type == ChangeRecord.EnumType.MOVE ) {
-                    X86Instruction instr = mutatedProgram.instructions[iChangeRecord.idxSource];
+                    InstructionType instr = mutatedProgram.instructions[iChangeRecord.idxSource];
                     mutatedProgram.instructions.removeAt(iChangeRecord.idxSource);
                     mutatedProgram.instructions[iChangeRecord.idxDest] = instr;
                 }
@@ -117,7 +128,7 @@ namespace AiThisAndThat.prototyping {
                     mutatedProgram.instructions.appendAt(iChangeRecord.idxDest, iChangeRecord.storedInstruction);
                 }
                 else if( iChangeRecord.type == ChangeRecord.EnumType.MOVE ) {
-                    X86Instruction instr = mutatedProgram.instructions[iChangeRecord.idxDest];
+                    InstructionType instr = mutatedProgram.instructions[iChangeRecord.idxDest];
                     mutatedProgram.instructions.removeAt(iChangeRecord.idxDest);
                     mutatedProgram.instructions[iChangeRecord.idxSource] = instr;
                 }

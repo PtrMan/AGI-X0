@@ -4,6 +4,7 @@ using System.Diagnostics;
 
 using MetaNix.datastructures.compact;
 using MetaNix.scheduler;
+using MetaNix.framework.logging;
 
 namespace MetaNix.search.levin2 {
     // implementations sample the programspace acording to an distribution which is stored and updated
@@ -668,6 +669,14 @@ namespace MetaNix.search.levin2 {
         }
     }
 
+    sealed public class Instruction {
+        public Instruction(uint code) {
+            this.code = code;
+        }
+
+        public uint code; // numeric code of the instruction
+    }
+
     sealed public class InstructionInterpreter {
         // checks if the program was terminated successfully by returning to the global caller
         public static bool isTerminating(InterpreterState interpreterState, uint instruction) {
@@ -675,8 +684,10 @@ namespace MetaNix.search.levin2 {
         }
 
         // \param indirectCall is not -1 if the instruction is an indirect call to another function
-        public static void dispatch(InterpreterState interpreterState, uint instruction, out bool success, out int indirectCall) {
+        public static void dispatch(InterpreterState interpreterState, Instruction instr, out bool success, out int indirectCall) {
             indirectCall = -1;
+
+            uint instruction = instr.code;
 
             switch (instruction) {
                 case 0: InductionOperationsString.arrayMove(interpreterState, -1); success = true; return;
@@ -825,11 +836,16 @@ namespace MetaNix.search.levin2 {
                 uint currentInstruction = arguments.program[arguments.interpreterState.instructionPointer];
 
                 if (arguments.debugExecution) {
-                    Console.WriteLine("program="); ;
-                    Program2.debug(arguments.program);
+                    Console.WriteLine("program=");
+
+                    throw new NotImplementedException(); // TODO< logger >
+                    Program2.debug(null, arguments.program);
+
                     Console.WriteLine("ip={0}", arguments.interpreterState.instructionPointer);
                     Console.Write("arr=");
-                    Program2.debug(arguments.interpreterState.arrayState.array);
+
+                    throw new NotImplementedException(); // TODO< logger >
+                    Program2.debug(null, arguments.interpreterState.arrayState.array);
                     Console.WriteLine("array index={0}", arguments.interpreterState.arrayState.index);
                 }
 
@@ -840,7 +856,7 @@ namespace MetaNix.search.levin2 {
 
                 bool instructionExecutedSuccessfull;
                 int indirectCallIndex;
-                InstructionInterpreter.dispatch(arguments.interpreterState, currentInstruction, out instructionExecutedSuccessfull, out indirectCallIndex);
+                InstructionInterpreter.dispatch(arguments.interpreterState, new Instruction(currentInstruction), out instructionExecutedSuccessfull, out indirectCallIndex);
                 if (!instructionExecutedSuccessfull) {
                     hardExecutionError = true;
                     break;
@@ -1152,23 +1168,39 @@ namespace MetaNix.search.levin2 {
         
         // for experimentation
 
-        public static void debug(uint[] arr) {
+        public static void debug(ILogger log,  uint[] arr) {
+            string message = "";
+
             foreach (uint iValue in arr) {
-                Console.Write("{0} ", iValue);
+                message += string.Format("{0} ", iValue);
             }
-            Console.WriteLine();
+
+            Logged logged = new Logged();
+            logged.notifyConsole = Logged.EnumNotifyConsole.YES;
+            logged.message = message;
+            logged.origin = new string[]{ "search", "ALS" };
+            logged.serverity = Logged.EnumServerity.INFO;
+            log.write(logged);
         }
 
-        public static void debug<Type>(IList<Type> list) {
+        public static void debug<Type>(ILogger log, IList<Type> list) {
+            string message = "";
+
             foreach (Type iValue in list) {
-                Console.Write("{0} ", iValue);
+                message += string.Format("{0} ", iValue);
             }
-            Console.WriteLine();
+
+            Logged logged = new Logged();
+            logged.notifyConsole = Logged.EnumNotifyConsole.YES;
+            logged.message = message;
+            logged.origin = new string[] { "search",  "ALS", "debug" };
+            logged.serverity = Logged.EnumServerity.INFO;
+            log.write(logged);
         }
 
         
 
-        public static void interactiveTestEnumeration() {
+        public static void interactiveTestEnumeration(ILogger logger) {
             uint programMaxSize = 512;
 
             SparseArrayProgramDistribution programDistribution = new SparseArrayProgramDistribution();
@@ -1194,7 +1226,7 @@ namespace MetaNix.search.levin2 {
             interpreterArguments.program = program;
             interpreterArguments.lengthOfProgram = numberOfInstructions;
             interpreterArguments.interpreterState = new InterpreterState();
-            interpreterArguments.interpreterState.registers = new int[2];
+            interpreterArguments.interpreterState.registers = new int[3];
             interpreterArguments.interpreterState.arrayState = new ArrayState();
             interpreterArguments.interpreterState.arrayState.array = new List<int>();
             interpreterArguments.debugExecution = false;
@@ -1209,12 +1241,12 @@ namespace MetaNix.search.levin2 {
             trainingSamples.Add(new TrainingSample());
             trainingSamples.Add(new TrainingSample());
             trainingSamples[0].questionArray = new List<int> { 5, 8, 3, 7 };
-            trainingSamples[0].questionRegisters = new int?[] { 7, null }; // search for 7
+            trainingSamples[0].questionRegisters = new int?[] { 7, null, null }; // search for 7
             trainingSamples[0].answerArray = new List<int> { 5, 8, 3, 7 }; // don't change array
             trainingSamples[0].answerArrayIndex = 3; // result index must be 3
 
             trainingSamples[1].questionArray = new List<int> { 7, 8, 3, 2 };
-            trainingSamples[1].questionRegisters = new int?[] { 7, null }; // search for 7
+            trainingSamples[1].questionRegisters = new int?[] { 7, null, null }; // search for 7
             trainingSamples[1].answerArray = new List<int> { 7, 8, 3, 2 }; // don't change array
             trainingSamples[1].answerArrayIndex = 0; // result index must be 3
 
@@ -1294,16 +1326,20 @@ namespace MetaNix.search.levin2 {
                 }
 
 
-
-                Console.Write("[search - ALS]<Task:find (no meta)> finished, ");
-                Console.WriteLine("required< #iterations={0}, cputime=?, realtime=?>", iteration);
-
-
+                { // log
+                    Logged logged = new Logged();
+                    logged.notifyConsole = Logged.EnumNotifyConsole.YES;
+                    logged.message = string.Format("< Task:find(no meta) > finished, required< #iterations={0}, cputime=?, realtime=?>", iteration);
+                    logged.origin = new string[] {"search", "ALS"};
+                    logged.serverity = Logged.EnumServerity.INFO;
+                    logger.write(logged);
+                }
+                
                 programResult = new uint[numberOfInstructions];
                 for (int i = 0; i < programResult.Length; i++) {
                     programResult[i] = program[i];
                 }
-                debug(programResult);
+                debug(logger, programResult);
 
 
                 break;
@@ -1457,16 +1493,26 @@ namespace MetaNix.search.levin2 {
 
 
 
-
-
-
-                Console.Write("[search - ALS]<Task:findRemovalProgramExtended1 (no meta)> finished, ");
-                Console.WriteLine("required< #iterations={0}, cputime=?, realtime=?>", iteration);
-                debug(program);
-
+                {
+                    Logged logged = new Logged();
+                    logged.notifyConsole = Logged.EnumNotifyConsole.YES;
+                    logged.message = string.Format("<Task:findRemovalProgramExtended1 (no meta)> finished, required< #iterations={0}, cputime=?, realtime=?>", iteration);
+                    logged.origin = new string[] { "search", "ALS" };
+                    logged.serverity = Logged.EnumServerity.INFO;
+                    logger.write(logged);
+                }
+                
+                
                 // debug memonics
                 for (int i = 0; i < program.Length; i++) {
-                    Console.WriteLine("{0}: {1}", i, InstructionInfo.getMemonic(program[i]));
+                    Logged logged = new Logged();
+                    logged.notifyConsole = Logged.EnumNotifyConsole.YES;
+                    logged.message = string.Format("{0}: {1}", i, InstructionInfo.getMemonic(program[i]));
+                    logged.origin = new string[] { "search", "ALS" };
+                    logged.serverity = Logged.EnumServerity.INFO;
+                    logger.write(logged);
+
+                    //Console.WriteLine("{0}: {1}", i, InstructionInfo.getMemonic(program[i]));
                 }
 
 
