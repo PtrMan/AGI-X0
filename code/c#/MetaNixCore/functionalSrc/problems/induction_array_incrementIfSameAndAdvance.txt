@@ -1,0 +1,73 @@
+﻿{ -- add one to reg0 if reg1 appear in array at current position, advance
+	{
+		6 -- enumerate program length
+	}
+
+	{ -- at end of array it should return the answer flag false because it is at the end
+		{} -- question array
+		{null null} -- question registers
+		0 -- question array index
+
+		{} -- answer array
+		{} -- answer registers
+		0 -- answer array index
+
+		false -- answer flag
+	}
+
+	{ -- count the counter up if it appeared
+		{1} -- question array
+		{1 1} -- question registers
+		0 -- question array index
+
+		{1} -- answer array
+		{2 null} -- answer registers
+		1 -- answer array index
+
+		false -- answer flag
+	}
+
+	{ -- we can't count the counter up if it doesn't appear
+		{1}
+		{1 3}
+		0
+
+		{1}
+		{1 null}
+		1
+
+		false
+	}
+
+	{ -- flag should be false if it couldn't advance
+		{1}
+		{2 1}
+		0
+
+		{1}
+		{3 null}
+		1
+
+		false
+	}
+
+	{ -- flag should be true if it could advance
+		{1 3}
+		{2 1}
+		0
+
+		{1 3}
+		{3 null}
+		1
+
+		true
+	}
+
+	-- should return
+    --                arrayValid arr0
+    --                jumpIfNotFlag a
+    --                arrayCompare reg1
+    --                addFlag reg0, 1
+    --                arrayIdxFlag arr0 +1
+    --            a:  (ret)
+}

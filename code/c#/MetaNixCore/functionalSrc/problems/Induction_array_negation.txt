@@ -1,0 +1,68 @@
+﻿-- multiplication of all elements of the array
+-- precondition: array index must be already set to 0
+
+{
+	{ -- settings
+		5 -- enumerate program length, maybe not enough
+	}
+
+	{
+		{}
+		{null null}
+		0
+
+		{}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{1}
+		{null null}
+		0
+
+		{-1}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{2}
+		{null null}
+		0
+
+		{-2}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{9 -5}
+		{null null}
+		0
+
+		{-9 5}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{-4 -2 1 1}
+		{null null}
+		0
+
+		{4 2 -1 -1}
+		{null null}
+		null
+
+		null
+	}
+}

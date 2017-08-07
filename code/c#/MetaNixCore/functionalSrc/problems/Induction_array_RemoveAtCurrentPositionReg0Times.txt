@@ -1,0 +1,75 @@
+﻿-- remove at current array[0] position reg0 times
+
+{
+	{ -- settings
+		6 -- enumerate program length
+	}
+
+	{
+		{ 5 8 3 7}
+		{1 null} -- remove 1 element
+		0
+
+		{ 8 3 7}
+		{null null}
+		0
+		
+		null
+	}
+
+	{
+		{5 8 3 7}
+		{1 null} -- remove 1 element
+		1
+
+		{5 3 7}
+		{null null}
+		1
+		
+		null
+	}
+
+	{
+		{5 8 3 7}
+		{1 null} -- remove 1 element
+		1
+
+		{5 3 7}
+		{null null}
+		1
+		
+		null
+	}
+
+	{
+		{5 8 3 7}
+		{2 null} -- remove 2 elements
+		0
+
+		{5 7}
+		{null null}
+		1
+		
+		null
+	}
+
+	{
+		{5 8 3 7}
+		{0 null} -- remove 0 elements
+		0
+
+		{5 8 3 7}
+		{null null}
+		0
+		
+		null
+	}
+}
+
+-- should return
+--                    compare 0 reg0
+--                    jumpIfFlag 3
+--                    dec reg0
+--                    arrayRemove
+--                    jmp -5
+--                    ret

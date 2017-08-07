@@ -1,15 +1,20 @@
 ﻿using AiThisAndThat.prototyping;
+using MetaNix.framework.languages.functional2;
 using MetaNix.framework.logging;
 using MetaNix.framework.misc;
+using MetaNix.framework.pattern;
+using MetaNix.framework.pattern.withDecoration;
 using MetaNix.framework.representation.x86;
 using MetaNix.instrumentation;
 using MetaNix.nars;
 using MetaNix.nars.entity;
 using MetaNix.nars.inference;
+using MetaNix.scheduler;
 using MetaNix.search.levin2;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace MetaNixExperimentalPrivate {
     class Class1 {
@@ -165,9 +170,114 @@ namespace MetaNixExperimentalPrivate {
         void testALS() {
             prepare();
             
-            joinIrc1();
+            //joinIrc1();
 
-            Program2.interactiveTestEnumeration(logger);
+            var absolute = PathHelper.AssemblyDirectory.Uri.AbsoluteUri;
+            var absoluteWithoutFile = absolute.Substring(8);
+            var pathParts = new List<string>(absoluteWithoutFile.Split(new char[] { '/'}));
+            var pathPartsWithoutSpecific = pathParts;
+            for(;;) {
+                string lastPathPart = pathPartsWithoutSpecific[pathPartsWithoutSpecific.Count-1];
+                if( lastPathPart == "bin" )   break;
+                pathPartsWithoutSpecific.RemoveAt(pathPartsWithoutSpecific.Count-1);
+            }
+            pathPartsWithoutSpecific.RemoveAt(pathPartsWithoutSpecific.Count-1);
+            pathPartsWithoutSpecific.RemoveAt(pathPartsWithoutSpecific.Count - 1);
+
+            pathPartsWithoutSpecific.AddRange(new string[] { "MetaNixCore", "functionalSrc", "problems" });
+
+
+            string directoryPath = string.Join("\\", pathPartsWithoutSpecific.ToArray());
+            string[] problemsFilenames = Directory.GetFiles(directoryPath);
+
+
+            PatternSymbolContext patternSymbolContext = new PatternSymbolContext();
+            patternSymbolContext.lookupOrCreateSymbolIdAndUniqueIdForName("null"); // must have 0 as uniqueId
+            patternSymbolContext.lookupOrCreateSymbolIdAndUniqueIdForName("true");// must have 1 as uniqueId
+            patternSymbolContext.lookupOrCreateSymbolIdAndUniqueIdForName("false"); // must have 2 as uniqueId
+
+
+            Scheduler scheduler = new Scheduler();
+
+
+            SparseArrayProgramDistribution sparseArrayProgramDistribution = new SparseArrayProgramDistribution();
+            AdvancedAdaptiveLevinSearchTaskProvider levinSearchTaskProvider = new AdvancedAdaptiveLevinSearchTaskProvider(scheduler, sparseArrayProgramDistribution, logger);
+            
+            foreach ( string iterationPath in problemsFilenames ) {
+                string fileContent = File.ReadAllText(iterationPath);
+
+                Lexer lexer = new Lexer();
+                lexer.setSource(fileContent);
+
+                Functional2LexerAndParser parser = new Functional2LexerAndParser(patternSymbolContext);
+                parser.lexer = lexer;
+                parser.parse();
+
+                Pattern<Decoration> problemRootElement = parser.rootPattern;
+
+
+                AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
+                levinSearchProblem.humanReadableTaskname = iterationPath;
+
+
+                //levinSearchProblem.enumerationMaxProgramLength = 5;
+                levinSearchProblem.instructionsetCount = InstructionInfo.getNumberOfInstructions() - 16;/*because no call*/
+
+                levinSearchProblem.maxNumberOfRetiredInstructions = /*length of program*/6 + 1/* might be off by one*/;
+
+                levinSearchProblem.initialInterpreterState = new InterpreterState();
+                levinSearchProblem.initialInterpreterState.registers = new int[3];
+                levinSearchProblem.initialInterpreterState.arrayState = new ArrayState();
+                levinSearchProblem.initialInterpreterState.arrayState.array = new List<int>();
+                //levinSearchProblem.initialInterpreterState.debugExecution = false;
+
+
+                MetaNix.framework.pattern.Interpreter.vmAssert(problemRootElement.isBranch, false, "Must be branch!");
+                MetaNix.framework.pattern.Interpreter.vmAssert(problemRootElement.decoration == null, false, "Must be pure branch!");
+
+                Pattern<Decoration> configurationPattern = problemRootElement.referenced[0];
+                levinSearchProblem.enumerationMaxProgramLength = Conversion.convertToUint(configurationPattern.referenced[0]);
+
+                for (int trainingSampleI = 1; trainingSampleI < problemRootElement.referenced.Length; trainingSampleI++) {
+                    var trainingSamplePattern = problemRootElement.referenced[trainingSampleI];
+
+                    MetaNix.framework.pattern.Interpreter.vmAssert(trainingSamplePattern.isBranch, false, "Must be branch!");
+                    MetaNix.framework.pattern.Interpreter.vmAssert(trainingSamplePattern.decoration == null, false, "Must be pure branch!");
+
+                    Pattern<Decoration> questionArrayPattern = trainingSamplePattern.referenced[0],
+                        questionRegistersPattern = trainingSamplePattern.referenced[1],
+                        answerArrayPattern = trainingSamplePattern.referenced[3],
+                        answerRegistersPattern = trainingSamplePattern.referenced[4];
+
+                    // append
+
+                    TrainingSample createdTrainingSample = new TrainingSample();
+                    createdTrainingSample.questionArray = new List<int>(Conversion.convertToIntArray(questionArrayPattern));
+                    createdTrainingSample.questionRegisters = Conversion.convertToOptionalIntArray(questionRegistersPattern);
+                    createdTrainingSample.questionArrayIndex = Conversion.convertToOptionalInt(trainingSamplePattern.referenced[2]);
+                    createdTrainingSample.answerRegisters = Conversion.convertToOptionalIntArray(answerRegistersPattern);
+                    createdTrainingSample.answerArray = new List<int>(Conversion.convertToIntArray(answerArrayPattern));
+                    createdTrainingSample.answerArrayIndex = Conversion.convertToOptionalInt(trainingSamplePattern.referenced[5]);
+
+                    levinSearchProblem.trainingSamples.Add(createdTrainingSample);
+                }
+
+
+
+
+
+                levinSearchTaskProvider.problems.Add(levinSearchProblem);
+
+            }
+
+            
+
+
+            levinSearchTaskProvider.submitFirstTask();
+
+            for (; ; ) {
+                scheduler.process();
+            }
         }
 
 

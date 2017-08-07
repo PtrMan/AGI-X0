@@ -1,0 +1,80 @@
+﻿-- first numer of linked list element is delta till ext element
+-- second numer is if the element is enabled, used for freeing memory
+
+{ -- induction problem
+	{ -- settings
+		5 -- enumerate program length
+	}
+	
+	{ -- example
+		{3 1 6} -- question array
+		{42 11} -- question registers
+		0 -- question array index
+
+		{3 0 6} -- answer array
+		{null 11} -- answer registers
+		0 -- answer array index
+
+		null -- answer flag
+	}
+
+	{
+		 {3 1 6 3 1 5}
+		 {42 11}
+		 0
+
+		 {3 0 6 3 1 5}
+		 {null 11}
+		 0
+
+		 null
+	}
+
+	{
+		 {3 1 6 3 1 5}
+		 {42 11}
+		 3
+
+		 {3 1 6 3 0 5}
+		 {null 11}
+		 3
+
+		 null
+	}
+
+	{
+		 {4 1 6 9 3 1 7 3 1 10}
+		 {42 11}
+		 7
+
+		 { 4 1 6 9 3 1 7 3 0 10 }
+		 {null 11}
+		 7
+
+		 null
+	}
+
+	{
+		 {4 1 6 9 3 1 7 3 1 10}
+		 {42 11}
+		 0
+
+		 { 4 0 6 9 3 1 7 3 1 10 }
+		 {null 11}
+		 0
+
+		 null
+	}
+
+	{
+		 {4 1 6 9 3 1 7 3 1 10}
+		 {42 11}
+		 4
+
+		 {4 1 6 9 3 0 7 3 1 10}
+		 {null 11}
+		 4
+
+		 null
+	}
+}

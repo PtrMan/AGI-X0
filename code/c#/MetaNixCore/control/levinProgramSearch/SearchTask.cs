@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using MetaNix.scheduler;
 using MetaNix.search.levin2;
 using MetaNix.weakAi.behaviorTree;
+using MetaNix.framework.logging;
 
 namespace MetaNix.control.levinProgramSearch {
     // starts an search and monitors the search for an program with levin search
@@ -13,11 +14,13 @@ namespace MetaNix.control.levinProgramSearch {
             Scheduler scheduler,
             SparseArrayProgramDistribution sparseArrayProgramDistribution,
             AdvancedAdaptiveLevinSearchProblem problem,
-            Observable completitionObservable
+            Observable completitionObservable,
+            ILogger log
         ) {
             this.scheduler = scheduler;
             this.sparseArrayProgramDistribution = sparseArrayProgramDistribution;
             this.problem = problem;
+            this.log = log;
 
             this.completitionObservable = completitionObservable;
             this.completitionObserver = new CompletitionObserver(this);
@@ -25,7 +28,7 @@ namespace MetaNix.control.levinProgramSearch {
         }
 
         public override Task clone() {
-            return new SearchTask(scheduler, sparseArrayProgramDistribution, problem, completitionObservable);
+            return new SearchTask(scheduler, sparseArrayProgramDistribution, problem, completitionObservable, log);
         }
 
         public override void reset() {
@@ -78,10 +81,10 @@ namespace MetaNix.control.levinProgramSearch {
 
         void submitTask(AdvancedAdaptiveLevinSearchProblem problem) {
             Observable levinSearchObservable = new Observable();
-            levinSearchObservable.register(new AdvancedAdaptiveLevinSearchLogObserver());
+            levinSearchObservable.register(new AdvancedAdaptiveLevinSearchLogObserver(log));
             levinSearchObservable.register(new LevinSearchObserver(this));
 
-            levinSearchTask = new LevinSearchTask(levinSearchObservable);
+            levinSearchTask = new LevinSearchTask(levinSearchObservable, problem.humanReadableTaskname);
             scheduler.addTaskSync(levinSearchTask);
 
             levinSearchTask.levinSearchContext = new LevinSearchContext();
@@ -94,6 +97,7 @@ namespace MetaNix.control.levinProgramSearch {
         }
 
         AdvancedAdaptiveLevinSearchProblem problem;
+        private ILogger log;
         Scheduler scheduler;
         SparseArrayProgramDistribution sparseArrayProgramDistribution;
 

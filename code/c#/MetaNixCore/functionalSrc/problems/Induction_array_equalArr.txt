@@ -1,0 +1,80 @@
+﻿-- converts the array to an boolean array where the values are equal to reg0
+-- precondition: array index must be already set to 0
+
+{
+	{ -- settings
+		6 -- enumerate program length
+	}
+
+	{
+		{}
+		{null null}
+		0
+
+		{}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{4}
+		{4 null}
+		0
+
+		{1}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{7}
+		{5 null}
+		0
+
+		{0}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{1}
+		{5 null}
+		0
+
+		{0}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{0 3 4 3 8}
+		{3 null}
+		0
+
+		{0 1 0 1 0}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{1 0 4 2 -1 4 1}
+		{1 null}
+		0
+
+		{1 0 0 0 0 0 1}
+		{null null}
+		null
+
+		null
+	}
+}

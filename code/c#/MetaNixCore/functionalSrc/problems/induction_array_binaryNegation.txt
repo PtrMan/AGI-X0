@@ -1,0 +1,104 @@
+﻿-- negate array which encodes binary values
+-- precondition: array index must be already set to 0
+
+{
+	{ -- settings
+		6 -- enumerate program length
+	}
+
+	{
+		{}
+		{null null}
+		0
+
+		{}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{1}
+		{null null}
+		0
+
+		{0}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{0}
+		{null null}
+		0
+
+		{1}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{1 0}
+		{null null}
+		0
+
+		{0 1}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{0 1}
+		{null null}
+		0
+
+		{1 0}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{1 1}
+		{null null}
+		0
+
+		{0 0}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{0 0}
+		{null null}
+		0
+
+		{1 1}
+		{null null}
+		null
+
+		null
+	}
+
+	{ -- randomly seemingly sequence to avoid hardcoded value lookup for the positions
+		{1 0 1 0 1 1 0 0}
+		{null null}
+		0
+
+		{0 1 0 1 0 0 1 1}
+		{null null}
+		null
+
+		null
+	}
+}

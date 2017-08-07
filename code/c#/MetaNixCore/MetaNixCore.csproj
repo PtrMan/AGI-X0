@@ -78,9 +78,9 @@
     <Compile Include="framework\pattern\Interpreter.cs" />
     <Compile Include="framework\pattern\Matcher.cs" />
     <Compile Include="framework\pattern\Pattern.cs" />
+    <Compile Include="framework\pattern\withDecoration\Conversion.cs" />
     <Compile Include="framework\pattern\withDecoration\PatternManipulation.cs" />
     <Compile Include="framework\pattern\withDecoration\PatternSymbolContext.cs" />
-    <Compile Include="framework\pattern\withDecoration\StringHelper.cs" />
     <Compile Include="framework\representation\x86\X86ExecutionContext.cs" />
     <Compile Include="framework\representation\x86\X86Instruction.cs" />
     <Compile Include="framework\representation\x86\X86Program.cs" />
@@ -203,6 +203,25 @@
       <HintPath>..\MetaNix\packages\System.Collections.Immutable.1.3.1\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="functionalSrc\parserBugTest1.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_addition.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_appendReg0TimesReg1.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_appendReg1ToArr0.txt" />
+    <Content Include="functionalSrc\problems\induction_array_binaryNegation.txt" />
+    <Content Include="functionalSrc\problems\induction_array_countTrue.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_equalArr.txt" />
+    <Content Include="functionalSrc\problems\induction_array_greaterThan.txt" />
+    <Content Include="functionalSrc\problems\induction_array_incrementIfSameAndAdvance.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_multiplication.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_negation.txt" />
+    <Content Include="functionalSrc\problems\induction_array_patternGen_0.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_RemoveAtCurrentPositionReg0Times.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_findReg1InArr0AndStay.txt" />
+    <Content Include="functionalSrc\problems\Induction_LinkedList1.txt" />
+    <Content Include="functionalSrc\randomInstruction1.txt" />
+    <Content Include="functionalSrc\test1.txt" />
+    <Content Include="functionalSrc\test2.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

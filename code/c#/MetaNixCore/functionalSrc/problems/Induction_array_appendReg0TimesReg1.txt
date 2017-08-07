@@ -1,0 +1,81 @@
+﻿-- append reg0 times reg1
+
+-- needs some bias, is to hard to claculate as a primitive solution
+
+{
+	{ -- settings
+		6 -- enumerate program length
+	}
+
+	{
+		{}
+		{0 5}
+		null
+
+		{}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{}
+		{1 5}
+		null
+
+		{5}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{}
+		{2 5}
+		null
+
+		{5 5}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{1}
+		{2 5}
+		null
+
+		{1 5 5}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{3}
+		{2 9}
+		null
+
+		{3 9 9}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{3}
+		{3 9}
+		null
+
+		{3 9 9 9}
+		{null null}
+		null
+
+		null
+	}
+}

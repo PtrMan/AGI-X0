@@ -1084,8 +1084,9 @@ namespace MetaNix.search.levin2 {
 
     public class LevinSearchTask : MetaNix.scheduler.ITask {
         // /param doneObserable will be notified when the search is done or failed
-        public LevinSearchTask(Observable obserable) {
+        public LevinSearchTask(Observable obserable, string taskname) {
             this.observable = obserable;
+            this.taskname = taskname;
         }
 
         public void processTask(Scheduler scheduler, double softTimelimitInSeconds, out EnumTaskStates taskState) {
@@ -1108,8 +1109,6 @@ namespace MetaNix.search.levin2 {
         }
 
         void timingIteration(out bool searchCompleted) {
-            string taskname = "?";
-
             searchCompleted = false;
 
             for (int timingIterationCounter = 0; timingIterationCounter < iterationGranularity; timingIterationCounter++) {
@@ -1151,6 +1150,7 @@ namespace MetaNix.search.levin2 {
         Stopwatch executiontimeSchedulingStopwatch = new Stopwatch();
 
         private Observable observable;
+        private string taskname;
     }
 
     

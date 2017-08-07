@@ -44,7 +44,7 @@ namespace MetaNix.framework.lang {
                 if( m.Success ) {
                     string matchedString = m.Groups[1].Value;
 
-                    Console.WriteLine(matchedString);
+                    Console.WriteLine(matchedString + "<-");
 
                     string completeMatchedString = m.Groups[0].Value;
 

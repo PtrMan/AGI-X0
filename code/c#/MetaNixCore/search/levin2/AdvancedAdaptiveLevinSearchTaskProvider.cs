@@ -2,16 +2,25 @@
 using System.Collections.Generic;
 
 using MetaNix.scheduler;
+using MetaNix.framework.logging;
 
 namespace MetaNix.search.levin2 {
     // tries to supply the scheduler with new levin search tasks if it completed relevant tasks
     public class AdvancedAdaptiveLevinSearchTaskProvider : IObserver {
         // /param scheduler used to submit new tasks which search for the programs with levin search
         // /param sparseArrayProgramDistribution used distribution for choosing the instructions
-        public AdvancedAdaptiveLevinSearchTaskProvider(Scheduler scheduler, SparseArrayProgramDistribution sparseArrayProgramDistribution) {
+        public AdvancedAdaptiveLevinSearchTaskProvider(
+            Scheduler scheduler,
+            SparseArrayProgramDistribution sparseArrayProgramDistribution,
+            ILogger log
+        ) {
+
             this.scheduler = scheduler;
             this.sparseArrayProgramDistribution = sparseArrayProgramDistribution;
+            this.log = log;
         }
+
+
 
         // called from outside to submit the first task to the scheduler
         public void submitFirstTask() {
@@ -51,10 +60,10 @@ namespace MetaNix.search.levin2 {
 
         void submitTask(AdvancedAdaptiveLevinSearchProblem problem) {
             Observable levinSearchObservable = new Observable();
-            levinSearchObservable.register(new AdvancedAdaptiveLevinSearchLogObserver());
+            levinSearchObservable.register(new AdvancedAdaptiveLevinSearchLogObserver(log));
             levinSearchObservable.register(this); // register ourself to know when the task failed or succeeded
 
-            LevinSearchTask levinSearchTask = new LevinSearchTask(levinSearchObservable);
+            LevinSearchTask levinSearchTask = new LevinSearchTask(levinSearchObservable, problem.humanReadableTaskname);
             scheduler.addTaskSync(levinSearchTask);
 
             levinSearchTask.levinSearchContext = new LevinSearchContext();
@@ -70,6 +79,7 @@ namespace MetaNix.search.levin2 {
 
         Scheduler scheduler;
         SparseArrayProgramDistribution sparseArrayProgramDistribution;
+        ILogger log;
     }
 
     // describes an problem which has to been solved with levinsearch
@@ -83,6 +93,7 @@ namespace MetaNix.search.levin2 {
             copied.maxNumberOfRetiredInstructions = maxNumberOfRetiredInstructions;
             copied.parentProgram = parentProgram;
             copied.humanReadableHints = humanReadableHints;
+            copied.humanReadableTaskname = humanReadableTaskname;
             return copied;
         }
 
@@ -99,6 +110,7 @@ namespace MetaNix.search.levin2 {
         public InterpreterState initialInterpreterState;
         public IList<TrainingSample> trainingSamples = new List<TrainingSample>();
 
+        public string humanReadableTaskname = "?";
 
         public uint enumerationMaxProgramLength;
 

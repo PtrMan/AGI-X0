@@ -11,6 +11,7 @@ using MetaNix.attention;
 using MetaNix.search.levin2;
 using MetaNix.scheduler;
 using MetaNix.nars;
+using MetaNix.framework.logging;
 
 namespace MetaNix {
     class CellularAutomata {
@@ -217,8 +218,17 @@ namespace MetaNix {
 
             Scheduler scheduler = new Scheduler();
 
+            FileLogger log = new FileLogger();
+            log.open("log.txt");
+
+            
+
+
+
+
+
             SparseArrayProgramDistribution sparseArrayProgramDistribution = new SparseArrayProgramDistribution();
-            AdvancedAdaptiveLevinSearchTaskProvider levinSearchTaskProvider = new AdvancedAdaptiveLevinSearchTaskProvider(scheduler, sparseArrayProgramDistribution);
+            AdvancedAdaptiveLevinSearchTaskProvider levinSearchTaskProvider = new AdvancedAdaptiveLevinSearchTaskProvider(scheduler, sparseArrayProgramDistribution, log);
 
             // linked list problem
             if (false) { // append one element in reg1 to linked list, precondition is that the array index is already past the end of the array
@@ -243,26 +253,27 @@ namespace MetaNix {
                 levinSearchProblem.trainingSamples[0].questionArray = new List<int> { };
                 levinSearchProblem.trainingSamples[0].questionRegisters = new int?[] { null, 6 };
                 levinSearchProblem.trainingSamples[0].questionArrayIndex = 0;
-                levinSearchProblem.trainingSamples[0].answerRegisters = new int?[] { null, null };
                 levinSearchProblem.trainingSamples[0].answerArray = new List<int> { 3, 1, 6 };
+                levinSearchProblem.trainingSamples[0].answerRegisters = new int?[] { null, null };
 
                 levinSearchProblem.trainingSamples[1].questionArray = new List<int> { 3, 1, 6 };
                 levinSearchProblem.trainingSamples[1].questionRegisters = new int?[] { null, 5 };
                 levinSearchProblem.trainingSamples[1].questionArrayIndex = 3;
-                levinSearchProblem.trainingSamples[1].answerRegisters = new int?[] { null, null };
                 levinSearchProblem.trainingSamples[1].answerArray = new List<int> { 3, 1, 6, 3, 1, 5 };
+                levinSearchProblem.trainingSamples[1].answerRegisters = new int?[] { null, null };
 
                 levinSearchProblem.trainingSamples[2].questionArray = new List<int> { 3, 1, 6, 9 };
                 levinSearchProblem.trainingSamples[2].questionRegisters = new int?[] { null, 7 };
                 levinSearchProblem.trainingSamples[2].questionArrayIndex = 4;
-                levinSearchProblem.trainingSamples[2].answerRegisters = new int?[] { null, null };
                 levinSearchProblem.trainingSamples[2].answerArray = new List<int> { 3, 1, 6, 9, 3, 1, 7 };
+                levinSearchProblem.trainingSamples[2].answerRegisters = new int?[] { null, null };
+
 
                 levinSearchProblem.trainingSamples[3].questionArray = new List<int> { 4, 1, 6, 9, 3, 1, 7 };
                 levinSearchProblem.trainingSamples[3].questionRegisters = new int?[] { null, 10 };
                 levinSearchProblem.trainingSamples[3].questionArrayIndex = 7;
-                levinSearchProblem.trainingSamples[3].answerRegisters = new int?[] { null, null };
                 levinSearchProblem.trainingSamples[3].answerArray = new List<int> { 4, 1, 6, 9, 3, 1, 7, 3, 1, 10 };
+                levinSearchProblem.trainingSamples[3].answerRegisters = new int?[] { null, null };
 
 
                 levinSearchTaskProvider.problems.Add(levinSearchProblem);
@@ -270,6 +281,7 @@ namespace MetaNix {
 
             }
 
+            // WAS TRANSLATED TO LANGUAGE
             // linked list problem
             if (true) {
                 // disable/free element in linked list, precondition is that the array index is already pointing at the element
@@ -344,6 +356,7 @@ namespace MetaNix {
 
             }
 
+            // WAS TRANSLATED TO LANGUAGE
             if (false) { // add one to reg0 if reg1 appear in array at current position, advance
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
                 levinSearchProblem.enumerationMaxProgramLength = 6;
@@ -416,6 +429,7 @@ namespace MetaNix {
                 */
             }
 
+            // TRANSLATED
             // append reg1 to array[0]
             if(false) {
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
@@ -455,6 +469,7 @@ namespace MetaNix {
                 levinSearchTaskProvider.problems.Add(levinSearchProblem);
             }
 
+            // TRANSLATED
             // disabled because too complicated without bias
             // we need to use another program here
             if(false) { // append reg0 times reg1
@@ -574,6 +589,7 @@ namespace MetaNix {
                  */
             }
 
+            // TRANSLATED
             if (false) { // problem : find value in reg1 with value in array[0] and stay with index
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
                 levinSearchProblem.enumerationMaxProgramLength = 5;
@@ -610,6 +626,7 @@ namespace MetaNix {
                  */
             }
 
+            // TRANSLATED
             if (false) { // problem : remove at current array[0] position reg0 times
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
                 levinSearchProblem.enumerationMaxProgramLength = 6;

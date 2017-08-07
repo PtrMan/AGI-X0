@@ -1,0 +1,40 @@
+﻿-- problem : find value in reg1 with value in array[0] and stay with index
+
+{
+	{ -- settings
+		5 -- enumerate program length
+	}
+
+	{
+		{5 8 3 7}
+		{null 7} -- search for 7
+		null
+
+		{5 8 3 7} -- don't change array
+		{null null}
+		3 -- 7 found at [3]
+
+		null
+	}
+
+	{
+		{7 8 3 2}
+		{null 7} -- search for 7
+		null
+
+		{7 8 3 2}
+		{null null}
+		0 -- 7 found at [0]
+
+		null
+	}
+
+	-- should return
+    --             
+    --                compareArray reg1       3
+    --                jumpIfFlag    +2       
+    --                arrayIdx +1             1
+    --                jmp           -4
+    --                ret                    (5)
+
+}

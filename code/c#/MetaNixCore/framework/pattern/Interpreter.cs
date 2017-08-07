@@ -133,7 +133,7 @@ namespace MetaNix.framework.pattern {
             vmAssert(patternWithDecoration.referenced.Length >= 1, true, "Not sufficient many parameters!");
             
             Pattern<Decoration> calledName = patternWithDecoration.referenced[0];
-            string calledNameAsString = StringHelper.convertPatternToString(calledName);
+            string calledNameAsString = Conversion.convertPatternToString(calledName);
 
             int numberOfArguments = patternWithDecoration.referenced.Length - 1;
             Pattern<Decoration>[] arguments = patternWithDecoration.referenced.Skip(1).Take(numberOfArguments).ToArray(); // TODO OPTIMZIATION< might be to slow >

@@ -1,0 +1,43 @@
+﻿-- append reg1 to array[0]
+
+{ -- induction problem
+	{ -- settings
+		6 -- enumerate program length
+	}
+
+	{
+		{}
+		{null 0}
+		null
+
+		{0}
+		{null null}
+		0
+
+		null
+	}
+
+	{
+		{4}
+		{null 1}
+		null
+
+		{4 1}
+		{null null}
+		1
+
+		null
+	}
+
+	{
+		{9 3}
+		{null 2}
+		null
+
+		{9 3 2}
+		{null null}
+		2
+
+		null
+	}
+}

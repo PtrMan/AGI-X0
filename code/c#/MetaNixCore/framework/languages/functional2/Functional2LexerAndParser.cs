@@ -15,62 +15,64 @@ namespace MetaNix.framework.languages.functional2 {
         SEMICOLON, // ;
     }
 
-    class Lexer : lang.Lexer {
+    public class Lexer : lang.Lexer {
         protected override Token createToken(int ruleIndex, string matchedString) {
             Token token = new Token();
 
-            if( ruleIndex == 1 ) {
+            if (ruleIndex == 1) {
+                token.type = Token.EnumType.NUMBER;
+                token.contentNumber = long.Parse(matchedString);
+            }
+            else if ( ruleIndex == 2 ) {
                 token.type = Token.EnumType.IDENTIFIER;
 	    		token.contentString = matchedString;
             }
-            else if( ruleIndex == 2 ) {
+            else if( ruleIndex == 3 ) {
 			    token.type = Token.EnumType.OPERATION;
 			    token.contentOperation = (int)EnumToken.AT;
 		    }
-            else if( ruleIndex == 3 ) {
+            else if( ruleIndex == 4 ) {
 			    token.type = Token.EnumType.OPERATION;
 			    token.contentOperation = (int)EnumToken.DOUBLENUMBERSIGN;
 		    }
-            else if( ruleIndex == 4 ) {
+            else if( ruleIndex == 5 ) {
 			    token.type = Token.EnumType.OPERATION;
 			    token.contentOperation = (int)EnumToken.BRACEOPEN;
 		    }
-            else if( ruleIndex == 5 ) {
+            else if( ruleIndex == 6 ) {
 			    token.type = Token.EnumType.OPERATION;
 			    token.contentOperation = (int)EnumToken.BRACECLOSE;
 		    }
-            else if( ruleIndex == 6 ) {
+            else if( ruleIndex == 7 ) {
 			    token.type = Token.EnumType.OPERATION;
 			    token.contentOperation = (int)EnumToken.SEMICOLON;
 		    }
-            else if( ruleIndex == 7 ) {
+            else if( ruleIndex == 8 ) {
                 token.type = Token.EnumType.STRING;
 	    		token.contentString = matchedString;
             }
-            else if( ruleIndex == 8 ) {
-                token.type = Token.EnumType.NUMBER;
-	    		token.contentNumber = long.Parse(matchedString);
-            }
+            
             
             return token;
         }
 
         protected override void fillRules() {
             tokenRules = new Rule[] {
-                new Rule("^([ \\n\\r\\t]+|\\-\\-[ \\r\\t0-9\\w\\s\\.,:;_\\-\"#]*\n)"), // space or comment
-                new Rule(@"^([a-zA-Z/\-\?!=][0-9a-zA-Z/\-\?!=]*)"),
+                new Rule("^([ \\n\\r\\t]+|\\-\\-[ \\r\\t0-9\\w\\.,:;_\\-\"#\\(\\)\\[\\]\\{\\}'\\+*/<>]*\n)"), // space or comment
+                new Rule(@"^(\-?[1-9][0-9]*|0)"), // integer
+                new Rule(@"^([a-zA-Z/\-\?!=][0-9a-zA-Z/\-\?!=]*)"), // identifier
                 new Rule(@"^(\@)"),
                 new Rule(@"^(##)"),
                 new Rule(@"^({)"),
                 new Rule(@"^(})"),
                 new Rule(@"^(;)"),
                 new Rule("^\"([0-9\\._;:,\\w\\s\\-\\./#]*)\""), // string
-                new Rule(@"^(\-?[1-9][0-9]*|0)"), // integer
+                
             };
         }
     }
 
-    class Functional2LexerAndParser : lang.Parser {
+    public class Functional2LexerAndParser : lang.Parser {
         public Functional2LexerAndParser(PatternSymbolContext patternSymbolContext) : base() {
             this.patternSymbolContext = patternSymbolContext;
         }
@@ -79,10 +81,10 @@ namespace MetaNix.framework.languages.functional2 {
         protected override void fillArcs() {
             Arc errorArc = new Arc(Functional2LexerAndParser.Arc.EnumType.ERROR    , 0                                                    , callbackNothing             , 0                     , null                     );
 
-            /* +  0 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.OPERATION, (uint)EnumToken.AT             , callbackNothing       , 1, null));
-            /* +  1 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.ARC      , 10                              , callbackNothing, 2, null));
-            /* +  2 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.END      , 0                              , callbackNothing, uint.MaxValue, null));
-            /* +  3 */this.arcs.Add(errorArc);
+            /* +  0 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.OPERATION, (uint)EnumToken.AT             , callbackNothing       , 2, 1));
+            /* +  1 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.OPERATION, (uint)EnumToken.BRACEOPEN, callbackEnterPattern, 13, null));
+            /* +  2 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.ARC      , 10                              , callbackNothing, 3, null));
+            /* +  3 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.END      , 0                              , callbackNothing, uint.MaxValue, null));
             /* +  4 */this.arcs.Add(errorArc);
             /* +  5 */this.arcs.Add(errorArc);
             /* +  6 */this.arcs.Add(errorArc);
@@ -121,7 +123,7 @@ namespace MetaNix.framework.languages.functional2 {
             /* + 24 */this.arcs.Add(errorArc);
 
             //    inner instruction
-            //          name parameter(variable or pattern or name) ;
+            //          name parameter(variable or pattern or name or number) ;
             
             /* + 25 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.TOKEN    , (uint)Token.EnumType.STRING, callbackEnterInstructionAndInstructionName, 26, 22));
             /* + 26 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.OPERATION, (uint)EnumToken.SEMICOLON      , callbackExitInstruction, 13, 27));
@@ -251,7 +253,7 @@ namespace MetaNix.framework.languages.functional2 {
             Pattern<pattern.Decoration> interpretationPattern = Pattern<pattern.Decoration>.makeBranch(uniqueId);
             interpretationPattern.referenced = new Pattern<pattern.Decoration>[0];
 
-            PatternManipulation.append(topPattern, interpretationPattern);
+            if(topPatternStack.Count != 0)   PatternManipulation.append(topPattern, interpretationPattern);
 
             topPatternStack.Add(interpretationPattern); // TODO< rewrite to push >
         }
@@ -285,7 +287,7 @@ namespace MetaNix.framework.languages.functional2 {
 
             ulong functionNamePatternUniqueId = patternSymbolContext.returnNewUniqueId();
 
-            instructionPattern.referenced[0] = StringHelper.convert(calledFunctionName, functionNamePatternUniqueId);
+            instructionPattern.referenced[0] = Conversion.convert(calledFunctionName, functionNamePatternUniqueId);
             
 
             PatternManipulation.append(topPattern, instructionPattern);
@@ -301,7 +303,7 @@ namespace MetaNix.framework.languages.functional2 {
             string stringContent = currentToken.contentString;
 
             ulong uniqueId = patternSymbolContext.returnNewUniqueId();
-            Pattern<pattern.Decoration> stringPattern = StringHelper.convert(stringContent, uniqueId);
+            Pattern<pattern.Decoration> stringPattern = Conversion.convert(stringContent, uniqueId);
             
             PatternManipulation.append(topPattern, stringPattern);
         }
@@ -322,7 +324,7 @@ namespace MetaNix.framework.languages.functional2 {
 
             ulong stringUniqueId = patternSymbolContext.returnNewUniqueId();
 
-            Pattern<Decoration> stringPattern = StringHelper.convert(@string, stringUniqueId);
+            Pattern<Decoration> stringPattern = Conversion.convert(@string, stringUniqueId);
             PatternManipulation.append(topPattern, stringPattern);
         }
 
