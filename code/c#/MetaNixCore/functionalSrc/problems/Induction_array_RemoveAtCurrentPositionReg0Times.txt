@@ -3,6 +3,7 @@
 {
 	{ -- settings
 		6 -- enumerate program length
+		50 -- max number of retired instructions
 	}
 
 	{

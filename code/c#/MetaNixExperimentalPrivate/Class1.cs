@@ -219,6 +219,11 @@ namespace MetaNixExperimentalPrivate {
 
                 Pattern<Decoration> problemRootElement = parser.rootPattern;
 
+                MetaNix.framework.pattern.Interpreter.vmAssert(problemRootElement.isBranch, false, "Must be branch!");
+                MetaNix.framework.pattern.Interpreter.vmAssert(problemRootElement.decoration == null, false, "Must be pure branch!");
+
+                Pattern<Decoration> configurationPattern = problemRootElement.referenced[0];
+
 
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
                 levinSearchProblem.humanReadableTaskname = iterationPath;
@@ -227,7 +232,7 @@ namespace MetaNixExperimentalPrivate {
                 //levinSearchProblem.enumerationMaxProgramLength = 5;
                 levinSearchProblem.instructionsetCount = InstructionInfo.getNumberOfInstructions() - 16;/*because no call*/
 
-                levinSearchProblem.maxNumberOfRetiredInstructions = /*length of program*/6 + 1/* might be off by one*/;
+                levinSearchProblem.maxNumberOfRetiredInstructions = Conversion.convertToUint(configurationPattern.referenced[0]); // TODO< derive by propability with some formula from schmidhuber >
 
                 levinSearchProblem.initialInterpreterState = new InterpreterState();
                 levinSearchProblem.initialInterpreterState.registers = new int[3];
@@ -236,10 +241,6 @@ namespace MetaNixExperimentalPrivate {
                 //levinSearchProblem.initialInterpreterState.debugExecution = false;
 
 
-                MetaNix.framework.pattern.Interpreter.vmAssert(problemRootElement.isBranch, false, "Must be branch!");
-                MetaNix.framework.pattern.Interpreter.vmAssert(problemRootElement.decoration == null, false, "Must be pure branch!");
-
-                Pattern<Decoration> configurationPattern = problemRootElement.referenced[0];
                 levinSearchProblem.enumerationMaxProgramLength = Conversion.convertToUint(configurationPattern.referenced[0]);
 
                 for (int trainingSampleI = 1; trainingSampleI < problemRootElement.referenced.Length; trainingSampleI++) {

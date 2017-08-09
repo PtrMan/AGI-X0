@@ -1,9 +1,10 @@
-﻿-- first numer of linked list element is delta till ext element
+﻿-- first numer of linked list element is delta till next element
 -- second numer is if the element is enabled, used for freeing memory
 
-{ -- induction problem
+{
 	{ -- settings
 		5 -- enumerate program length
+		10 -- max number of retired instructions
 	}
 	
 	{ -- example

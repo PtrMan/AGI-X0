@@ -893,6 +893,12 @@ namespace MetaNix.search.levin2 {
 
             */
 
+            if( arguments.lengthOfProgram >= 4 ) {
+                if( arguments.program[0] == 13 && arguments.program[1] == 19 && arguments.program[2] == 18 && arguments.program[3] == 20 ) {
+                    int debugHere = 5;
+                }
+            }
+
             for (int instructionsRetired = 0; instructionsRetired < arguments.maxNumberOfRetiredInstructions; instructionsRetired++) {
                 bool instructionPointerValid = arguments.interpreterState.instructionPointer >= 0 && arguments.interpreterState.instructionPointer < arguments.lengthOfProgram;
                 if (!instructionPointerValid) {
