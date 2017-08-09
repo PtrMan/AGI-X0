@@ -202,7 +202,11 @@ namespace MetaNixExperimentalPrivate {
 
             SparseArrayProgramDistribution sparseArrayProgramDistribution = new SparseArrayProgramDistribution();
             AdvancedAdaptiveLevinSearchTaskProvider levinSearchTaskProvider = new AdvancedAdaptiveLevinSearchTaskProvider(scheduler, sparseArrayProgramDistribution, logger);
-            
+
+
+            // overwrite for testing
+            problemsFilenames = new string[] { @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_negation.txt" };
+
             foreach ( string iterationPath in problemsFilenames ) {
                 string fileContent = File.ReadAllText(iterationPath);
 

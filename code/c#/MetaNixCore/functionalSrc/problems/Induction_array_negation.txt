@@ -3,20 +3,23 @@
 
 {
 	{ -- settings
-		5 -- enumerate program length, maybe not enough
+		6 -- enumerate program length, maybe not enough
 	}
 
-	{
-		{}
-		{null null}
-		0
+	-- uncommented because empty case can't be handled because it is to complex
+	--{
+	--	{}
+	--	{null null}
+	--	0
+	--
+	--	{}
+	--	{null null}
+	--	null
+	--
+	--	null
+	--}
 
-		{}
-		{null null}
-		null
 
-		null
-	}
 
 	{
 		{1}

@@ -358,6 +358,12 @@ namespace MetaNix.search.levin2 {
             state.instructionPointer++;
         }
 
+
+        internal static void mul(InterpreterState state, int register, int value) {
+            state.registers[register] *= value;
+            state.instructionPointer++;
+        }
+
         // add by checking flag
         public static void addFlag(InterpreterState state, uint register, int value) {
             if( state.comparisionFlag ) {
@@ -434,9 +440,15 @@ namespace MetaNix.search.levin2 {
             state.instructionPointer++;
             success = true;
         }
-
-        // behaves as NOP, TODO
-        internal static void arrayRead(InterpreterState state, int v1, int v2, out bool success) {
+        
+        internal static void arrayRead(InterpreterState state, uint array, uint register, out bool success) {
+            if (state.arrayState == null || !state.arrayState.isIndexValid) {
+                success = false;
+                return;
+            }
+            
+            state.registers[register] = state.arrayState.array[state.arrayState.index];
+            
             state.instructionPointer++;
             success = true;
         }
@@ -469,6 +481,31 @@ namespace MetaNix.search.levin2 {
             state.instructionPointer++;
             success = true;
         }
+
+        // macro-arrAdvanceOrExit
+
+        // advance array index and reset and return/terminate if its over
+        // else jump relative
+        internal static void macroArrayAdvanceOrExit(InterpreterState state, int ipDelta, out bool success) {
+            if (state.arrayState == null) {
+                success = false;
+                return;
+            }
+
+            state.arrayState.index++;
+            bool isIndexValid = state.arrayState.isIndexValid;
+            if( !isIndexValid ) {
+                state.arrayState.index = 0;
+                return_(state, out success);
+                return;
+            }
+
+            state.instructionPointer++;
+            state.instructionPointer += ipDelta;
+
+            success = true;
+        }
+
     }
 
     public class CallStack {
@@ -556,7 +593,7 @@ namespace MetaNix.search.levin2 {
 
     sealed public class InstructionInfo {
         static string[] hardcodedSingleInstructions = {
-            "arrayIdx -1",
+            "arrayIdx -1", 
             "arrayIdx +1",
             "arrayRemove",
             "arrayCompare reg0",
@@ -569,12 +606,16 @@ namespace MetaNix.search.levin2 {
             "arraySetIdx -1",
             "arrayIdxFlag arr0 +1",
             "arrayValid arr0",
-            "arrayRead arr0 reg0",
+            "arrayRead arr0 reg0", // 13
             "arrayIdx2Reg arr0 reg0",
             "mov reg0, 0",
             "mov reg0, 1",
             "mov reg0, 3",
-            "arrayMov arr0 reg0",
+            "arrayMov arr0 reg0", // 18
+
+            "mul reg0, -1", // 19
+
+            "macro-arrAdvanceOrExit -4", // 20
         };
 
         public static uint getNumberOfHardcodedSingleInstructions() {
@@ -680,7 +721,17 @@ namespace MetaNix.search.levin2 {
     sealed public class InstructionInterpreter {
         // checks if the program was terminated successfully by returning to the global caller
         public static bool isTerminating(InterpreterState interpreterState, uint instruction) {
-            return interpreterState.topCallstack.top == 0x0000ffff && instruction == 5;
+            // return
+            if( interpreterState.topCallstack.top == 0x0000ffff && instruction == 5 )   return true;
+
+
+            if( instruction == 20 ) {
+                bool atLastIndex = interpreterState.arrayState.index == interpreterState.arrayState.array.Count - 1;
+                
+                return atLastIndex;
+            }
+
+            return false;
         }
 
         // \param indirectCall is not -1 if the instruction is an indirect call to another function
@@ -709,6 +760,8 @@ namespace MetaNix.search.levin2 {
                 case 16: InductionOperationsString.mov(interpreterState, /*register*/0, 1, out success); return;
                 case 17: InductionOperationsString.mov(interpreterState, /*register*/0, 3, out success); return;
                 case 18: InductionOperationsString.arrayMovToArray(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 19: InductionOperationsString.mul(interpreterState, /*register*/0, -1); success = true; return;
+                case 20: InductionOperationsString.macroArrayAdvanceOrExit(interpreterState, -4, out success); return;
             }
 
             // if we are here we have instrution with hardcoded parameters
@@ -825,6 +878,20 @@ namespace MetaNix.search.levin2 {
             programExecutedSuccessful = false;
             hardExecutionError = false;
 
+            /*
+
+            arguments.program = new uint[]
+            {
+                13,
+                19,
+                18,
+                20,
+            };
+            arguments.lengthOfProgram = 4;
+            arguments.maxNumberOfRetiredInstructions = 500;
+
+
+            */
 
             for (int instructionsRetired = 0; instructionsRetired < arguments.maxNumberOfRetiredInstructions; instructionsRetired++) {
                 bool instructionPointerValid = arguments.interpreterState.instructionPointer >= 0 && arguments.interpreterState.instructionPointer < arguments.lengthOfProgram;
@@ -907,16 +974,6 @@ namespace MetaNix.search.levin2 {
                 parentProgram.CopyTo(program, privateNumberOfInstructions);
             }
 
-            /*
-            uint[] program2 = new uint[5];
-            program2[0] = 1;
-            program2[1] = 15;
-            program2[2] = 18;
-            program2[3] = 0;
-            program2[4] = 5;
-            program2.CopyTo(program, 0);
-            interpreterArguments.lengthOfProgram = 5;
-            */
 
             bool trainingSamplesTestedSuccessful = true;
 
@@ -943,12 +1000,6 @@ namespace MetaNix.search.levin2 {
                 bool
                     programExecutedSuccessful,
                     hardExecutionError;
-
-                /*
-                interpreterArguments.program = new uint[5];
-                interpreterArguments.lengthOfProgram = 5;
-                program = interpreterArguments.program;
-                */
 
                 // * interpret
                 interpreter.interpret(interpreterArguments, out programExecutedSuccessful, out hardExecutionError);
