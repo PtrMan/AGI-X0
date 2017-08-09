@@ -206,6 +206,7 @@ namespace MetaNixExperimentalPrivate {
 
             // overwrite for testing
             problemsFilenames = new string[] {
+                @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_verticalAddition.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_multiplication.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\induction_array_binaryNegation.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_negation.txt",
