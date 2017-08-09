@@ -92,6 +92,7 @@
     <Compile Include="FunctionalParser.cs" />
     <Compile Include="instrumentation\CounterInstrumentation.cs" />
     <Compile Include="instrumentation\Statistics.cs" />
+    <Compile Include="math\Gamma.cs" />
     <Compile Include="math\MathMisc.cs" />
     <Compile Include="misc\ArrayUtilities.cs" />
     <Compile Include="misc\MyListExtensions.cs" />
@@ -206,11 +207,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="functionalSrc\parserBugTest1.txt" />
-    <Content Include="functionalSrc\problems\Induction_array_addition.txt" />
     <Content Include="functionalSrc\problems\Induction_array_appendReg0TimesReg1.txt" />
     <Content Include="functionalSrc\problems\Induction_array_appendReg1ToArr0.txt" />
     <Content Include="functionalSrc\problems\induction_array_binaryNegation.txt" />
-    <Content Include="functionalSrc\problems\induction_array_countTrue.txt" />
     <Content Include="functionalSrc\problems\Induction_array_equalArr.txt" />
     <Content Include="functionalSrc\problems\induction_array_greaterThan.txt" />
     <Content Include="functionalSrc\problems\induction_array_incrementIfSameAndAdvance.txt" />
@@ -219,6 +218,7 @@
     <Content Include="functionalSrc\problems\induction_array_patternGen_0.txt" />
     <Content Include="functionalSrc\problems\Induction_array_RemoveAtCurrentPositionReg0Times.txt" />
     <Content Include="functionalSrc\problems\Induction_array_findReg1InArr0AndStay.txt" />
+    <Content Include="functionalSrc\problems\induction_array_verticalAddition.txt" />
     <Content Include="functionalSrc\problems\Induction_LinkedList1.txt" />
     <Content Include="functionalSrc\randomInstruction1.txt" />
     <Content Include="functionalSrc\test1.txt" />
