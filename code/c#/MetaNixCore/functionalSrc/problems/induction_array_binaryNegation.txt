@@ -3,21 +3,21 @@
 
 {
 	{ -- settings
-		6 -- enumerate program length
-		7 -- max number of retired instructions
+		5 -- enumerate program length
+		50 -- max number of retired instructions
 	}
 
-	{
-		{}
-		{null null}
-		0
+	--{
+		--{}
+		--{null null}
+		--0
 
-		{}
-		{null null}
-		null
+		--{}
+		--{null null}
+		--null
 
-		null
-	}
+		--null
+	--}
 
 	{
 		{1}

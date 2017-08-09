@@ -205,7 +205,9 @@ namespace MetaNixExperimentalPrivate {
 
 
             // overwrite for testing
-            problemsFilenames = new string[] { @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_negation.txt" };
+            problemsFilenames = new string[] {
+                @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\induction_array_binaryNegation.txt" };
+            //    @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_negation.txt" };
 
             foreach ( string iterationPath in problemsFilenames ) {
                 string fileContent = File.ReadAllText(iterationPath);
@@ -232,7 +234,7 @@ namespace MetaNixExperimentalPrivate {
                 //levinSearchProblem.enumerationMaxProgramLength = 5;
                 levinSearchProblem.instructionsetCount = InstructionInfo.getNumberOfInstructions() - 16;/*because no call*/
 
-                levinSearchProblem.maxNumberOfRetiredInstructions = Conversion.convertToUint(configurationPattern.referenced[0]); // TODO< derive by propability with some formula from schmidhuber >
+                levinSearchProblem.maxNumberOfRetiredInstructions = Conversion.convertToUint(configurationPattern.referenced[1]); // TODO< derive by propability with some formula from schmidhuber >
 
                 levinSearchProblem.initialInterpreterState = new InterpreterState();
                 levinSearchProblem.initialInterpreterState.registers = new int[3];

@@ -506,6 +506,11 @@ namespace MetaNix.search.levin2 {
             success = true;
         }
 
+        // interprets the value as binary (zero is false and all else is true) and negates it
+        internal static void binaryNegate(InterpreterState state, int register) {
+            state.registers[register] = (state.registers[register] == 0) ? 1 : 0;
+            state.instructionPointer++;
+        }
     }
 
     public class CallStack {
@@ -614,8 +619,9 @@ namespace MetaNix.search.levin2 {
             "arrayMov arr0 reg0", // 18
 
             "mul reg0, -1", // 19
+            "binaryNeg reg0", // 20
 
-            "macro-arrAdvanceOrExit -4", // 20
+            "macro-arrAdvanceOrExit -4", // 21
         };
 
         public static uint getNumberOfHardcodedSingleInstructions() {
@@ -725,7 +731,7 @@ namespace MetaNix.search.levin2 {
             if( interpreterState.topCallstack.top == 0x0000ffff && instruction == 5 )   return true;
 
 
-            if( instruction == 20 ) {
+            if( instruction == 21 ) {
                 bool atLastIndex = interpreterState.arrayState.index == interpreterState.arrayState.array.Count - 1;
                 
                 return atLastIndex;
@@ -761,7 +767,8 @@ namespace MetaNix.search.levin2 {
                 case 17: InductionOperationsString.mov(interpreterState, /*register*/0, 3, out success); return;
                 case 18: InductionOperationsString.arrayMovToArray(interpreterState, /*array*/0, /*register*/0, out success); return;
                 case 19: InductionOperationsString.mul(interpreterState, /*register*/0, -1); success = true; return;
-                case 20: InductionOperationsString.macroArrayAdvanceOrExit(interpreterState, -4, out success); return;
+                case 20: InductionOperationsString.binaryNegate(interpreterState, /*register*/0); success = true; return;
+                case 21: InductionOperationsString.macroArrayAdvanceOrExit(interpreterState, -4, out success); return;
             }
 
             // if we are here we have instrution with hardcoded parameters
@@ -878,23 +885,8 @@ namespace MetaNix.search.levin2 {
             programExecutedSuccessful = false;
             hardExecutionError = false;
 
-            /*
-
-            arguments.program = new uint[]
-            {
-                13,
-                19,
-                18,
-                20,
-            };
-            arguments.lengthOfProgram = 4;
-            arguments.maxNumberOfRetiredInstructions = 500;
-
-
-            */
-
             if( arguments.lengthOfProgram >= 4 ) {
-                if( arguments.program[0] == 13 && arguments.program[1] == 19 && arguments.program[2] == 18 && arguments.program[3] == 20 ) {
+                if( arguments.program[0] == 13 && arguments.program[1] == 20 && arguments.program[2] == 18 && arguments.program[3] == 21 ) {
                     int debugHere = 5;
                 }
             }
