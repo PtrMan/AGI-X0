@@ -3,28 +3,29 @@
 
 {
 	{ -- settings
-		6 -- enumerate program length
+		5 -- enumerate program length
 		50 -- max number of retired instructions
 	}
 
-	{
-		{}
-		{null null}
-		0
+	-- special case which is currently not handled
+	--{
+	--	{}
+	--	{null null}
+	--	0
 
-		{}
-		{1 null}
-		null
+	--	{}
+	--	{1 null}
+	--	null
 
-		null
-	}
+	--	null
+	--}
 
 	{
 		{1}
 		{null null}
 		0
 
-		{}
+		{1}
 		{1 null}
 		null
 
@@ -36,7 +37,7 @@
 		{null null}
 		0
 
-		{}
+		{5}
 		{5 null}
 		null
 
@@ -48,7 +49,7 @@
 		{null null}
 		0
 
-		{}
+		{1 5}
 		{5 null}
 		null
 
@@ -60,7 +61,7 @@
 		{null null}
 		0
 
-		{}
+		{6}
 		{6 null}
 		null
 
@@ -72,7 +73,7 @@
 		{null null}
 		0
 
-		{}
+		{2 3}
 		{6 null}
 		null
 
@@ -84,7 +85,7 @@
 		{null null}
 		0
 
-		{}
+		{1 2 3}
 		{6 null}
 		null
 
@@ -96,7 +97,7 @@
 		{null null}
 		0
 
-		{}
+		{3 2}
 		{6 null}
 		null
 
@@ -108,7 +109,7 @@
 		{null null}
 		0
 
-		{}
+		{-1}
 		{-1 null}
 		null
 
@@ -120,7 +121,7 @@
 		{null null}
 		0
 
-		{}
+		{1 8 2 1}
 		{16 null}
 		null
 
@@ -132,10 +133,16 @@
 		{null null}
 		0
 
-		{}
+		{2 4 2 2}
 		{32 null}
 		null
 
 		null
 	}
+
+	-- should return
+	-- mov reg0, 1
+	-- arrayRead arr0 reg1
+	-- mul reg0, reg1
+	-- macro-arrAdvanceOrExit -3
 }

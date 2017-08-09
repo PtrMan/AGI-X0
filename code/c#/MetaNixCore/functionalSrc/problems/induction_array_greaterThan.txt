@@ -4,20 +4,21 @@
 {
 	{ -- settings
 		6 -- enumerate program length
-		50 -- max number of retired instructions
+		60 -- max number of retired instructions
 	}
 
-	{
-		{}
-		{null null}
-		0
+	-- special case currently not handled
+	--{
+	--	{}
+	--	{null null}
+	--	0
 
-		{}
-		{null null}
-		null
+	--	{}
+	--	{null null}
+	--	null
 
-		null
-	}
+	--	null
+	--}
 
 	{
 		{1 4 3 4}

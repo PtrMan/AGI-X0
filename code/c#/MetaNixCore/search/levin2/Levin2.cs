@@ -359,8 +359,13 @@ namespace MetaNix.search.levin2 {
         }
 
 
-        internal static void mul(InterpreterState state, int register, int value) {
+        internal static void mulRegisterImmediate(InterpreterState state, int register, int value) {
             state.registers[register] *= value;
+            state.instructionPointer++;
+        }
+
+        internal static void mulRegisterRegister(InterpreterState state, int registerDestination, int registerSource) {
+            state.registers[registerDestination] *= state.registers[registerSource];
             state.instructionPointer++;
         }
 
@@ -622,6 +627,13 @@ namespace MetaNix.search.levin2 {
             "binaryNeg reg0", // 20
 
             "macro-arrAdvanceOrExit -4", // 21
+            "mov reg1, 0",
+            "mov reg1, 1", // 23
+            "mov reg1, 3",
+            "arrayRead arr0 reg1", // 25
+            "macro-arrAdvanceOrExit -3", // 26
+            "mul reg0, reg1", // 27
+
         };
 
         public static uint getNumberOfHardcodedSingleInstructions() {
@@ -731,13 +743,17 @@ namespace MetaNix.search.levin2 {
             if( interpreterState.topCallstack.top == 0x0000ffff && instruction == 5 )   return true;
 
 
-            if( instruction == 21 ) {
+            if(isMacroArrayAdvanceOrExit(instruction) ) {
                 bool atLastIndex = interpreterState.arrayState.index == interpreterState.arrayState.array.Count - 1;
                 
                 return atLastIndex;
             }
 
             return false;
+        }
+
+        static bool isMacroArrayAdvanceOrExit(uint instruction) {
+            return instruction == 21 || instruction == 26;
         }
 
         // \param indirectCall is not -1 if the instruction is an indirect call to another function
@@ -766,9 +782,15 @@ namespace MetaNix.search.levin2 {
                 case 16: InductionOperationsString.mov(interpreterState, /*register*/0, 1, out success); return;
                 case 17: InductionOperationsString.mov(interpreterState, /*register*/0, 3, out success); return;
                 case 18: InductionOperationsString.arrayMovToArray(interpreterState, /*array*/0, /*register*/0, out success); return;
-                case 19: InductionOperationsString.mul(interpreterState, /*register*/0, -1); success = true; return;
+                case 19: InductionOperationsString.mulRegisterImmediate(interpreterState, /*register*/0, -1); success = true; return;
                 case 20: InductionOperationsString.binaryNegate(interpreterState, /*register*/0); success = true; return;
                 case 21: InductionOperationsString.macroArrayAdvanceOrExit(interpreterState, -4, out success); return;
+                case 22: InductionOperationsString.mov(interpreterState, /*register*/1, 0, out success); return;
+                case 23: InductionOperationsString.mov(interpreterState, /*register*/1, 1, out success); return;
+                case 24: InductionOperationsString.mov(interpreterState, /*register*/1, 3, out success); return;
+                case 25: InductionOperationsString.arrayRead(interpreterState, /*array*/0, /*register*/1, out success); return;
+                case 26: InductionOperationsString.macroArrayAdvanceOrExit(interpreterState, -3, out success); return;
+                case 27: InductionOperationsString.mulRegisterRegister(interpreterState, 0, 1); success = true; return;
             }
 
             // if we are here we have instrution with hardcoded parameters
@@ -886,7 +908,7 @@ namespace MetaNix.search.levin2 {
             hardExecutionError = false;
 
             if( arguments.lengthOfProgram >= 4 ) {
-                if( arguments.program[0] == 13 && arguments.program[1] == 20 && arguments.program[2] == 18 && arguments.program[3] == 21 ) {
+                if( arguments.program[0] == 23 && arguments.program[1] == 25 && arguments.program[2] == 27 && arguments.program[3] == 26 ) {
                     int debugHere = 5;
                 }
             }
