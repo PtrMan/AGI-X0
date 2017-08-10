@@ -286,9 +286,126 @@ namespace MetaNix.search.levin2 {
 
 
 
+    // wrapper for two parameter call with success
+    static class ArrayOperationsTwoArgumentWrapper {
+        public static void arrayMove(InterpreterState state, int delta, int dummy, out bool success) {
+            ArrayOperations.arrayMove(state, delta);
+            success = true;
+        }
+
+        public static void arrayRemove(InterpreterState state, int dummy0, int dummy1, out bool success) {
+            ArrayOperations.arrayRemove(state, out success);
+        }
+
+        public static void arrayCompareWithRegister(InterpreterState state, uint register, int dummy0, out bool success) {
+            ArrayOperations.arrayCompareWithRegister(state, register, out success);
+        }
+    }
+
+    // wrappr for two parameters call with cuccess
+    static class OperationsTwoArgumentWrapper {
+        public static void @return(InterpreterState state, int dummy0, int dummy1, out bool success) {
+            Operations.@return(state, out success);
+        }
+
+        public static void jumpIfNotFlag(InterpreterState state, int delta, int dummy0, out bool success) {
+            Operations.jumpIfNotFlag(state, delta);
+            success = true;
+        }
+
+        public static void jumpIfFlag(InterpreterState state, int delta, int dummy0, out bool success) {
+            Operations.jumpIfFlag(state, delta);
+            success = true;
+        }
+
+        public static void jump(InterpreterState state, int delta, int dummy0, out bool success) {
+            Operations.jump(state, delta);
+            success = true;
+        }
+
+    }
+
+    public static class Operations {
+        public static void @return(InterpreterState state, out bool success) {
+            state.instructionPointer = state.topCallstack.pop(out success);
+        }
 
 
-    sealed class InductionOperationsString {
+        public static void jumpIfNotFlag(InterpreterState state, int delta) {
+            if (!state.comparisionFlag) {
+                state.instructionPointer += delta;
+            }
+            state.instructionPointer++;
+        }
+
+        public static void jumpIfFlag(InterpreterState state, int delta) {
+            if (state.comparisionFlag) {
+                state.instructionPointer += delta;
+            }
+            state.instructionPointer++;
+        }
+        
+        public static void jump(InterpreterState state, int delta) {
+            state.instructionPointer += delta;
+            state.instructionPointer++;
+        }
+        
+        public static void mov(InterpreterState state, int register, int value, out bool success) {
+            state.registers[register] = value;
+
+            state.instructionPointer++;
+            success = true;
+        }
+
+
+
+        public static void call(InterpreterState state, int delta) {
+            state.topCallstack.push(state.instructionPointer + 1);
+            state.instructionPointer += delta;
+            state.instructionPointer++;
+        }
+
+        public static void compare(InterpreterState state, uint register, int value) {
+            state.comparisionFlag = state.registers[register] == value;
+            state.instructionPointer++;
+        }
+
+        public static void add(InterpreterState state, uint register, int value) {
+            state.registers[register] += value;
+            state.instructionPointer++;
+        }
+
+
+        public static void mulRegisterImmediate(InterpreterState state, int register, int value) {
+            state.registers[register] *= value;
+            state.instructionPointer++;
+        }
+
+        public static void mulRegisterRegister(InterpreterState state, int registerDestination, int registerSource) {
+            state.registers[registerDestination] *= state.registers[registerSource];
+            state.instructionPointer++;
+        }
+
+        public static void addRegisterRegister(InterpreterState state, int registerDestination, int registerSource) {
+            state.registers[registerDestination] += state.registers[registerSource];
+            state.instructionPointer++;
+        }
+
+        public static void subRegisterRegister(InterpreterState state, int registerDestination, int registerSource) {
+            state.registers[registerDestination] -= state.registers[registerSource];
+            state.instructionPointer++;
+        }
+
+        // add by checking flag
+        public static void addFlag(InterpreterState state, uint register, int value) {
+            if (state.comparisionFlag) {
+                state.registers[register] += value;
+            }
+            state.instructionPointer++;
+        }
+    }
+
+    public static class ArrayOperations {
         public static void arrayMove(InterpreterState state, int delta) {
             state.arrayState.index += delta;
             state.instructionPointer++;
@@ -317,77 +434,8 @@ namespace MetaNix.search.levin2 {
             success = true;
         }
 
-        public static void jumpIfNotFlag(InterpreterState state, int delta) {
-            if (!state.comparisionFlag) {
-                state.instructionPointer += delta;
-            }
-            state.instructionPointer++;
-        }
 
-        public static void jumpIfFlag(InterpreterState state, int delta) {
-            if (state.comparisionFlag) {
-                state.instructionPointer += delta;
-            }
-            state.instructionPointer++;
-        }
-
-
-        public static void jump(InterpreterState state, int delta) {
-            state.instructionPointer += delta;
-            state.instructionPointer++;
-        }
-
-        public static void return_(InterpreterState state, out bool success) {
-            state.instructionPointer = state.topCallstack.pop(out success);
-        }
-
-
-        public static void call(InterpreterState state, int delta) {
-            state.topCallstack.push(state.instructionPointer + 1);
-            state.instructionPointer += delta;
-            state.instructionPointer++;
-        }
-
-        public static void compare(InterpreterState state, uint register, int value) {
-            state.comparisionFlag = state.registers[register] == value;
-            state.instructionPointer++;
-        }
-
-        public static void add(InterpreterState state, uint register, int value) {
-            state.registers[register] += value;
-            state.instructionPointer++;
-        }
-
-
-        internal static void mulRegisterImmediate(InterpreterState state, int register, int value) {
-            state.registers[register] *= value;
-            state.instructionPointer++;
-        }
-
-        internal static void mulRegisterRegister(InterpreterState state, int registerDestination, int registerSource) {
-            state.registers[registerDestination] *= state.registers[registerSource];
-            state.instructionPointer++;
-        }
-
-        internal static void addRegisterRegister(InterpreterState state, int registerDestination, int registerSource) {
-            state.registers[registerDestination] += state.registers[registerSource];
-            state.instructionPointer++;
-        }
-        
-        internal static void subRegisterRegister(InterpreterState state, int registerDestination, int registerSource) {
-            state.registers[registerDestination] -= state.registers[registerSource];
-            state.instructionPointer++;
-        }
-
-        // add by checking flag
-        public static void addFlag(InterpreterState state, uint register, int value) {
-            if( state.comparisionFlag ) {
-                state.registers[register] += value;
-            }
-            state.instructionPointer++;
-        }
-
-        internal static void arrayInsert(InterpreterState state, uint register, out bool success) {
+        public static void arrayInsert(InterpreterState state, uint register, out bool success) {
             if (state.arrayState == null ) {
                 success = false;
                 return;
@@ -405,7 +453,7 @@ namespace MetaNix.search.levin2 {
             success = true;
         }
 
-        internal static void arraySetIdx(InterpreterState state, int index, out bool success) {
+        public static void arraySetIdx(InterpreterState state, int index, out bool success) {
             if (state.arrayState == null ) {
                 success = false;
                 return;
@@ -423,7 +471,7 @@ namespace MetaNix.search.levin2 {
         }
 
         // moves the array index by delta and stores in the flag if the index is still in bound after moving
-        internal static void arrayIdxFlag(InterpreterState state, uint array, int delta, out bool success) {
+        public static void arrayIdxFlag(InterpreterState state, uint array, int delta, out bool success) {
             if (state.arrayState == null) {
                 success = false;
                 return;
@@ -444,7 +492,7 @@ namespace MetaNix.search.levin2 {
         }
 
         // /param array is the index of the array (currently ignored)
-        internal static void arrayValid(InterpreterState state, int array, out bool success) {
+        public static void arrayValid(InterpreterState state, int array, out bool success) {
             if (state.arrayState == null) {
                 success = false;
                 return;
@@ -455,8 +503,8 @@ namespace MetaNix.search.levin2 {
             state.instructionPointer++;
             success = true;
         }
-        
-        internal static void arrayRead(InterpreterState state, uint array, uint register, out bool success) {
+
+        public static void arrayRead(InterpreterState state, uint array, uint register, out bool success) {
             if (state.arrayState == null || !state.arrayState.isIndexValid) {
                 success = false;
                 return;
@@ -468,7 +516,7 @@ namespace MetaNix.search.levin2 {
             success = true;
         }
 
-        internal static void arrayIdx2Reg(InterpreterState state, uint array, uint register, out bool success) {
+        public static void arrayIdx2Reg(InterpreterState state, uint array, uint register, out bool success) {
             if (state.arrayState == null) {
                 success = false;
                 return;
@@ -479,15 +527,9 @@ namespace MetaNix.search.levin2 {
             state.instructionPointer++;
             success = true;
         }
+        
 
-        internal static void mov(InterpreterState state, int register, int value, out bool success) {
-            state.registers[register] = value;
-
-            state.instructionPointer++;
-            success = true;
-        }
-
-        internal static void arrayMovToArray(InterpreterState state, uint array, uint register, out bool success) {
+        public static void arrayMovToArray(InterpreterState state, uint array, uint register, out bool success) {
             if (state.arrayState == null || !state.arrayState.isIndexValid) {
                 success = false;
                 return;
@@ -501,7 +543,7 @@ namespace MetaNix.search.levin2 {
 
         // advance array index and reset and return/terminate if its over
         // else jump relative
-        internal static void macroArrayAdvanceOrExit(InterpreterState state, int ipDelta, out bool success) {
+        public static void macroArrayAdvanceOrExit(InterpreterState state, int ipDelta, out bool success) {
             if (state.arrayState == null) {
                 success = false;
                 return;
@@ -511,7 +553,7 @@ namespace MetaNix.search.levin2 {
             bool isIndexValid = state.arrayState.isIndexValid;
             if( !isIndexValid ) {
                 state.arrayState.index = 0;
-                return_(state, out success);
+                Operations.@return(state, out success);
                 return;
             }
 
@@ -522,7 +564,7 @@ namespace MetaNix.search.levin2 {
         }
 
         // interprets the value as binary (zero is false and all else is true) and negates it
-        internal static void binaryNegate(InterpreterState state, int register) {
+        public static void binaryNegate(InterpreterState state, int register) {
             state.registers[register] = (state.registers[register] == 0) ? 1 : 0;
             state.instructionPointer++;
         }
@@ -568,6 +610,10 @@ namespace MetaNix.search.levin2 {
     }
 
     public class InterpreterState {
+        // used to patch additional instructions into the running program
+        public delegate void AdditionalOperationsDelegateType(InterpreterState state);
+        public IDictionary<uint, AdditionalOperationsDelegateType> additionalOperations = new Dictionary<uint, AdditionalOperationsDelegateType>();
+
         public ArrayState arrayState;
 
         // each callstack is valid just for one function
@@ -591,7 +637,7 @@ namespace MetaNix.search.levin2 {
             }
 
             callstacks = new List<CallStack> { new CallStack() };
-            topCallstack.setTo(new int[] { 0x0000ffff });
+            topCallstack.setTo(new int[] { 0x0000ffff }); // special value to indicate returning of program
         }
 
         public int[] registers;
@@ -775,37 +821,37 @@ namespace MetaNix.search.levin2 {
             uint instruction = instr.code;
 
             switch (instruction) {
-                case 0: InductionOperationsString.arrayMove(interpreterState, -1); success = true; return;
-                case 1: InductionOperationsString.arrayMove(interpreterState, 1); success = true; return;
-                case 2: InductionOperationsString.arrayRemove(interpreterState, out success); return;
-                case 3: InductionOperationsString.arrayCompareWithRegister(interpreterState, 0, out success); return;
-                case 4: InductionOperationsString.arrayCompareWithRegister(interpreterState, 1, out success); return;
-                case 5: InductionOperationsString.return_(interpreterState, out success); return;
-                case 6: InductionOperationsString.arrayInsert(interpreterState, /*reg*/0, out success); return;
-                case 7: InductionOperationsString.arrayInsert(interpreterState, /*reg*/1, out success); return;
-                case 8: InductionOperationsString.arrayInsert(interpreterState, /*reg*/2, out success); return;
-                case 9: InductionOperationsString.arraySetIdx(interpreterState, 0, out success); return;
-                case 10: InductionOperationsString.arraySetIdx(interpreterState, -1, out success); return; // -1 is end of array
-                case 11: InductionOperationsString.arrayIdxFlag(interpreterState, 0, 1, out success); return; // TODO< should be an intrinsic command which gets added by default >
-                case 12: InductionOperationsString.arrayValid(interpreterState, /*array*/0, out success); return;
-                case 13: InductionOperationsString.arrayRead(interpreterState, /*array*/0, /*register*/0, out success); return;
-                case 14: InductionOperationsString.arrayIdx2Reg(interpreterState, /*array*/0, /*register*/0, out success); return;
-                case 15: InductionOperationsString.mov(interpreterState, /*register*/0, 0, out success); return;
-                case 16: InductionOperationsString.mov(interpreterState, /*register*/0, 1, out success); return;
-                case 17: InductionOperationsString.mov(interpreterState, /*register*/0, 3, out success); return;
-                case 18: InductionOperationsString.arrayMovToArray(interpreterState, /*array*/0, /*register*/0, out success); return;
-                case 19: InductionOperationsString.mulRegisterImmediate(interpreterState, /*register*/0, -1); success = true; return;
-                case 20: InductionOperationsString.binaryNegate(interpreterState, /*register*/0); success = true; return;
-                case 21: InductionOperationsString.macroArrayAdvanceOrExit(interpreterState, -4, out success); return;
-                case 22: InductionOperationsString.mov(interpreterState, /*register*/1, 0, out success); return;
-                case 23: InductionOperationsString.mov(interpreterState, /*register*/1, 1, out success); return;
-                case 24: InductionOperationsString.mov(interpreterState, /*register*/1, 3, out success); return;
-                case 25: InductionOperationsString.arrayRead(interpreterState, /*array*/0, /*register*/1, out success); return;
-                case 26: InductionOperationsString.macroArrayAdvanceOrExit(interpreterState, -3, out success); return;
-                case 27: InductionOperationsString.mulRegisterRegister(interpreterState, 0, 1); success = true; return;
-                case 28: InductionOperationsString.addRegisterRegister(interpreterState, 0, 1); success = true; return;
-                case 29: InductionOperationsString.arrayMovToArray(interpreterState, /*array*/0, /*register*/1, out success); return;
-                case 30: InductionOperationsString.subRegisterRegister(interpreterState, 1, 0); success = true; return;
+                case 0: ArrayOperationsTwoArgumentWrapper.arrayMove(interpreterState, -1, int.MaxValue, out success); return;
+                case 1: ArrayOperationsTwoArgumentWrapper.arrayMove(interpreterState, 1, int.MaxValue, out success); return;
+                case 2: ArrayOperationsTwoArgumentWrapper.arrayRemove(interpreterState, int.MaxValue, int.MaxValue, out success); return;
+                case 3: ArrayOperationsTwoArgumentWrapper.arrayCompareWithRegister(interpreterState, 0, int.MaxValue, out success); return;
+                case 4: ArrayOperationsTwoArgumentWrapper.arrayCompareWithRegister(interpreterState, 1, int.MaxValue, out success); return;
+                case 5: OperationsTwoArgumentWrapper.@return(interpreterState, int.MaxValue, int.MaxValue, out success); return;
+                case 6: ArrayOperations.arrayInsert(interpreterState, /*reg*/0, out success); return;
+                case 7: ArrayOperations.arrayInsert(interpreterState, /*reg*/1, out success); return;
+                case 8: ArrayOperations.arrayInsert(interpreterState, /*reg*/2, out success); return;
+                case 9: ArrayOperations.arraySetIdx(interpreterState, 0, out success); return;
+                case 10: ArrayOperations.arraySetIdx(interpreterState, -1, out success); return; // -1 is end of array
+                case 11: ArrayOperations.arrayIdxFlag(interpreterState, 0, 1, out success); return; // TODO< should be an intrinsic command which gets added by default >
+                case 12: ArrayOperations.arrayValid(interpreterState, /*array*/0, out success); return;
+                case 13: ArrayOperations.arrayRead(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 14: ArrayOperations.arrayIdx2Reg(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 15: Operations.mov(interpreterState, /*register*/0, 0, out success); return;
+                case 16: Operations.mov(interpreterState, /*register*/0, 1, out success); return;
+                case 17: Operations.mov(interpreterState, /*register*/0, 3, out success); return;
+                case 18: ArrayOperations.arrayMovToArray(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 19: Operations.mulRegisterImmediate(interpreterState, /*register*/0, -1); success = true; return;
+                case 20: ArrayOperations.binaryNegate(interpreterState, /*register*/0); success = true; return;
+                case 21: ArrayOperations.macroArrayAdvanceOrExit(interpreterState, -4, out success); return;
+                case 22: Operations.mov(interpreterState, /*register*/1, 0, out success); return;
+                case 23: Operations.mov(interpreterState, /*register*/1, 1, out success); return;
+                case 24: Operations.mov(interpreterState, /*register*/1, 3, out success); return;
+                case 25: ArrayOperations.arrayRead(interpreterState, /*array*/0, /*register*/1, out success); return;
+                case 26: ArrayOperations.macroArrayAdvanceOrExit(interpreterState, -3, out success); return;
+                case 27: Operations.mulRegisterRegister(interpreterState, 0, 1); success = true; return;
+                case 28: Operations.addRegisterRegister(interpreterState, 0, 1); success = true; return;
+                case 29: ArrayOperations.arrayMovToArray(interpreterState, /*array*/0, /*register*/1, out success); return;
+                case 30: Operations.subRegisterRegister(interpreterState, 1, 0); success = true; return;
             }
 
             // if we are here we have instrution with hardcoded parameters
@@ -817,7 +863,7 @@ namespace MetaNix.search.levin2 {
             // compare constant
             if (instruction <= currentBaseInstruction + 1) {
                 // currently just compare reg0 with zero
-                InductionOperationsString.compare(interpreterState, /*register*/0, 0);
+                Operations.compare(interpreterState, /*register*/0, 0);
                 success = true;
                 return;
             }
@@ -833,10 +879,10 @@ namespace MetaNix.search.levin2 {
                 int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the pool
 
                 if (subInstruction == 0) {
-                    InductionOperationsString.add(interpreterState, /*register*/0, -1);
+                    Operations.add(interpreterState, /*register*/0, -1);
                 }
                 else if (subInstruction == 1) {
-                    InductionOperationsString.add(interpreterState, /*register*/0, 2);
+                    Operations.add(interpreterState, /*register*/0, 2);
                 }
 
             }
@@ -847,7 +893,7 @@ namespace MetaNix.search.levin2 {
             // addFlag reg0 constant
             if (instruction <= currentBaseInstruction + 1) {
                 // currently just compare reg0 with zero
-                InductionOperationsString.addFlag(interpreterState, /*register*/0, 1);
+                Operations.addFlag(interpreterState, /*register*/0, 1);
                 success = true;
                 return;
             }
@@ -862,7 +908,7 @@ namespace MetaNix.search.levin2 {
             if (instruction <= currentBaseInstruction + 16) {
                 int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
                 int jumpDelta = subInstruction - 8;
-                InductionOperationsString.jump(interpreterState, jumpDelta);
+                Operations.jump(interpreterState, jumpDelta);
                 success = true;
                 return;
             }
@@ -872,7 +918,7 @@ namespace MetaNix.search.levin2 {
             if (instruction <= currentBaseInstruction + 16) {
                 int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
                 int jumpDelta = subInstruction - 8;
-                InductionOperationsString.jumpIfNotFlag(interpreterState, jumpDelta);
+                Operations.jumpIfNotFlag(interpreterState, jumpDelta);
                 success = true;
                 return;
             }
@@ -882,7 +928,7 @@ namespace MetaNix.search.levin2 {
             if (instruction <= currentBaseInstruction + 16) {
                 int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
                 int jumpDelta = subInstruction - 8;
-                InductionOperationsString.call(interpreterState, jumpDelta);
+                Operations.call(interpreterState, jumpDelta);
                 success = true;
                 return;
             }
@@ -897,6 +943,14 @@ namespace MetaNix.search.levin2 {
             }
 
             currentBaseInstruction += 1;
+
+            // additional instructions
+            InterpreterState.AdditionalOperationsDelegateType additionalOperationDelegate;
+            if( interpreterState.additionalOperations.TryGetValue(instruction, out additionalOperationDelegate) ) {
+                additionalOperationDelegate(interpreterState);
+                success = true;
+                return;
+            }
 
 
             // unknown instruction
