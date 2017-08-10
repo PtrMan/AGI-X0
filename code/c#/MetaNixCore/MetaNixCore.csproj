@@ -206,6 +206,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="functionalSrc\interpreted\functions\Generator_ones.txt" />
+    <Content Include="functionalSrc\interpreted\functions\Generator_reg1.txt" />
+    <Content Include="functionalSrc\interpreted\functions\Generator_zeros.txt" />
     <Content Include="functionalSrc\parserBugTest1.txt" />
     <Content Include="functionalSrc\problems\Induction_array_appendReg0TimesReg1.txt" />
     <Content Include="functionalSrc\problems\Induction_array_appendReg1ToArr0.txt" />
@@ -218,6 +221,7 @@
     <Content Include="functionalSrc\problems\induction_array_patternGen_0.txt" />
     <Content Include="functionalSrc\problems\Induction_array_RemoveAtCurrentPositionReg0Times.txt" />
     <Content Include="functionalSrc\problems\Induction_array_findReg1InArr0AndStay.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_subReg0.txt" />
     <Content Include="functionalSrc\problems\induction_array_verticalAddition.txt" />
     <Content Include="functionalSrc\problems\Induction_LinkedList1.txt" />
     <Content Include="functionalSrc\randomInstruction1.txt" />

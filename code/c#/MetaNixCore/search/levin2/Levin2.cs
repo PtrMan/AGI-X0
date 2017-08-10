@@ -373,6 +373,11 @@ namespace MetaNix.search.levin2 {
             state.registers[registerDestination] += state.registers[registerSource];
             state.instructionPointer++;
         }
+        
+        internal static void subRegisterRegister(InterpreterState state, int registerDestination, int registerSource) {
+            state.registers[registerDestination] -= state.registers[registerSource];
+            state.instructionPointer++;
+        }
 
         // add by checking flag
         public static void addFlag(InterpreterState state, uint register, int value) {
@@ -639,6 +644,8 @@ namespace MetaNix.search.levin2 {
             "macro-arrAdvanceOrExit -3", // 26
             "mul reg0, reg1", // 27
             "add reg0, reg1", // 28
+            "arrayMov arr0 reg1",
+            "sub reg1, reg0",
         };
 
         public static uint getNumberOfHardcodedSingleInstructions() {
@@ -797,6 +804,8 @@ namespace MetaNix.search.levin2 {
                 case 26: InductionOperationsString.macroArrayAdvanceOrExit(interpreterState, -3, out success); return;
                 case 27: InductionOperationsString.mulRegisterRegister(interpreterState, 0, 1); success = true; return;
                 case 28: InductionOperationsString.addRegisterRegister(interpreterState, 0, 1); success = true; return;
+                case 29: InductionOperationsString.arrayMovToArray(interpreterState, /*array*/0, /*register*/1, out success); return;
+                case 30: InductionOperationsString.subRegisterRegister(interpreterState, 1, 0); success = true; return;
             }
 
             // if we are here we have instrution with hardcoded parameters
