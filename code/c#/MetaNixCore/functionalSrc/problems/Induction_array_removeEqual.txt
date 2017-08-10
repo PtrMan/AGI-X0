@@ -1,0 +1,62 @@
+﻿-- removes arr0 from array
+
+{
+	{ -- settings
+		5 -- enumerate program length
+		50 -- max number of retired instructions
+	}
+
+	{
+		{5}
+		{5 null}
+		null
+
+		{}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{5 6}
+		{5 null}
+		null
+
+		{6}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{6 5}
+		{5 null}
+		null
+
+		{6}
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{0 5 0 7}
+		{0 null}
+		null
+
+		{5 7}
+		{null null}
+		null
+
+		null
+	}
+
+	-- should yield
+	--    arrayCompare reg0
+	--    jmpIfNotFlag +1
+	--    arrRemove
+	--    macro-arrNotEndOrExit -4
+}
