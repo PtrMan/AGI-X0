@@ -5,6 +5,7 @@ using System.Linq;
 
 using MetaNix.scheduler;
 using MetaNix.framework.logging;
+using MetaNix.framework.datastructures;
 
 namespace MetaNix.search.levin2 {
     // wrapper for two parameter call with success
@@ -67,7 +68,7 @@ namespace MetaNix.search.levin2 {
             state.instructionPointer++;
         }
         
-        public static void mov(InterpreterState state, int register, int value, out bool success) {
+        public static void movImmediate(InterpreterState state, int register, int value, out bool success) {
             state.registers[register] = value;
 
             state.instructionPointer++;
@@ -126,6 +127,17 @@ namespace MetaNix.search.levin2 {
             state.registers[register] = (state.registers[register] == 0) ? 1 : 0;
             state.instructionPointer++;
         }
+
+        // random number up to the value of the register
+        public static void random(InterpreterState state, int destRegister, int register, out bool success) {
+            if( state.registers[register] <= 0 ) {
+                success = false;
+                return;
+            }
+
+            state.registers[destRegister] = state.rng.Next(state.registers[register]);
+            success = true;
+        }
     }
 
     public static class ArrayOperations {
@@ -140,7 +152,7 @@ namespace MetaNix.search.levin2 {
                 return;
             }
 
-            state.arrayState.array.RemoveAt(state.arrayState.index);
+            state.arrayState.array.removeAt(state.arrayState.index);
 
             state.instructionPointer++;
 
@@ -158,33 +170,33 @@ namespace MetaNix.search.levin2 {
         }
 
 
-        public static void arrayInsert(InterpreterState state, int register, out bool success) {
+        public static void insert(InterpreterState state, int register, out bool success) {
             if (state.arrayState == null ) {
                 success = false;
                 return;
             }
 
-            if( state.arrayState.index < 0 || state.arrayState.index > state.arrayState.array.Count ) {
+            if( state.arrayState.index < 0 || state.arrayState.index > state.arrayState.array.count ) {
                 success = false;
                 return;
             }
 
             int valueToInsert = state.registers[register];
-            state.arrayState.array.Insert(state.arrayState.index, valueToInsert);
+            state.arrayState.array.insert(state.arrayState.index, valueToInsert);
 
             state.instructionPointer++;
             success = true;
         }
 
         // array is ignored
-        public static void arraySetIdx(InterpreterState state, int array, int index, out bool success) {
+        public static void setIdx(InterpreterState state, int array, int index, out bool success) {
             if (state.arrayState == null ) {
                 success = false;
                 return;
             }
 
             if( index == -1 ) { // end of array, so insertion appends an element
-                state.arrayState.index = state.arrayState.array.Count;
+                state.arrayState.index = state.arrayState.array.count;
             }
             else {
                 state.arrayState.index = index;
@@ -195,7 +207,7 @@ namespace MetaNix.search.levin2 {
         }
 
         // moves the array index by delta and stores in the flag if the index is still in bound after moving
-        public static void arrayIdxFlag(InterpreterState state, int array, int delta, out bool success) {
+        public static void idxFlag(InterpreterState state, int array, int delta, out bool success) {
             if (state.arrayState == null) {
                 success = false;
                 return;
@@ -216,7 +228,7 @@ namespace MetaNix.search.levin2 {
         }
 
         // /param array is the index of the array (currently ignored)
-        public static void arrayValid(InterpreterState state, int array, out bool success) {
+        public static void valid(InterpreterState state, int array, out bool success) {
             if (state.arrayState == null) {
                 success = false;
                 return;
@@ -228,7 +240,7 @@ namespace MetaNix.search.levin2 {
             success = true;
         }
 
-        public static void arrayRead(InterpreterState state, int array, int register, out bool success) {
+        public static void read(InterpreterState state, int array, int register, out bool success) {
             if (state.arrayState == null || !state.arrayState.isIndexValid) {
                 success = false;
                 return;
@@ -240,7 +252,7 @@ namespace MetaNix.search.levin2 {
             success = true;
         }
 
-        public static void arrayIdx2Reg(InterpreterState state, int array, int register, out bool success) {
+        public static void idx2Reg(InterpreterState state, int array, int register, out bool success) {
             if (state.arrayState == null) {
                 success = false;
                 return;
@@ -307,7 +319,17 @@ namespace MetaNix.search.levin2 {
 
             success = true;
         }
-        
+
+        public static void length(InterpreterState state, int destRegister, out bool success) {
+            if (state.arrayState == null) {
+                success = false;
+                return;
+            }
+
+            state.registers[destRegister] = state.arrayState.array.count;
+
+            success = true;
+        }
     }
 
 
@@ -331,45 +353,7 @@ namespace MetaNix.search.levin2 {
     }
 
 
-
-    public class CallStack {
-        int privateCount;
-        int[] stackValues = new int[128];
-
-        public void setTo(int[] arr) {
-            arr.CopyTo(stackValues, 0);
-            privateCount = arr.Length;
-        }
-
-        public void push(int value) {
-            stackValues[privateCount] = value;
-            privateCount++;
-        }
-
-        public int pop(out bool success) {
-            if (privateCount <= 0) {
-                success = false;
-                return 0;
-            }
-
-            success = true;
-            int result = stackValues[privateCount - 1];
-            privateCount--;
-            return result;
-        }
-
-        public int top {
-            get {
-                return stackValues[privateCount - 1];
-            }
-        }
-
-        public int count {
-            get {
-                return privateCount;
-            }
-        }
-    }
+    
 
     public class InterpreterState {
         // used to patch additional instructions into the running program
@@ -378,11 +362,13 @@ namespace MetaNix.search.levin2 {
 
         public ArrayState arrayState;
 
+        public Random rng = new Random();
+
         // each callstack is valid just for one function
         // but we need multiple callstacks because functions can invoke other functions
-        public IList<CallStack> callstacks = new List<CallStack>();
+        public IList<IntStack> callstacks = new List<IntStack>();
 
-        public CallStack topCallstack {
+        public IntStack topCallstack {
             get {
                 return callstacks[callstacks.Count - 1];
             }
@@ -398,7 +384,7 @@ namespace MetaNix.search.levin2 {
                 arrayState.index = 0;
             }
 
-            callstacks = new List<CallStack> { new CallStack() };
+            callstacks = new List<IntStack> { new IntStack() };
             topCallstack.setTo(new int[] { 0x0000ffff }); // special value to indicate returning of program
         }
 
@@ -407,26 +393,73 @@ namespace MetaNix.search.levin2 {
         public int instructionPointer;
     }
 
+    // implementations can implement different kinds of array like behaviour
+    public interface IAbstractArray<Type> {
+        void removeAt(int idx);
+        void insert(int idx, Type value);
+
+        void clear();
+        void append(Type value);
+
+        Type this[int idx] {
+            get;
+            set;
+        }
+
+        int count {
+            get;
+        }
+    }
+
+    public class ListArray<Type> : IAbstractArray<Type> {
+        public int count => arr.Count;
+
+        public Type this[int idx] {
+            get => arr[idx];
+            set => arr[idx] = value;
+        }
+
+        public Type at(int idx) {
+            return arr[idx];
+        }
+
+        public void insert(int idx, Type value) {
+            arr.Insert(idx, value);
+        }
+
+        public void removeAt(int idx) {
+            arr.RemoveAt(idx);
+        }
+
+        public void setAt(int idx, Type value) {
+            arr[idx] = value;
+        }
+
+        public void clear() {
+            arr.Clear();
+        }
+
+        public void append(Type value) {
+            arr.Add(value);
+        }
+
+        IList<Type> arr = new List<Type>();
+    }
+
+
     public class ArrayState {
         public int index;
-        public IList<int> array = new List<int>();
+        public IAbstractArray<int> array = new ListArray<int>();
 
         public bool isIndexValid {
             get {
-                return index >= 0 && index < array.Count;
+                return index >= 0 && index < array.count;
             }
         }
     }
 
 
     sealed public class InstructionInfo {
-        // "macro-arrAdvanceOrExit -4"
-        // "macro-arrNotEndOrExit -4",
-        // "macro-arrNotEndOrExit -5",
-        // "macro-arrAdvanceOrExit -3",
-
-
-
         static string[] hardcodedSingleInstructions = {
             "ret",
             "macro-arrAdvanceOrExit $rel",
@@ -469,6 +502,7 @@ namespace MetaNix.search.levin2 {
             "arrayMov arr0 reg1",
             "sub reg1, reg0",
            
+            // TODO< remaining instructions >
         };
 
         public static uint getNumberOfHardcodedSingleInstructions() {
@@ -524,36 +558,7 @@ namespace MetaNix.search.levin2 {
             }
 
             currentBaseInstruction += 1;
-
-
-
-            // jump
-            /*
-            if (instruction <= currentBaseInstruction + 16) {
-                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
-                int jumpDelta = subInstruction - 8;
-                return String.Format("jmp {0}", jumpDelta);
-            }
-            currentBaseInstruction += 16;
-
-            // jump if flag is not set
-            if (instruction <= currentBaseInstruction + 16) {
-                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
-                int jumpDelta = subInstruction - 8;
-                return String.Format("jmpIfNotFlag {0}", jumpDelta);
-            }
-            currentBaseInstruction += 16;
             
-            // call
-            if (instruction <= currentBaseInstruction + 16) {
-                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
-                int jumpDelta = subInstruction - 8;
-                return String.Format("call {0}", jumpDelta);
-            }
-            currentBaseInstruction += 16;
-            */
-
-
             // indirect table call
             if (instruction <= currentBaseInstruction + 1) {
                 // currently just compare reg0 with zero
@@ -597,7 +602,7 @@ namespace MetaNix.search.levin2 {
 
 
             if(isMacroArrayAdvanceOrExit(instruction) ) {
-                bool atLastIndex = interpreterState.arrayState.index >= interpreterState.arrayState.array.Count - 1;
+                bool atLastIndex = interpreterState.arrayState.index >= interpreterState.arrayState.array.count - 1;
                 
                 return atLastIndex;
             }
@@ -640,32 +645,34 @@ namespace MetaNix.search.levin2 {
                 case 9: ArrayOperationsTwoArgumentWrapper.arrayCompareWithRegister(interpreterState, 0, int.MaxValue, out success); return;
                 case 10: ArrayOperationsTwoArgumentWrapper.arrayCompareWithRegister(interpreterState, 1, int.MaxValue, out success); return;
                 
-                case 11: ArrayOperations.arrayInsert(interpreterState, /*reg*/0, out success); return;
-                case 12: ArrayOperations.arrayInsert(interpreterState, /*reg*/1, out success); return;
-                case 13: ArrayOperations.arrayInsert(interpreterState, /*reg*/2, out success); return;
-                case 14: ArrayOperations.arraySetIdx(interpreterState, 0, 0, out success); return;
-                case 15: ArrayOperations.arraySetIdx(interpreterState, 0, -1, out success); return; // -1 is end of array
-                case 16: ArrayOperations.arrayIdxFlag(interpreterState, 0, 1, out success); return; // TODO< should be an intrinsic command which gets added by default >
-                case 17: ArrayOperations.arrayValid(interpreterState, /*array*/0, out success); return;
-                case 18: ArrayOperations.arrayRead(interpreterState, /*array*/0, /*register*/0, out success); return;
-                case 19: ArrayOperations.arrayIdx2Reg(interpreterState, /*array*/0, /*register*/0, out success); return;
-                case 20: Operations.mov(interpreterState, /*register*/0, 0, out success); return;
-                case 21: Operations.mov(interpreterState, /*register*/0, 1, out success); return;
-                case 22: Operations.mov(interpreterState, /*register*/0, 3, out success); return;
+                case 11: ArrayOperations.insert(interpreterState, /*reg*/0, out success); return;
+                case 12: ArrayOperations.insert(interpreterState, /*reg*/1, out success); return;
+                case 13: ArrayOperations.insert(interpreterState, /*reg*/2, out success); return;
+                case 14: ArrayOperations.setIdx(interpreterState, 0, 0, out success); return;
+                case 15: ArrayOperations.setIdx(interpreterState, 0, -1, out success); return; // -1 is end of array
+                case 16: ArrayOperations.idxFlag(interpreterState, 0, 1, out success); return; // TODO< should be an intrinsic command which gets added by default >
+                case 17: ArrayOperations.valid(interpreterState, /*array*/0, out success); return;
+                case 18: ArrayOperations.read(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 19: ArrayOperations.idx2Reg(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 20: Operations.movImmediate(interpreterState, /*register*/0, 0, out success); return;
+                case 21: Operations.movImmediate(interpreterState, /*register*/0, 1, out success); return;
+                case 22: Operations.movImmediate(interpreterState, /*register*/0, 3, out success); return;
                 case 23: ArrayOperations.arrayMovToArray(interpreterState, /*array*/0, /*register*/0, out success); return;
                 case 24: Operations.mulRegisterImmediate(interpreterState, /*register*/0, -1); success = true; return;
                 case 25: Operations.binaryNegate(interpreterState, /*register*/0); success = true; return;
                 case 26: ArrayOperations.macroArrayAdvanceOrExit(interpreterState, -4, out success); return;
-                case 27: Operations.mov(interpreterState, /*register*/1, 0, out success); return;
-                case 28: Operations.mov(interpreterState, /*register*/1, 1, out success); return;
-                case 29: Operations.mov(interpreterState, /*register*/1, 3, out success); return;
-                case 30: ArrayOperations.arrayRead(interpreterState, /*array*/0, /*register*/1, out success); return;
+                case 27: Operations.movImmediate(interpreterState, /*register*/1, 0, out success); return;
+                case 28: Operations.movImmediate(interpreterState, /*register*/1, 1, out success); return;
+                case 29: Operations.movImmediate(interpreterState, /*register*/1, 3, out success); return;
+                case 30: ArrayOperations.read(interpreterState, /*array*/0, /*register*/1, out success); return;
                 
                 case 31: Operations.mulRegisterRegister(interpreterState, 0, 1); success = true; return;
                 case 32: Operations.addRegisterRegister(interpreterState, 0, 1); success = true; return;
                 case 33: ArrayOperations.arrayMovToArray(interpreterState, /*array*/0, /*register*/1, out success); return;
                 case 34: Operations.subRegisterRegister(interpreterState, 1, 0); success = true; return;
                 
+                case 35: Operations.random(interpreterState, 0, 0, out success); return;
+                case 36: ArrayOperations.length(interpreterState, /*destRegister*/0, out success); return;
             }
 
             // if we are here we have instrution with hardcoded parameters
@@ -784,13 +791,13 @@ namespace MetaNix.search.levin2 {
                     Console.WriteLine("program=");
 
                     throw new NotImplementedException(); // TODO< logger >
-                    Program2.debug(null, arguments.program);
+                    //Program2.debug(null, arguments.program);
 
                     Console.WriteLine("ip={0}", arguments.interpreterState.instructionPointer);
                     Console.Write("arr=");
 
                     throw new NotImplementedException(); // TODO< logger >
-                    Program2.debug(null, arguments.interpreterState.arrayState.array);
+                    //Program2.debug(null, arguments.interpreterState.arrayState.array);
                     Console.WriteLine("array index={0}", arguments.interpreterState.arrayState.index);
                 }
 
@@ -870,9 +877,9 @@ namespace MetaNix.search.levin2 {
                     }
                 }
 
-                interpreterArguments.interpreterState.arrayState.array.Clear();
+                interpreterArguments.interpreterState.arrayState.array.clear();
                 for (int i = 0; i < currentTrainingSample.questionArray.Count; i++) {
-                    interpreterArguments.interpreterState.arrayState.array.Add(currentTrainingSample.questionArray[i]);
+                    interpreterArguments.interpreterState.arrayState.array.append(currentTrainingSample.questionArray[i]);
                 }
 
                 if(currentTrainingSample.questionArrayIndex.HasValue) {
@@ -1092,8 +1099,6 @@ namespace MetaNix.search.levin2 {
     
 
     public class Program2 {
-
-
         // roll one bit to the left
         static ulong rolLeft1(ulong number) {
             ulong carryOver = number >> (64 - 1);
@@ -1102,23 +1107,8 @@ namespace MetaNix.search.levin2 {
         }
         
         // for experimentation
-
-        public static void debug(ILogger log,  uint[] arr) {
-            string message = "";
-
-            foreach (uint iValue in arr) {
-                message += string.Format("{0} ", iValue);
-            }
-
-            Logged logged = new Logged();
-            logged.notifyConsole = Logged.EnumNotifyConsole.YES;
-            logged.message = message;
-            logged.origin = new string[]{ "search", "ALS" };
-            logged.serverity = Logged.EnumServerity.INFO;
-            log.write(logged);
-        }
-
-        public static void debug<Type>(ILogger log, IList<Type> list) {
+        
+        public static void debug<Type>(ILogger log, IEnumerable<Type> list) {
             string message = "";
 
             foreach (Type iValue in list) {
@@ -1132,351 +1122,16 @@ namespace MetaNix.search.levin2 {
             logged.serverity = Logged.EnumServerity.INFO;
             log.write(logged);
         }
-
-        
-
-        public static void interactiveTestEnumeration(ILogger logger) {
-            uint programMaxSize = 512;
-
-            SparseArrayProgramDistribution programDistribution = new SparseArrayProgramDistribution();
-
-            uint numberOfInstructions = 5;
-            uint enumeratedProgramLength = numberOfInstructions - 1;
-            uint instructionsetCount = 54 + 16 + 1 + 1 - 16/*because no call*/;
-
-            uint[] program = new uint[programMaxSize];
-
-            uint numberOfInstructionsToEnumerate = 6; // we enumerate at maximum with just 6 instructions
-            // ASK< do we need this even if we base our programs on existing programs? >
-            ProgramSampler programSampler = new ProgramSampler(programDistribution, numberOfInstructionsToEnumerate, instructionsetCount);
-
-            programSampler.setInstructionsetCount(instructionsetCount);
-
-
-            double exhausiveSearchFactor = 2.0; // hown many times do we try a program at maximum till we give up based on the # of combinations
-                                                // can be less than 1 which favors non-exhausive search
-
-            Interpreter.InterpretArguments interpreterArguments = new Interpreter.InterpretArguments();
-            interpreterArguments.maxNumberOfRetiredInstructions = 50;
-            interpreterArguments.program = program;
-            interpreterArguments.lengthOfProgram = numberOfInstructions;
-            interpreterArguments.interpreterState = new InterpreterState();
-            interpreterArguments.interpreterState.registers = new int[3];
-            interpreterArguments.interpreterState.arrayState = new ArrayState();
-            interpreterArguments.interpreterState.arrayState.array = new List<int>();
-            interpreterArguments.debugExecution = false;
-
-            Interpreter interpreter = new Interpreter();
-
-            uint[] programDirectParent;
-            uint[] programResult = new uint[0]; // the program of the current search process
-
-
-            IList<TrainingSample> trainingSamples = new List<TrainingSample>();
-            trainingSamples.Add(new TrainingSample());
-            trainingSamples.Add(new TrainingSample());
-            trainingSamples[0].questionArray = new List<int> { 5, 8, 3, 7 };
-            trainingSamples[0].questionRegisters = new int?[] { 7, null, null }; // search for 7
-            trainingSamples[0].answerArray = new List<int> { 5, 8, 3, 7 }; // don't change array
-            trainingSamples[0].answerArrayIndex = 3; // result index must be 3
-
-            trainingSamples[1].questionArray = new List<int> { 7, 8, 3, 2 };
-            trainingSamples[1].questionRegisters = new int?[] { 7, null, null }; // search for 7
-            trainingSamples[1].answerArray = new List<int> { 7, 8, 3, 2 }; // don't change array
-            trainingSamples[1].answerArrayIndex = 0; // result index must be 3
-
-
-
-            for (int iteration = 0; iteration < (double)(exhausiveSearchFactor * Math.Pow(instructionsetCount, enumeratedProgramLength)); iteration++) {
-                uint[] sampledProgram = programSampler.sampleProgram((int)numberOfInstructionsToEnumerate);
-                // copy
-                sampledProgram.CopyTo(program, 0);
-                program[numberOfInstructions - 1] = 5; // overwrite last instruction with ret so it terminates always
-
-
-                bool trainingSamplesTestedSuccessful = true;
-
-                foreach (TrainingSample currentTrainingSample in trainingSamples) {
-                    // reset interpreter state
-                    interpreterArguments.interpreterState.reset();
-
-                    // set question states
-                    for (int i = 0; i < currentTrainingSample.questionRegisters.Length; i++) {
-                        if (currentTrainingSample.questionRegisters[i].HasValue) {
-                            interpreterArguments.interpreterState.registers[i] = currentTrainingSample.questionRegisters[i].Value;
-                        }
-                    }
-
-                    interpreterArguments.interpreterState.arrayState.array.Clear();
-                    for (int i = 0; i < currentTrainingSample.questionArray.Count; i++) {
-                        interpreterArguments.interpreterState.arrayState.array.Add(currentTrainingSample.questionArray[i]);
-                    }
-
-                    bool
-                        programExecutedSuccessful,
-                        hardExecutionError;
-
-                    // * interpret
-                    interpreter.interpret(interpreterArguments, out programExecutedSuccessful, out hardExecutionError);
-
-                    if (!programExecutedSuccessful) {
-                        trainingSamplesTestedSuccessful = false;
-                        break;
-                    }
-
-                    // we are here if the program executed successfully and if it returned something
-
-
-                    // compare result
-                    if (
-                        currentTrainingSample.answerArray != null &
-                        !ListHelpers.isSame(interpreterArguments.interpreterState.arrayState.array, currentTrainingSample.answerArray)
-                    ) {
-                        trainingSamplesTestedSuccessful = false;
-                        break;
-                    }
-
-                    if (currentTrainingSample.answerArrayIndex.HasValue && interpreterArguments.interpreterState.arrayState.index != currentTrainingSample.answerArrayIndex) {
-                        trainingSamplesTestedSuccessful = false;
-                        break;
-                    }
-
-                }
-
-                if (!trainingSamplesTestedSuccessful) {
-                    continue; // try next program
-                }
-
-                // ** search was successful
-
-
-                // bias further search
-                {
-                    uint[] effectiveProgram = new uint[numberOfInstructions - 1];
-                    for (int i = 0; i < numberOfInstructions - 1; i++) {
-                        effectiveProgram[i] = program[i];
-                    }
-
-                    programDistribution.addProgram(effectiveProgram);
-                }
-
-
-                { // log
-                    Logged logged = new Logged();
-                    logged.notifyConsole = Logged.EnumNotifyConsole.YES;
-                    logged.message = string.Format("< Task:find(no meta) > finished, required< #iterations={0}, cputime=?, realtime=?>", iteration);
-                    logged.origin = new string[] {"search", "ALS"};
-                    logged.serverity = Logged.EnumServerity.INFO;
-                    logger.write(logged);
-                }
-                
-                programResult = new uint[numberOfInstructions];
-                for (int i = 0; i < programResult.Length; i++) {
-                    programResult[i] = program[i];
-                }
-                debug(logger, programResult);
-
-
-                break;
-
-
-
-
-            }
-
-            int here5 = 5;
-
-
-            // store found program
-            programDirectParent = new uint[numberOfInstructions];
-            programResult.CopyTo(programDirectParent, 0);
-
-
-
-            programSampler.setInstructionsetCount(54 + 1 + 1 + 16);
-
-            numberOfInstructions = 7;
-            enumeratedProgramLength = numberOfInstructions - 1;
-
-            program = new uint[programDirectParent.Length + numberOfInstructions];
-            interpreterArguments.program = program;
-
-            numberOfInstructionsToEnumerate = enumeratedProgramLength; // we enumerate one less instruction because we add a ret at the end by default
-
-            interpreterArguments.lengthOfProgram = (uint)programDirectParent.Length + numberOfInstructions;
-
-            for (int iteration = 0; true /*iteration < (double)(exhausiveSearchFactor*Math.Pow(instructionsetCount, enumeratedProgramLength))*/; iteration++) {
-                uint[] sampledProgram = programSampler.sampleProgram((int)numberOfInstructionsToEnumerate);
-                // concat sampled program with parent program
-                sampledProgram.CopyTo(program, 0);
-                program[numberOfInstructions - 1] = 5; // overwrite last instruction with ret so it terminates always
-
-                programDirectParent.CopyTo(program, numberOfInstructions);
-
-                { // reset interpreter state
-                    interpreterArguments.interpreterState.reset();
-
-                    interpreterArguments.interpreterState.registers[0] = 2; // remove two times
-                    interpreterArguments.interpreterState.registers[1] = 2; // search for 2
-                    interpreterArguments.interpreterState.arrayState.array.Clear();
-                    interpreterArguments.interpreterState.arrayState.array.Add(4);
-                    interpreterArguments.interpreterState.arrayState.array.Add(2);
-                    interpreterArguments.interpreterState.arrayState.array.Add(7);
-                    interpreterArguments.interpreterState.arrayState.array.Add(9);
-                }
-
-
-                // * interpret
-                bool
-                    programExecutedSuccessful,
-                    hardExecutionError;
-
-                interpreter.interpret(interpreterArguments, out programExecutedSuccessful, out hardExecutionError);
-
-                if (!programExecutedSuccessful) {
-                    continue; // try next program
-                }
-
-                // we are here if the program executed successfully and if it returned something
-
-
-                // compare result
-
-                if (
-                    !ListHelpers.isSame(interpreterArguments.interpreterState.arrayState.array, new List<int> { 4, 9 })
-                ) {
-                    continue;
-                }
-
-
-
-
-
-
-
-
-
-
-
-
-
-                { // reset interpreter state
-                    interpreterArguments.interpreterState.reset();
-
-                    interpreterArguments.interpreterState.registers[0] = 1; // remove 1 time
-                    interpreterArguments.interpreterState.registers[1] = 7; // search for 7
-                    interpreterArguments.interpreterState.arrayState.array.Clear();
-                    interpreterArguments.interpreterState.arrayState.array.Add(4);
-                    interpreterArguments.interpreterState.arrayState.array.Add(2);
-                    interpreterArguments.interpreterState.arrayState.array.Add(7);
-                    interpreterArguments.interpreterState.arrayState.array.Add(9);
-                }
-
-
-                // * interpret
-                interpreter.interpret(interpreterArguments, out programExecutedSuccessful, out hardExecutionError);
-
-                if (!programExecutedSuccessful) {
-                    continue; // try next program
-                }
-
-                // we are here if the program executed successfully and if it returned something
-
-
-                // compare result
-
-                if (
-                    !ListHelpers.isSame(interpreterArguments.interpreterState.arrayState.array, new List<int> { 4, 2, 9 })
-                ) {
-                    continue;
-                }
-
-
-
-
-
-
-                { // reset interpreter state
-                    interpreterArguments.interpreterState.reset();
-
-                    interpreterArguments.interpreterState.registers[0] = 3; // remove 3 times
-                    interpreterArguments.interpreterState.registers[1] = 4; // search for 4
-                    interpreterArguments.interpreterState.arrayState.array.Clear();
-                    interpreterArguments.interpreterState.arrayState.array.Add(4);
-                    interpreterArguments.interpreterState.arrayState.array.Add(2);
-                    interpreterArguments.interpreterState.arrayState.array.Add(7);
-                    interpreterArguments.interpreterState.arrayState.array.Add(9);
-                }
-
-
-                // * interpret
-                interpreter.interpret(interpreterArguments, out programExecutedSuccessful, out hardExecutionError);
-
-                if (!programExecutedSuccessful) {
-                    continue; // try next program
-                }
-
-                // we are here if the program executed successfully and if it returned something
-
-
-                // compare result
-                if (
-                    !ListHelpers.isSame(interpreterArguments.interpreterState.arrayState.array, new List<int> { 9 })
-                ) {
-                    continue;
-                }
-
-
-
-                {
-                    Logged logged = new Logged();
-                    logged.notifyConsole = Logged.EnumNotifyConsole.YES;
-                    logged.message = string.Format("<Task:findRemovalProgramExtended1 (no meta)> finished, required< #iterations={0}, cputime=?, realtime=?>", iteration);
-                    logged.origin = new string[] { "search", "ALS" };
-                    logged.serverity = Logged.EnumServerity.INFO;
-                    logger.write(logged);
-                }
-                
-                
-                // debug memonics
-                for (int i = 0; i < program.Length; i++) {
-                    Logged logged = new Logged();
-                    logged.notifyConsole = Logged.EnumNotifyConsole.YES;
-                    logged.message = string.Format("{0}: {1}", i, InstructionInfo.getMemonic(program[i]));
-                    logged.origin = new string[] { "search", "ALS" };
-                    logged.serverity = Logged.EnumServerity.INFO;
-                    logger.write(logged);
-
-                    //Console.WriteLine("{0}: {1}", i, InstructionInfo.getMemonic(program[i]));
-                }
-
-
-                int here9 = 9;
-
-                programResult = new uint[program.Length];
-                for (int i = 0; i < programResult.Length; i++) {
-                    programResult[i] = program[i];
-                }
-
-
-
-
-            }
-
-        }
         
     }
 
-    class ListHelpers {
-        public static bool isSame(IList<int> a, IList<int> b) {
-            if (a.Count != b.Count) {
-                return false;
-            }
-            for (int i = 0; i < a.Count; i++) {
-                if (a[i] != b[i]) {
-                    return false;
-                }
-            }
+    static class ListHelpers {
+        public static bool isSame(IAbstractArray<int> a, IList<int> b) {
+            if (a.count != b.Count)   return false;
+            
+            for (int i = 0; i < a.count; i++)
+                if (a[i] != b[i])   return false;
+            
             return true;
         }
     }

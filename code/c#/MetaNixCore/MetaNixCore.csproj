@@ -65,6 +65,7 @@
     <Compile Include="dispatch\Surrogates.cs" />
     <Compile Include="Ensure.cs" />
     <Compile Include="framework\contemporary\SupportVectorMachine.cs" />
+    <Compile Include="framework\datastructures\IntStack.cs" />
     <Compile Include="framework\executionBridges\BridgePatternToX86Instructions.cs" />
     <Compile Include="framework\languages\functional2\Functional2LexerAndParser.cs" />
     <Compile Include="framework\lang\Lexer.cs" />
@@ -183,6 +184,8 @@
     <Compile Include="search\levin2\AdvancedAdaptiveLevinSearchLogObserver.cs" />
     <Compile Include="search\levin2\AdvancedAdaptiveLevinSearchTaskProvider.cs" />
     <Compile Include="search\levin2\Levin2.cs" />
+    <Compile Include="search\levin2\OperationReflection.cs" />
+    <Compile Include="search\levin2\ProgramDistribution.cs" />
     <Compile Include="symbolic\Stringmanipulation.cs" />
     <Compile Include="TranslateFunctionalParseTree.cs" />
     <Compile Include="Variant.cs" />
@@ -206,6 +209,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="functionalSrc\interpreted\functions\Generator_increment.txt" />
     <Content Include="functionalSrc\interpreted\functions\Generator_ones.txt" />
     <Content Include="functionalSrc\interpreted\functions\Generator_reg1.txt" />
     <Content Include="functionalSrc\interpreted\functions\Generator_zeros.txt" />
@@ -214,15 +218,19 @@
     <Content Include="functionalSrc\problems\Induction_array_appendReg1ToArr0.txt" />
     <Content Include="functionalSrc\problems\induction_array_binaryNegation.txt" />
     <Content Include="functionalSrc\problems\Induction_array_equalArr.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_findReg1AndRemoveReg0Times.txt" />
     <Content Include="functionalSrc\problems\induction_array_greaterThan.txt" />
     <Content Include="functionalSrc\problems\induction_array_incrementIfSameAndAdvance.txt" />
+    <Content Include="functionalSrc\problems\level1\Induction_array_integer_exists.txt" />
     <Content Include="functionalSrc\problems\Induction_array_multiplication.txt" />
     <Content Include="functionalSrc\problems\Induction_array_negation.txt" />
     <Content Include="functionalSrc\problems\induction_array_patternGen_0.txt" />
     <Content Include="functionalSrc\problems\Induction_array_RemoveAtCurrentPositionReg0Times.txt" />
     <Content Include="functionalSrc\problems\Induction_array_findReg1InArr0AndStay.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_removeEqual.txt" />
     <Content Include="functionalSrc\problems\Induction_array_subReg0.txt" />
     <Content Include="functionalSrc\problems\induction_array_verticalAddition.txt" />
+    <Content Include="functionalSrc\problems\level1\Induction_function_factorial.txt" />
     <Content Include="functionalSrc\problems\Induction_LinkedList1.txt" />
     <Content Include="functionalSrc\randomInstruction1.txt" />
     <Content Include="functionalSrc\test1.txt" />

@@ -244,7 +244,7 @@ namespace MetaNixExperimentalPrivate {
                 levinSearchProblem.initialInterpreterState = new InterpreterState();
                 levinSearchProblem.initialInterpreterState.registers = new int[3];
                 levinSearchProblem.initialInterpreterState.arrayState = new ArrayState();
-                levinSearchProblem.initialInterpreterState.arrayState.array = new List<int>();
+                levinSearchProblem.initialInterpreterState.arrayState.array = new ListArray<int>();
                 //levinSearchProblem.initialInterpreterState.debugExecution = false;
 
 

@@ -1,0 +1,44 @@
+﻿-- problem : find value in reg1 with value in array[0] and remove reg0 times
+
+{
+	{ -- settings
+		6 -- enumerate program length
+		50 -- max number of retired instructions
+	}
+
+	{
+		{4 2 7 9}
+		{2 2} -- search for 2 and remove 2 elements
+		null
+
+		{4 9} -- don't change array
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{4 2 7 9}
+		{1 2} -- search for 2 and remove 1 elements
+		null
+
+		{4 7 9} -- don't change array
+		{null null}
+		null
+
+		null
+	}
+
+	{
+		{4 2 7 9}
+		{1 7} -- search for 2 and remove 1 elements
+		null
+
+		{4 2 9} -- don't change array
+		{null null}
+		null
+
+		null
+	}
+}
