@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 using MetaNix.scheduler;
 using MetaNix.framework.logging;
@@ -24,10 +25,6 @@ namespace MetaNix.search.levin2 {
 
     // wrappr for two parameters call with cuccess
     static class OperationsTwoArgumentWrapper {
-        public static void @return(InterpreterState state, int dummy0, int dummy1, out bool success) {
-            Operations.@return(state, out success);
-        }
-
         public static void jumpIfNotFlag(InterpreterState state, int delta, int dummy0, out bool success) {
             Operations.jumpIfNotFlag(state, delta);
             success = true;
@@ -123,6 +120,12 @@ namespace MetaNix.search.levin2 {
             }
             state.instructionPointer++;
         }
+        
+        // interprets the value as binary (zero is false and all else is true) and negates it
+        public static void binaryNegate(InterpreterState state, int register) {
+            state.registers[register] = (state.registers[register] == 0) ? 1 : 0;
+            state.instructionPointer++;
+        }
     }
 
     public static class ArrayOperations {
@@ -173,7 +176,8 @@ namespace MetaNix.search.levin2 {
             success = true;
         }
 
-        public static void arraySetIdx(InterpreterState state, int index, out bool success) {
+        // array is ignored
+        public static void arraySetIdx(InterpreterState state, int array, int index, out bool success) {
             if (state.arrayState == null ) {
                 success = false;
                 return;
@@ -303,12 +307,7 @@ namespace MetaNix.search.levin2 {
 
             success = true;
         }
-
-        // interprets the value as binary (zero is false and all else is true) and negates it
-        public static void binaryNegate(InterpreterState state, int register) {
-            state.registers[register] = (state.registers[register] == 0) ? 1 : 0;
-            state.instructionPointer++;
-        }
+        
     }
 
 
@@ -421,42 +420,55 @@ namespace MetaNix.search.levin2 {
 
 
     sealed public class InstructionInfo {
+        // "macro-arrAdvanceOrExit -4"
+        // "macro-arrNotEndOrExit -4",
+        // "macro-arrNotEndOrExit -5",
+        // "macro-arrAdvanceOrExit -3",
+
+
+
         static string[] hardcodedSingleInstructions = {
-            "arrayIdx -1", 
-            "arrayIdx +1",
+            "ret",
+            "macro-arrAdvanceOrExit $rel",
+            "macro-arrNotEndOrExit $rel",
+            "jmp $rel",
+            "jmpIfNotFlag $rel",
+            "call $rel",
+
+            "arrayIdx arr0 -1", 
+            "arrayIdx arr0 +1",
             "arrayRemove",
             "arrayCompare reg0",
             "arrayCompare reg1",
-            "ret",
+            
             "arrayInsert reg0",
             "arrayInsert reg1",
             "arrayInsert reg2",
-            "arraySetIdx 0",
-            "arraySetIdx -1",
+            "arraySetIdx arr0 0",
+            "arraySetIdx arr0 -1",
             "arrayIdxFlag arr0 +1",
             "arrayValid arr0",
-            "arrayRead arr0 reg0", // 13
+            "arrayRead arr0 reg0",
             "arrayIdx2Reg arr0 reg0",
             "mov reg0, 0",
             "mov reg0, 1",
             "mov reg0, 3",
-            "arrayMov arr0 reg0", // 18
+            "arrayMov arr0 reg0",
 
-            "mul reg0, -1", // 19
-            "binaryNeg reg0", // 20
+            "mul reg0, -1",
+            "binaryNeg reg0",
 
-            "macro-arrAdvanceOrExit -4", // 21
+            
             "mov reg1, 0",
-            "mov reg1, 1", // 23
+            "mov reg1, 1",
             "mov reg1, 3",
-            "arrayRead arr0 reg1", // 25
-            "macro-arrAdvanceOrExit -3", // 26
-            "mul reg0, reg1", // 27
-            "add reg0, reg1", // 28
+            "arrayRead arr0 reg1",
+            
+            "mul reg0, reg1",
+            "add reg0, reg1",
             "arrayMov arr0 reg1",
             "sub reg1, reg0",
-            "macro-arrNotEndOrExit -4",
-            "macro-arrNotEndOrExit -5",
+           
         };
 
         public static uint getNumberOfHardcodedSingleInstructions() {
@@ -464,12 +476,16 @@ namespace MetaNix.search.levin2 {
         }
 
         public static uint getNumberOfInstructions() {
-            return (uint)hardcodedSingleInstructions.Length + 1 + 1 + 1 + 3 * 16 + 1;
+            return (uint)hardcodedSingleInstructions.Length + 6;
         }
 
         public static string getMemonic(uint instruction) {
-            if( instruction <= hardcodedSingleInstructions.Length ) {
-                return hardcodedSingleInstructions[(int)instruction];
+            // instruction is a 16 bit number where the high 7 bits are the jump offset for jump instructions
+            uint instructionWithoutRelative = instruction & 0x1ff;
+            int relative = (int)(instruction >> 9) - ((1 << 7) - 1) / 2;
+
+            if (instructionWithoutRelative <= hardcodedSingleInstructions.Length ) {
+                return hardcodedSingleInstructions[(int)instruction].Replace("$rel", relative.ToString());
             }
             
             // if we are here we have instrution with hardcoded parameters
@@ -512,6 +528,7 @@ namespace MetaNix.search.levin2 {
 
 
             // jump
+            /*
             if (instruction <= currentBaseInstruction + 16) {
                 int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
                 int jumpDelta = subInstruction - 8;
@@ -534,6 +551,8 @@ namespace MetaNix.search.levin2 {
                 return String.Format("call {0}", jumpDelta);
             }
             currentBaseInstruction += 16;
+            */
+
 
             // indirect table call
             if (instruction <= currentBaseInstruction + 1) {
@@ -560,10 +579,21 @@ namespace MetaNix.search.levin2 {
     }
 
     sealed public class InstructionInterpreter {
+        public static uint convInstructionAndRelativeToInstruction(uint instruction, int relative) {
+            uint relativeAsUint = (uint)(relative + (1 << (7 - 1)));
+            uint resultInstruction = instruction | (relativeAsUint << 9);
+
+            
+            int relativeDecoded = (int)(resultInstruction >> 9) - ((1 << 7)) / 2;
+            Debug.Assert(relativeDecoded == relative);
+
+            return resultInstruction;
+        }
+        
         // checks if the program was terminated successfully by returning to the global caller
         public static bool isTerminating(InterpreterState interpreterState, uint instruction) {
             // return
-            if( interpreterState.topCallstack.top == 0x0000ffff && instruction == 5 )   return true;
+            if( interpreterState.topCallstack.top == 0x0000ffff && instruction == INSTRUCTION_RET)   return true;
 
 
             if(isMacroArrayAdvanceOrExit(instruction) ) {
@@ -576,8 +606,14 @@ namespace MetaNix.search.levin2 {
         }
 
         static bool isMacroArrayAdvanceOrExit(uint instruction) {
-            return instruction == 21 || instruction == 26 || instruction == 31 || instruction == 32;
+            uint instructionWithoutRelative = instruction & 0x1ff;
+
+            return instructionWithoutRelative == 1 || instructionWithoutRelative == 2;
         }
+
+
+
+        public const uint INSTRUCTION_RET = 0; // instruction for return
 
         // \param indirectCall is not -1 if the instruction is an indirect call to another function
         public static void dispatch(InterpreterState interpreterState, Instruction instr, out bool success, out int indirectCall) {
@@ -585,50 +621,61 @@ namespace MetaNix.search.levin2 {
 
             uint instruction = instr.code;
 
-            switch (instruction) {
-                case 0: ArrayOperationsTwoArgumentWrapper.arrayMove(interpreterState, -1, int.MaxValue, out success); return;
-                case 1: ArrayOperationsTwoArgumentWrapper.arrayMove(interpreterState, 1, int.MaxValue, out success); return;
-                case 2: ArrayOperationsTwoArgumentWrapper.arrayRemove(interpreterState, int.MaxValue, int.MaxValue, out success); return;
-                case 3: ArrayOperationsTwoArgumentWrapper.arrayCompareWithRegister(interpreterState, 0, int.MaxValue, out success); return;
-                case 4: ArrayOperationsTwoArgumentWrapper.arrayCompareWithRegister(interpreterState, 1, int.MaxValue, out success); return;
-                case 5: OperationsTwoArgumentWrapper.@return(interpreterState, int.MaxValue, int.MaxValue, out success); return;
-                case 6: ArrayOperations.arrayInsert(interpreterState, /*reg*/0, out success); return;
-                case 7: ArrayOperations.arrayInsert(interpreterState, /*reg*/1, out success); return;
-                case 8: ArrayOperations.arrayInsert(interpreterState, /*reg*/2, out success); return;
-                case 9: ArrayOperations.arraySetIdx(interpreterState, 0, out success); return;
-                case 10: ArrayOperations.arraySetIdx(interpreterState, -1, out success); return; // -1 is end of array
-                case 11: ArrayOperations.arrayIdxFlag(interpreterState, 0, 1, out success); return; // TODO< should be an intrinsic command which gets added by default >
-                case 12: ArrayOperations.arrayValid(interpreterState, /*array*/0, out success); return;
-                case 13: ArrayOperations.arrayRead(interpreterState, /*array*/0, /*register*/0, out success); return;
-                case 14: ArrayOperations.arrayIdx2Reg(interpreterState, /*array*/0, /*register*/0, out success); return;
-                case 15: Operations.mov(interpreterState, /*register*/0, 0, out success); return;
-                case 16: Operations.mov(interpreterState, /*register*/0, 1, out success); return;
-                case 17: Operations.mov(interpreterState, /*register*/0, 3, out success); return;
-                case 18: ArrayOperations.arrayMovToArray(interpreterState, /*array*/0, /*register*/0, out success); return;
-                case 19: Operations.mulRegisterImmediate(interpreterState, /*register*/0, -1); success = true; return;
-                case 20: ArrayOperations.binaryNegate(interpreterState, /*register*/0); success = true; return;
-                case 21: ArrayOperations.macroArrayAdvanceOrExit(interpreterState, -4, out success); return;
-                case 22: Operations.mov(interpreterState, /*register*/1, 0, out success); return;
-                case 23: Operations.mov(interpreterState, /*register*/1, 1, out success); return;
-                case 24: Operations.mov(interpreterState, /*register*/1, 3, out success); return;
-                case 25: ArrayOperations.arrayRead(interpreterState, /*array*/0, /*register*/1, out success); return;
-                case 26: ArrayOperations.macroArrayAdvanceOrExit(interpreterState, -3, out success); return;
-                case 27: Operations.mulRegisterRegister(interpreterState, 0, 1); success = true; return;
-                case 28: Operations.addRegisterRegister(interpreterState, 0, 1); success = true; return;
-                case 29: ArrayOperations.arrayMovToArray(interpreterState, /*array*/0, /*register*/1, out success); return;
-                case 30: Operations.subRegisterRegister(interpreterState, 1, 0); success = true; return;
-                case 31: ArrayOperations.macroArrayNotEndOrExit(interpreterState, -4, out success); return;
-                case 32: ArrayOperations.macroArrayNotEndOrExit(interpreterState, -5, out success); return;
+            // instruction is a 16 bit number where the high 7 bits are the jump offset for jump instructions
+            uint instructionWithoutRelative = instruction & 0x1ff;
+            int relative = (int)(instruction >> 9) - ((1 << 7)) / 2;
+            // TODO< reduce instruction set to use the relative information and rewrite the generation of the programs to use a codebook of instructions >
+
+            switch (instructionWithoutRelative) {
+                case INSTRUCTION_RET: Operations.@return(interpreterState, out success); return;
+                case 1: ArrayOperations.macroArrayAdvanceOrExit(interpreterState, relative, out success); return;
+                case 2: ArrayOperations.macroArrayNotEndOrExit(interpreterState, relative, out success); return;
+                case 3: Operations.jump(interpreterState, relative); success = true; return;
+                case 4: Operations.jumpIfNotFlag(interpreterState, relative); success = true; return;
+                case 5: Operations.call(interpreterState, relative); success = true; return;
+
+                case 6: ArrayOperationsTwoArgumentWrapper.arrayMove(interpreterState, -1, int.MaxValue, out success); return;
+                case 7: ArrayOperationsTwoArgumentWrapper.arrayMove(interpreterState, 1, int.MaxValue, out success); return;
+                case 8: ArrayOperationsTwoArgumentWrapper.arrayRemove(interpreterState, int.MaxValue, int.MaxValue, out success); return;
+                case 9: ArrayOperationsTwoArgumentWrapper.arrayCompareWithRegister(interpreterState, 0, int.MaxValue, out success); return;
+                case 10: ArrayOperationsTwoArgumentWrapper.arrayCompareWithRegister(interpreterState, 1, int.MaxValue, out success); return;
+                
+                case 11: ArrayOperations.arrayInsert(interpreterState, /*reg*/0, out success); return;
+                case 12: ArrayOperations.arrayInsert(interpreterState, /*reg*/1, out success); return;
+                case 13: ArrayOperations.arrayInsert(interpreterState, /*reg*/2, out success); return;
+                case 14: ArrayOperations.arraySetIdx(interpreterState, 0, 0, out success); return;
+                case 15: ArrayOperations.arraySetIdx(interpreterState, 0, -1, out success); return; // -1 is end of array
+                case 16: ArrayOperations.arrayIdxFlag(interpreterState, 0, 1, out success); return; // TODO< should be an intrinsic command which gets added by default >
+                case 17: ArrayOperations.arrayValid(interpreterState, /*array*/0, out success); return;
+                case 18: ArrayOperations.arrayRead(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 19: ArrayOperations.arrayIdx2Reg(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 20: Operations.mov(interpreterState, /*register*/0, 0, out success); return;
+                case 21: Operations.mov(interpreterState, /*register*/0, 1, out success); return;
+                case 22: Operations.mov(interpreterState, /*register*/0, 3, out success); return;
+                case 23: ArrayOperations.arrayMovToArray(interpreterState, /*array*/0, /*register*/0, out success); return;
+                case 24: Operations.mulRegisterImmediate(interpreterState, /*register*/0, -1); success = true; return;
+                case 25: Operations.binaryNegate(interpreterState, /*register*/0); success = true; return;
+                case 26: ArrayOperations.macroArrayAdvanceOrExit(interpreterState, -4, out success); return;
+                case 27: Operations.mov(interpreterState, /*register*/1, 0, out success); return;
+                case 28: Operations.mov(interpreterState, /*register*/1, 1, out success); return;
+                case 29: Operations.mov(interpreterState, /*register*/1, 3, out success); return;
+                case 30: ArrayOperations.arrayRead(interpreterState, /*array*/0, /*register*/1, out success); return;
+                
+                case 31: Operations.mulRegisterRegister(interpreterState, 0, 1); success = true; return;
+                case 32: Operations.addRegisterRegister(interpreterState, 0, 1); success = true; return;
+                case 33: ArrayOperations.arrayMovToArray(interpreterState, /*array*/0, /*register*/1, out success); return;
+                case 34: Operations.subRegisterRegister(interpreterState, 1, 0); success = true; return;
+                
             }
 
             // if we are here we have instrution with hardcoded parameters
 
             uint baseInstruction = InstructionInfo.getNumberOfHardcodedSingleInstructions();
-            Debug.Assert(instruction >= baseInstruction);
+            Debug.Assert(instructionWithoutRelative >= baseInstruction);
             int currentBaseInstruction = (int)baseInstruction;
 
             // compare constant
-            if (instruction <= currentBaseInstruction + 1) {
+            if (instructionWithoutRelative <= currentBaseInstruction + 1) {
                 // currently just compare reg0 with zero
                 Operations.compare(interpreterState, /*register*/0, 0);
                 success = true;
@@ -642,8 +689,8 @@ namespace MetaNix.search.levin2 {
 
 
             // add register constant
-            if (instruction <= currentBaseInstruction + 2) {
-                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the pool
+            if (instructionWithoutRelative <= currentBaseInstruction + 3) {
+                int subInstruction = (int)instructionWithoutRelative - currentBaseInstruction; // which instruction do we choose from the pool
 
                 if (subInstruction == 0) {
                     Operations.add(interpreterState, /*register*/0, -1);
@@ -651,14 +698,17 @@ namespace MetaNix.search.levin2 {
                 else if (subInstruction == 1) {
                     Operations.add(interpreterState, /*register*/0, 2);
                 }
+                else if (subInstruction == 2) {
+                    Operations.add(interpreterState, /*register*/1, -1);
+                }
 
             }
 
-            currentBaseInstruction += 2;
+            currentBaseInstruction += 3;
 
 
             // addFlag reg0 constant
-            if (instruction <= currentBaseInstruction + 1) {
+            if (instructionWithoutRelative <= currentBaseInstruction + 1) {
                 // currently just compare reg0 with zero
                 Operations.addFlag(interpreterState, /*register*/0, 1);
                 success = true;
@@ -670,39 +720,12 @@ namespace MetaNix.search.levin2 {
 
 
 
-
-            // jump
-            if (instruction <= currentBaseInstruction + 16) {
-                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
-                int jumpDelta = subInstruction - 8;
-                Operations.jump(interpreterState, jumpDelta);
-                success = true;
-                return;
-            }
-            currentBaseInstruction += 16;
-
-            // jump if flag is not set
-            if (instruction <= currentBaseInstruction + 16) {
-                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
-                int jumpDelta = subInstruction - 8;
-                Operations.jumpIfNotFlag(interpreterState, jumpDelta);
-                success = true;
-                return;
-            }
-            currentBaseInstruction += 16;
             
-            // call
-            if (instruction <= currentBaseInstruction + 16) {
-                int subInstruction = (int)instruction - currentBaseInstruction; // which instruction do we choose from the jump instructions?
-                int jumpDelta = subInstruction - 8;
-                Operations.call(interpreterState, jumpDelta);
-                success = true;
-                return;
-            }
-            currentBaseInstruction += 16;
+            
+            
 
             // indirect table call
-            if (instruction <= currentBaseInstruction + 1) {
+            if (instructionWithoutRelative <= currentBaseInstruction + 1) {
                 // currently just compare reg0 with zero
                 indirectCall = 0;
                 success = true;
@@ -713,7 +736,7 @@ namespace MetaNix.search.levin2 {
 
             // additional instructions
             InterpreterState.AdditionalOperationsDelegateType additionalOperationDelegate;
-            if( interpreterState.additionalOperations.TryGetValue(instruction, out additionalOperationDelegate) ) {
+            if( interpreterState.additionalOperations.TryGetValue(instructionWithoutRelative, out additionalOperationDelegate) ) {
                 additionalOperationDelegate(interpreterState, out success);
                 return;
             }
@@ -819,10 +842,14 @@ namespace MetaNix.search.levin2 {
             searchCompleted = false;
             searchIterations++;
 
-            uint[] sampledProgram = programSampler.sampleProgram((int)numberOfInstructionsToEnumerate);
+            // are just the lookup values we still have to lookup
+            instructionIndices = programSampler.sampleProgram((int)numberOfInstructionsToEnumerate);
+            
+            uint[] sampledProgram = instructionIndices.Select(v => instructionIndexToInstruction[v]).ToArray();
+
             // copy
             sampledProgram.CopyTo(program, 0);
-            program[privateNumberOfInstructions - 1] = 5; // overwrite last instruction with ret so it terminates always
+            program[privateNumberOfInstructions - 1] = InstructionInterpreter.INSTRUCTION_RET; // overwrite last instruction with ret so it terminates always
 
             // append parent program if there is one
             if( parentProgram != null ) {
@@ -913,7 +940,7 @@ namespace MetaNix.search.levin2 {
             this.programDistribution = programDistribution;
             this.enumerationMaxProgramLength = enumerationMaxProgramLength;
 
-            privateNumberOfInstructions = 1+/* with RET*/1; // with RET  (int)numberOfInstructions;
+            privateNumberOfInstructions = 1+/* with RET*/1;
 
             numberOfInstructionsToEnumerate = 6; // we enumerate at maximum with just 6 instructions
 
@@ -958,7 +985,13 @@ namespace MetaNix.search.levin2 {
 
         public ulong searchIterations; // how many iterations were done for this search already?
 
-        public uint instructionsetCount;
+        private uint instructionsetCount { get {
+                return (uint)instructionIndexToInstruction.Count;
+            }
+        }
+
+        // translates from instructionIndex to "real" instruction code
+        public IDictionary<uint, uint> instructionIndexToInstruction = new Dictionary<uint, uint>();
 
         public double exhausiveSearchFactor = 2.0; // hown many times do we try a program at maximum till we give up based on the # of combinations
                                                    // can be less than 1 which favors non-exhausive search
@@ -969,6 +1002,7 @@ namespace MetaNix.search.levin2 {
 
         public Interpreter.InterpretArguments interpreterArguments = new Interpreter.InterpretArguments(); // preallocated
         uint[] program; // preallocated temporary program which is composed out of the parent program and the current try
+        uint[] instructionIndices; // indices of the program which were used to lookup the real instructions
 
         Interpreter interpreter = new Interpreter();
         ProgramSampler programSampler;
@@ -979,12 +1013,7 @@ namespace MetaNix.search.levin2 {
         public uint[] parentProgram; // can be null
 
         internal void biasSearchTowardProgram() {
-            uint[] effectiveProgram = new uint[numberOfInstructions - 1];
-            for (int i = 0; i < numberOfInstructions - 1; i++) {
-                effectiveProgram[i] = program[i];
-            }
-
-            programDistribution.addProgram(effectiveProgram);
+            programDistribution.addProgram(instructionIndices);
         }
     }
 

@@ -90,10 +90,57 @@ namespace MetaNix.control.levinProgramSearch {
             levinSearchTask.levinSearchContext = new LevinSearchContext();
             levinSearchTask.levinSearchContext.interpreterArguments.maxNumberOfRetiredInstructions = problem.maxNumberOfRetiredInstructions;
             levinSearchTask.levinSearchContext.interpreterArguments.interpreterState = problem.initialInterpreterState;
-            levinSearchTask.levinSearchContext.instructionsetCount = problem.instructionsetCount;
             levinSearchTask.levinSearchContext.trainingSamples = problem.trainingSamples;
             levinSearchTask.levinSearchContext.parentProgram = problem.parentProgram;
+            fillUsedInstructionSet(levinSearchTask.levinSearchContext);
             levinSearchTask.levinSearchContext.initiateSearch(sparseArrayProgramDistribution, problem.enumerationMaxProgramLength);
+        }
+
+        void fillUsedInstructionSet(LevinSearchContext levinSearchContext) {
+            levinSearchContext.instructionIndexToInstruction.Clear();
+
+            uint instructionIndex = 0;
+
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = 0; // RET
+
+            // add all nonspecial instructions
+            for( uint instruction = 6; instruction < 39; instruction++ ) {
+                levinSearchContext.instructionIndexToInstruction[instructionIndex++] = instruction;
+            }
+
+            // add some special jump instructions
+
+            // advance or exit
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(1, -4);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(1, -3);
+
+            // not end or exit
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(2, -4);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(2, -5);
+
+            // jump
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(3, -0); // nop
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(3, -2);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(3, -3);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(3, -4);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(3, -5);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(3, -6);
+            // TODO< jump ahead >
+
+            // jump if not flag
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, -2);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, -3);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, -4);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, -5);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, -6);
+
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, +1);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, +2);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, +3);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, +4);
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, +5);
+
+            int breakpointHere1 = 1;
         }
 
         AdvancedAdaptiveLevinSearchProblem problem;
