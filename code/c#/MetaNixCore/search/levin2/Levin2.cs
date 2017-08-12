@@ -446,6 +446,75 @@ namespace MetaNix.search.levin2 {
         IList<Type> arr = new List<Type>();
     }
 
+    // preserves relative instruction of jump instructions by default
+    public class InstructionOffsetPreservingArray : IAbstractArray<int> {
+        public int this[int idx] {
+            get => arr[idx];
+            set => arr[idx] = value;
+        }
+
+        public int count => arr.Count;
+
+        public void append(int value) {
+            arr.Add(value);
+        }
+
+        public void clear() {
+            arr.Clear();
+        }
+
+        public void insert(int idx, int value) {
+            insertAtOffsetPreserving(idx, value);
+        }
+
+        public void removeAt(int idx) {
+            removeAtOffsetPreserving(idx);
+        }
+
+        public void insertAtOffsetPreserving(int idx, int value) {
+            adjustControlflowOffsetsForInstructionAtIndex(idx, +1);
+            arr.Insert(idx, value);
+        }
+        
+
+        public void removeAtOffsetPreserving(int idx) {
+            adjustControlflowOffsetsForInstructionAtIndex(idx, -1);
+            arr.RemoveAt(idx);
+        }
+
+        // /param delta the delta of the relative offset
+        void adjustControlflowOffsetsForInstructionAtIndex(int idx, int delta) {
+            
+            for (int i = 0; i < arr.Count; i++) {
+                if( i == idx )   continue;
+
+                uint instructionWithoutRelative;
+                int relative;
+                InstructionInterpreter.decodeInstruction((uint)arr[i], out instructionWithoutRelative, out relative);
+
+                bool isInstructionWithRelativeOffset = instructionWithoutRelative <= InstructionInterpreter.NUMBEROFCONTROLFLOWINSTRUCTIONS;
+                if (!isInstructionWithRelativeOffset)    continue; // if it is not a control flow altering instruction we don't have to change it
+
+                int relativeDestination = i + relative;
+
+                bool overlaps = false;
+
+                if( relative < 0 )   overlaps = idx > i && i < relativeDestination;
+                else                 overlaps = i < idx && idx < relativeDestination;
+
+                if (!overlaps)    continue; // if the range of the jump doesn't overlap with the index we don't hvae to modfy it
+
+                int newRelative = relative + delta;
+
+                arr[i] = (int)InstructionInterpreter.convInstructionAndRelativeToInstruction(instructionWithoutRelative, relative);
+            }
+        }
+
+
+
+        IList<int> arr = new List<int>();
+    }
+
 
     public class ArrayState {
         public int index;
@@ -584,6 +653,7 @@ namespace MetaNix.search.levin2 {
     }
 
     sealed public class InstructionInterpreter {
+        // conversion helper
         public static uint convInstructionAndRelativeToInstruction(uint instruction, int relative) {
             uint relativeAsUint = (uint)(relative + (1 << (7 - 1)));
             uint resultInstruction = instruction | (relativeAsUint << 9);
@@ -594,7 +664,15 @@ namespace MetaNix.search.levin2 {
 
             return resultInstruction;
         }
-        
+
+        // conversion helper
+        public static void decodeInstruction(uint instr, out uint instructionWithoutRelative, out int relative) {
+            // instruction is a 16 bit number where the high 7 bits are the jump offset for jump instructions
+            instructionWithoutRelative = instr & 0x1ff;
+            relative = (int)(instr >> 9) - ((1 << 7)) / 2;
+        }
+
+
         // checks if the program was terminated successfully by returning to the global caller
         public static bool isTerminating(InterpreterState interpreterState, uint instruction) {
             // return
@@ -620,17 +698,16 @@ namespace MetaNix.search.levin2 {
 
         public const uint INSTRUCTION_RET = 0; // instruction for return
 
+        public const uint NUMBEROFCONTROLFLOWINSTRUCTIONS = 6;
+        
         // \param indirectCall is not -1 if the instruction is an indirect call to another function
         public static void dispatch(InterpreterState interpreterState, Instruction instr, out bool success, out int indirectCall) {
             indirectCall = -1;
-
-            uint instruction = instr.code;
-
-            // instruction is a 16 bit number where the high 7 bits are the jump offset for jump instructions
-            uint instructionWithoutRelative = instruction & 0x1ff;
-            int relative = (int)(instruction >> 9) - ((1 << 7)) / 2;
-            // TODO< reduce instruction set to use the relative information and rewrite the generation of the programs to use a codebook of instructions >
-
+            
+            uint instructionWithoutRelative;
+            int relative;
+            decodeInstruction(instr.code, out instructionWithoutRelative, out relative);
+            
             switch (instructionWithoutRelative) {
                 case INSTRUCTION_RET: Operations.@return(interpreterState, out success); return;
                 case 1: ArrayOperations.macroArrayAdvanceOrExit(interpreterState, relative, out success); return;
