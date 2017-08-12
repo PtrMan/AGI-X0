@@ -1,0 +1,64 @@
+﻿-- append reg1 at beginning and reg2 at end
+
+{
+	{ -- settings
+		6 -- enumerate program length
+		7 -- max number of retired instructions
+	}
+
+	{
+		{}
+		{null 7 3}
+		null
+
+		{7 3}
+		{null null}
+		null
+		
+		null
+	}
+
+	{
+		{1 2}
+		{null 7 3}
+		null
+
+		{7 1 2 3}
+		{null null}
+		null
+		
+		null
+	}
+
+	{
+		{}
+		{null 5 9}
+		null
+
+		{5 9}
+		{null null}
+		null
+		
+		null
+	}
+
+	{
+		{1}
+		{null 5 9}
+		null
+
+		{5 1 9}
+		{null null}
+		null
+		
+		null
+	}
+}
+
+-- should return
+--
+--                	arraySetIdx 0
+--	                arrayInsert reg1
+--	                arraySetIdx -1
+--	                arrayInsert reg2
+--	                (ret)
