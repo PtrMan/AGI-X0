@@ -1,4 +1,6 @@
-﻿-- first numer of linked list element is delta till next element
+﻿-- disable linkedlist element at current index
+
+-- first numer of linked list element is delta till next element
 -- second numer is if the element is enabled, used for freeing memory
 
 {

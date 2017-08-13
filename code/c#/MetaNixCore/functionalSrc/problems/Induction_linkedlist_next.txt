@@ -1,0 +1,83 @@
+﻿-- go to next element
+
+-- first numer of linked list element is delta till next element
+-- second numer is if the element is enabled, used for freeing memory
+
+{
+	{ -- settings
+		5 -- enumerate program length
+		10 -- max number of retired instructions
+	}
+	
+	{
+		{3 1 6} -- question array
+		{null null} -- question registers
+		0 -- question array index
+
+		{3 1 6} -- answer array
+		{null null} -- answer registers
+		3 -- answer array index
+
+		null -- answer flag
+	}
+
+	{
+		{3 0 6} -- question array
+		{null null} -- question registers
+		0 -- question array index
+
+		{3 0 6} -- answer array
+		{null null} -- answer registers
+		3 -- answer array index
+
+		null -- answer flag
+	}
+
+	{
+		{3 1 6 4 0 7 3} -- question array
+		{null null} -- question registers
+		0 -- question array index
+
+		{3 1 6 4 0 7 3} -- answer array
+		{null null} -- answer registers
+		3 -- answer array index
+
+		null -- answer flag
+	}
+
+	{
+		{3 1 6 4 0 7 3} -- question array
+		{null null} -- question registers
+		3 -- question array index
+
+		{3 1 6 4 0 7 3} -- answer array
+		{null null} -- answer registers
+		7 -- answer array index
+
+		null -- answer flag
+	}
+
+	{
+		{3 1 6 4 1 4 3} -- question array
+		{null null} -- question registers
+		0 -- question array index
+
+		{3 1 6 4 1 4 3} -- answer array
+		{null null} -- answer registers
+		3 -- answer array index
+
+		null -- answer flag
+	}
+
+	{
+		{3 1 6 4 1 3 3} -- question array
+		{null null} -- question registers
+		3 -- question array index
+
+		{3 1 6 4 1 3 3} -- answer array
+		{null null} -- answer registers
+		7 -- answer array index
+
+		null -- answer flag
+	}
+}

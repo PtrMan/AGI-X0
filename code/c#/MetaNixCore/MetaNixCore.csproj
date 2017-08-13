@@ -223,6 +223,7 @@
     <Content Include="functionalSrc\problems\induction_array_greaterThan.txt" />
     <Content Include="functionalSrc\problems\induction_array_incrementIfSameAndAdvance.txt" />
     <Content Include="functionalSrc\problems\Induction_linkedlist_append.txt" />
+    <Content Include="functionalSrc\problems\Induction_linkedlist_next.txt" />
     <Content Include="functionalSrc\problems\level1\Induction_array_integer_exists.txt" />
     <Content Include="functionalSrc\problems\Induction_array_multiplication.txt" />
     <Content Include="functionalSrc\problems\Induction_array_negation.txt" />

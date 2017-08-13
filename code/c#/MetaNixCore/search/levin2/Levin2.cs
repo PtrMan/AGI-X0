@@ -190,7 +190,7 @@ namespace MetaNix.search.levin2 {
         }
 
         // array is ignored
-        public static void setIdx(GlobalInterpreterState globalState, LocalInterpreterState localState, int array, int index, out bool success) {
+        public static void setIdxRelative(GlobalInterpreterState globalState, LocalInterpreterState localState, int array, int index, out bool success) {
             if (globalState.arrayState == null ) {
                 success = false;
                 return;
@@ -264,7 +264,19 @@ namespace MetaNix.search.levin2 {
             localState.instructionPointer++;
             success = true;
         }
-        
+
+        public static void reg2idx(GlobalInterpreterState globalState, LocalInterpreterState localState, int register, int array, out bool success) {
+            if (globalState.arrayState == null) {
+                success = false;
+                return;
+            }
+
+            globalState.arrayState.index = localState.registers[register];
+
+            localState.instructionPointer++;
+            success = true;
+        }
+
 
         public static void arrayMovToArray(GlobalInterpreterState globalState, LocalInterpreterState localState, int array, int register, out bool success) {
             if (globalState.arrayState == null || !globalState.arrayState.isIndexValid) {
@@ -510,8 +522,8 @@ namespace MetaNix.search.levin2 {
             "arrayInsert reg0",
             "arrayInsert reg1",
             "arrayInsert reg2",
-            "arraySetIdx arr0 0",
-            "arraySetIdx arr0 -1",
+            "arraySetIdxRel arr0 0",
+            "arraySetIdxRel arr0 -1",
             "arrayIdxFlag arr0 +1",
             "arrayValid arr0",
             "arrayRead arr0 reg0",
@@ -534,6 +546,8 @@ namespace MetaNix.search.levin2 {
             "add reg0, reg1",
             "arrayMov arr0 reg1",
             "sub reg1, reg0",
+            "arrayRead arr0 reg1",
+            "arrReg2Idx reg0 arr0",
            
             // TODO< remaining instructions >
         };
@@ -696,8 +710,8 @@ namespace MetaNix.search.levin2 {
                 case 11: ArrayOperations.insert(globalState, localState, /*reg*/0, out success); return;
                 case 12: ArrayOperations.insert(globalState, localState, /*reg*/1, out success); return;
                 case 13: ArrayOperations.insert(globalState, localState, /*reg*/2, out success); return;
-                case 14: ArrayOperations.setIdx(globalState, localState, 0, 0, out success); return;
-                case 15: ArrayOperations.setIdx(globalState, localState, 0, -1, out success); return; // -1 is end of array
+                case 14: ArrayOperations.setIdxRelative(globalState, localState, 0, 0, out success); return;
+                case 15: ArrayOperations.setIdxRelative(globalState, localState, 0, -1, out success); return; // -1 is end of array
                 case 16: ArrayOperations.idxFlag(globalState, localState, 0, 1, out success); return; // TODO< should be an intrinsic command which gets added by default >
                 case 17: ArrayOperations.valid(globalState, localState, /*array*/0, out success); return;
                 case 18: ArrayOperations.read(globalState, localState, /*array*/0, /*register*/0, out success); return;
@@ -718,9 +732,13 @@ namespace MetaNix.search.levin2 {
                 case 32: Operations.addRegisterRegister(localState, 0, 1); success = true; return;
                 case 33: ArrayOperations.arrayMovToArray(globalState, localState, /*array*/0, /*register*/1, out success); return;
                 case 34: Operations.subRegisterRegister(localState, 1, 0); success = true; return;
+                case 35: ArrayOperations.read(globalState, localState, /*array*/0, /*register*/1, out success); return;
+                case 36: ArrayOperations.reg2idx(globalState, localState, /*register*/0, /*array*/0, out success); return;
                 
-                case 35: Operations.random(globalState, localState, 0, 0, out success); return;
-                case 36: ArrayOperations.length(globalState, localState, /*destRegister*/0, out success); return;
+                case 37: Operations.compare(localState, /*register*/0, 0); success = true; return; // TODO< maybe using relative value as immediate >
+
+                case 38: Operations.random(globalState, localState, 0, 0, out success); return;
+                case 39: ArrayOperations.length(globalState, localState, /*destRegister*/0, out success); return;
             }
 
             // if we are here we have instrution with hardcoded parameters
@@ -728,18 +746,7 @@ namespace MetaNix.search.levin2 {
             uint baseInstruction = InstructionInfo.getNumberOfHardcodedSingleInstructions();
             Debug.Assert(instructionWithoutRelative >= baseInstruction);
             int currentBaseInstruction = (int)baseInstruction;
-
-            // compare constant
-            if (instructionWithoutRelative <= currentBaseInstruction + 1) {
-                // currently just compare reg0 with zero
-                Operations.compare(localState, /*register*/0, 0);
-                success = true;
-                return;
-            }
-
-            currentBaseInstruction += 1;
-
-
+            
 
 
 
@@ -749,12 +756,15 @@ namespace MetaNix.search.levin2 {
 
                 if (subInstruction == 0) {
                     Operations.add(localState, /*register*/0, -1);
+                    success = true;
                 }
                 else if (subInstruction == 1) {
                     Operations.add(localState, /*register*/0, 2);
+                    success = true;
                 }
                 else if (subInstruction == 2) {
                     Operations.add(localState, /*register*/1, -1);
+                    success = true;
                 }
 
             }

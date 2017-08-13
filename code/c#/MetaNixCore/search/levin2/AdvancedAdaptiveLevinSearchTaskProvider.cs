@@ -84,7 +84,7 @@ namespace MetaNix.search.levin2 {
             levinSearchContext.instructionIndexToInstruction[instructionIndex++] = 0; // RET
 
             // add all nonspecial instructions
-            for (uint instruction = 6; instruction < 39; instruction++) {
+            for (uint instruction = 6; instruction <= 37; instruction++) {
                 levinSearchContext.instructionIndexToInstruction[instructionIndex++] = instruction;
             }
 
