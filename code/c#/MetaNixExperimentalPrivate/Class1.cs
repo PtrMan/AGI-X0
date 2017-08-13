@@ -206,6 +206,8 @@ namespace MetaNixExperimentalPrivate {
 
             // overwrite for testing
             problemsFilenames = new string[] {
+                @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_linkedlist_append.txt",
+                @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_appendBeginningAndEnding.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_removeEqual.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_subReg0.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_verticalAddition.txt",
