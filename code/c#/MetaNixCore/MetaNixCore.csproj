@@ -214,6 +214,7 @@
     <Content Include="functionalSrc\interpreted\functions\Generator_reg1.txt" />
     <Content Include="functionalSrc\interpreted\functions\Generator_zeros.txt" />
     <Content Include="functionalSrc\parserBugTest1.txt" />
+    <Content Include="functionalSrc\problems\Induction_array_appendBeginningAndEnding.txt" />
     <Content Include="functionalSrc\problems\Induction_array_appendReg0TimesReg1.txt" />
     <Content Include="functionalSrc\problems\Induction_array_appendReg1ToArr0.txt" />
     <Content Include="functionalSrc\problems\induction_array_binaryNegation.txt" />
@@ -221,6 +222,7 @@
     <Content Include="functionalSrc\problems\Induction_array_findReg1AndRemoveReg0Times.txt" />
     <Content Include="functionalSrc\problems\induction_array_greaterThan.txt" />
     <Content Include="functionalSrc\problems\induction_array_incrementIfSameAndAdvance.txt" />
+    <Content Include="functionalSrc\problems\Induction_linkedlist_append.txt" />
     <Content Include="functionalSrc\problems\level1\Induction_array_integer_exists.txt" />
     <Content Include="functionalSrc\problems\Induction_array_multiplication.txt" />
     <Content Include="functionalSrc\problems\Induction_array_negation.txt" />

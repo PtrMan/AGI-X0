@@ -88,8 +88,8 @@ namespace MetaNix.control.levinProgramSearch {
             scheduler.addTaskSync(levinSearchTask);
 
             levinSearchTask.levinSearchContext = new LevinSearchContext();
-            levinSearchTask.levinSearchContext.interpreterArguments.maxNumberOfRetiredInstructions = problem.maxNumberOfRetiredInstructions;
-            levinSearchTask.levinSearchContext.interpreterArguments.interpreterState = problem.initialInterpreterState;
+            levinSearchTask.levinSearchContext.localInterpreterState.maxNumberOfRetiredInstructions = problem.maxNumberOfRetiredInstructions;
+            //levinSearchTask.levinSearchContext.localInterpreterState = problem.localInitialInterpreterState;
             levinSearchTask.levinSearchContext.trainingSamples = problem.trainingSamples;
             levinSearchTask.levinSearchContext.parentProgram = problem.parentProgram;
             fillUsedInstructionSet(levinSearchTask.levinSearchContext);

@@ -241,10 +241,10 @@ namespace MetaNixExperimentalPrivate {
 
                 levinSearchProblem.maxNumberOfRetiredInstructions = Conversion.convertToUint(configurationPattern.referenced[1]); // TODO< derive by propability with some formula from schmidhuber >
 
-                levinSearchProblem.initialInterpreterState = new InterpreterState();
-                levinSearchProblem.initialInterpreterState.registers = new int[3];
-                levinSearchProblem.initialInterpreterState.arrayState = new ArrayState();
-                levinSearchProblem.initialInterpreterState.arrayState.array = new ListArray<int>();
+
+                //levinSearchProblem.localInitialInterpreterState = new LocalInterpreterState();
+                //levinSearchProblem.localInitialInterpreterState.registers = new int[3];
+                
                 //levinSearchProblem.initialInterpreterState.debugExecution = false;
 
 

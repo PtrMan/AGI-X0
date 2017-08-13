@@ -67,8 +67,8 @@ namespace MetaNix.search.levin2 {
             scheduler.addTaskSync(levinSearchTask);
 
             levinSearchTask.levinSearchContext = new LevinSearchContext();
-            levinSearchTask.levinSearchContext.interpreterArguments.maxNumberOfRetiredInstructions = problem.maxNumberOfRetiredInstructions;
-            levinSearchTask.levinSearchContext.interpreterArguments.interpreterState = problem.initialInterpreterState;
+            levinSearchTask.levinSearchContext.localInterpreterState.maxNumberOfRetiredInstructions = problem.maxNumberOfRetiredInstructions;
+            //levinSearchTask.levinSearchContext.interpreterArguments.interpreterState = problem.localInitialInterpreterState;
             fillUsedInstructionSet(levinSearchTask.levinSearchContext);
             levinSearchTask.levinSearchContext.trainingSamples = problem.trainingSamples;
             levinSearchTask.levinSearchContext.parentProgram = problem.parentProgram;
@@ -135,7 +135,8 @@ namespace MetaNix.search.levin2 {
     public class AdvancedAdaptiveLevinSearchProblem {
         public AdvancedAdaptiveLevinSearchProblem shallowCopy() {
             AdvancedAdaptiveLevinSearchProblem copied = new AdvancedAdaptiveLevinSearchProblem();
-            copied.initialInterpreterState = initialInterpreterState;
+            copied.globalInitialArrayState = globalInitialArrayState;
+            //copied.localInitialInterpreterState = localInitialInterpreterState;
             copied.trainingSamples = trainingSamples;
             copied.enumerationMaxProgramLength = enumerationMaxProgramLength;
             copied.instructionsetCount = instructionsetCount;
@@ -156,7 +157,8 @@ namespace MetaNix.search.levin2 {
             return this;
         }
 
-        public InterpreterState initialInterpreterState;
+        public ArrayState globalInitialArrayState;
+        //public LocalInterpreterState localInitialInterpreterState;
         public IList<TrainingSample> trainingSamples = new List<TrainingSample>();
 
         public string humanReadableTaskname = "?";

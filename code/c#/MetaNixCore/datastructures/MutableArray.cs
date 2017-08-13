@@ -24,6 +24,10 @@ namespace MetaNix.datastructures {
             numberOfElements++;
         }
 
+        public void setLength(int length) {
+            numberOfElements = length;
+        }
+
         public double length => numberOfElements;
 
         public Type this[int idx] {
