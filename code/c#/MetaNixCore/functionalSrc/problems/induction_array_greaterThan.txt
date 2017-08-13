@@ -5,6 +5,7 @@
 	{ -- settings
 		6 -- enumerate program length
 		60 -- max number of retired instructions
+		{} -- hint indirect call candidates
 	}
 
 	-- special case currently not handled

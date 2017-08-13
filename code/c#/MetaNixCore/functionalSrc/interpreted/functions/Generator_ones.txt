@@ -1,0 +1,13 @@
+﻿-- generator which adds reg0 ones into the array
+
+{
+	{"mov" "reg1" 1}
+	
+	{"cmp" "reg0" 0}
+	{"jmpIfFlagSet" 3}
+
+	{"arrInsert" "reg1"}
+	{"sub" "reg0" 1}
+	{"jmp" -5}
+	{"ret"}
+}

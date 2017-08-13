@@ -245,6 +245,16 @@ namespace MetaNixExperimentalPrivate {
                 levinSearchProblem.maxNumberOfRetiredInstructions = Conversion.convertToUint(configurationPattern.referenced[1]); // TODO< derive by propability with some formula from schmidhuber >
 
 
+                // read hints for indirect call candidates
+                Pattern<Decoration> hintIndirectCallCandidatesPattern = configurationPattern.referenced[3];
+                foreach( var iHintPattern in hintIndirectCallCandidatesPattern.referenced ) {
+                    string iHint = Conversion.convertPatternToString(iHintPattern);
+                    // TODO< add hint to levinSearchProblem >
+                }
+
+
+
+
                 //levinSearchProblem.localInitialInterpreterState = new LocalInterpreterState();
                 //levinSearchProblem.localInitialInterpreterState.registers = new int[3];
                 

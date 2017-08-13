@@ -1,0 +1,7 @@
+﻿-- max function between reg0 and reg1
+
+{
+	{"cmpLess" "reg0" "reg1"}
+	{"jmpIfNotFlag" "1"}
+	{"mov" "reg0" "reg1"}
+}

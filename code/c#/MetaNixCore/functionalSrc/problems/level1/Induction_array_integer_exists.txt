@@ -5,6 +5,7 @@
 	{ -- settings
 		6 -- enumerate program length, enough
 		50 -- max number of retired instructions
+		{} -- hint indirect call candidates
 	}
 
 	-- uncommented because empty case can't be handled because it is to complex

@@ -1,0 +1,14 @@
+﻿-- generator which generates 1 2 3 4 5 ... reg0
+
+{
+	{"mov" "reg1" 1}
+	
+	{"cmp" "reg0" 0}
+	{"jmpIfFlagSet" 4}
+
+	{"arrInsert" "reg1"}
+	{"add" "reg1" 1}
+	{"sub" "reg0" 1}
+	{"jmp" -6}
+	{"ret"}
+}

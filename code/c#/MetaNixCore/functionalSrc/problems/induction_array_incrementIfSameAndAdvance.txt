@@ -2,6 +2,7 @@
 	{
 		6 -- enumerate program length
 		7 -- max number of retired instructions
+		{} -- hint indirect call candidates
 	}
 
 	{ -- at end of array it should return the answer flag false because it is at the end
