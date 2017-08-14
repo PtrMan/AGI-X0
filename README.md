@@ -15,8 +15,7 @@ The so called Development cycle cisists out of a cycle of 3 months hibernation f
 * Propabilities of instructions are learned
 
 
-TODO
+# TODO
 * CausalReasoningSystem 
 * pull in more code
 * pull in code/write code for the various NN types + hofstadter networks
-
