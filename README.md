@@ -9,7 +9,7 @@ The so called Development cycle cisists out of a cycle of 3 months hibernation f
 # Implemented
 
 ## ALS
-[https://github.com/PtrMan/AGI-X0/blob/master/code/c%23/MetaNixCore/search/levin2/Levin2.cs](Adaptive Levin Search)
+(https://github.com/PtrMan/AGI-X0/blob/master/code/c%23/MetaNixCore/search/levin2/Levin2.cs)[Adaptive Levin Search]
 
 * with a VM for simple Operations
 * Propabilities of instructions are learned
