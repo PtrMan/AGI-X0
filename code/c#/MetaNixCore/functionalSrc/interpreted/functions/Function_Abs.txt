@@ -1,7 +1,7 @@
 ﻿-- absolute function
 
 {
-	{"cmpLess" "reg0" "0"}
-	{"jmpIfNotFlag" "1"}
-	{"mul" "reg0" "-1"}
+	{"cmpLess reg0 0"}
+	{"jmpIfNotFlag 1"}
+	{"mul reg0 -1"}
 }

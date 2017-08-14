@@ -1,11 +1,11 @@
 ﻿-- generator which adds reg0 times into the array the value of reg1
 
 {	
-	{"cmp" "reg0" 0}
-	{"jmpIfFlagSet" 3}
+	{"cmp reg0 0"}
+	{"jmpIfFlagSet 3"}
 
-	{"arrInsert" "reg1"}
-	{"sub" "reg0" 1}
-	{"jmp" -5}
+	{"arrInsert reg1"}
+	{"sub reg0 1"}
+	{"jmp -5"}
 	{"ret"}
 }

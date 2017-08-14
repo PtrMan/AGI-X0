@@ -1,7 +1,7 @@
 ﻿-- min function between reg0 and reg1
 
 {
-	{"cmpLess" "reg0" "reg1"}
-	{"jmpIfFlag" "1"}
-	{"mov" "reg0" "reg1"}
+	{"cmpLess reg0 reg1"}
+	{"jmpIfFlag 1"}
+	{"mov reg0 reg1"}
 }
