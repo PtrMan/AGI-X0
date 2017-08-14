@@ -125,9 +125,13 @@ namespace MetaNix.search.levin2 {
 
         // /param delta the delta of the relative offset
         void adjustControlflowOffsetsForInstructionAtIndex(int idx, int delta) {
-            
+            bool overlaps(int value, int min, int max) {
+                Debug.Assert(min <= max);
+                return min < value && value <= max;
+            }
+
             for (int i = 0; i < arr.Count; i++) {
-                if( i == idx )   continue;
+                //if( i == idx )   continue;
 
                 uint instructionWithoutRelative;
                 int relative;
@@ -136,18 +140,18 @@ namespace MetaNix.search.levin2 {
                 bool isInstructionWithRelativeOffset = instructionWithoutRelative <= InstructionInterpreter.NUMBEROFCONTROLFLOWINSTRUCTIONS;
                 if (!isInstructionWithRelativeOffset)    continue; // if it is not a control flow altering instruction we don't have to change it
 
-                int relativeDestination = i + relative;
+                int relativeDestination = i + relative + 1; // add one because instructionpointer is implicitly added one for a jump
 
-                bool overlaps = false;
+                bool isOverlapping = false;
 
-                if( relative < 0 )   overlaps = idx > i && i < relativeDestination;
-                else                 overlaps = i < idx && idx < relativeDestination;
+                if( relative < 0 ) isOverlapping = overlaps(idx, relativeDestination, i);
+                else               isOverlapping = overlaps(idx, i, relativeDestination);
 
-                if (!overlaps)    continue; // if the range of the jump doesn't overlap with the index we don't hvae to modfy it
+                if (!isOverlapping)    continue; // if the range of the jump doesn't overlap with the index we don't hvae to modfy it
 
-                int newRelative = relative + delta;
+                int newRelative = relative + (relative < 0 ? -delta : delta);
 
-                arr[i] = (int)InstructionInterpreter.convInstructionAndRelativeToInstruction(instructionWithoutRelative, relative);
+                arr[i] = (int)InstructionInterpreter.convInstructionAndRelativeToInstruction(instructionWithoutRelative, newRelative);
             }
         }
 

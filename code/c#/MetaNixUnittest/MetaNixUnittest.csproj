@@ -57,6 +57,7 @@
     <Compile Include="UnitTest1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnitTestCausalInference.cs" />
+    <Compile Include="UnitTestLevin2.cs" />
     <Compile Include="UnitTestNode.cs" />
     <Compile Include="UnitTestStringmanipulation.cs" />
   </ItemGroup>

@@ -186,6 +186,7 @@
     <Compile Include="search\levin2\Levin2.cs" />
     <Compile Include="search\levin2\OperationReflection.cs" />
     <Compile Include="search\levin2\ProgramDistribution.cs" />
+    <Compile Include="search\levin2\VmOperations.cs" />
     <Compile Include="symbolic\Stringmanipulation.cs" />
     <Compile Include="TranslateFunctionalParseTree.cs" />
     <Compile Include="Variant.cs" />
@@ -209,6 +210,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="functionalSrc\interpreted\functions\Function_Abs.txt" />
+    <Content Include="functionalSrc\interpreted\functions\Function_Max.txt" />
+    <Content Include="functionalSrc\interpreted\functions\Function_Min.txt" />
     <Content Include="functionalSrc\interpreted\functions\Generator_increment.txt" />
     <Content Include="functionalSrc\interpreted\functions\Generator_ones.txt" />
     <Content Include="functionalSrc\interpreted\functions\Generator_reg1.txt" />
