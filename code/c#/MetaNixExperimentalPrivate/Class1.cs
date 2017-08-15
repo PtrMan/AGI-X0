@@ -1,4 +1,5 @@
 ﻿using AiThisAndThat.prototyping;
+using MetaNix.control.levinProgramSearch;
 using MetaNix.framework.languages.functional2;
 using MetaNix.framework.logging;
 using MetaNix.framework.misc;
@@ -199,9 +200,10 @@ namespace MetaNixExperimentalPrivate {
 
             Scheduler scheduler = new Scheduler();
 
+            AdvancedAdaptiveLevinSearchProgramDatabase levinSearchProblemDatabase = new AdvancedAdaptiveLevinSearchProgramDatabase();
 
             SparseArrayProgramDistribution sparseArrayProgramDistribution = new SparseArrayProgramDistribution();
-            AdvancedAdaptiveLevinSearchTaskProvider levinSearchTaskProvider = new AdvancedAdaptiveLevinSearchTaskProvider(scheduler, sparseArrayProgramDistribution, logger);
+            AdvancedAdaptiveLevinSearchTaskProvider levinSearchTaskProvider = new AdvancedAdaptiveLevinSearchTaskProvider(scheduler, sparseArrayProgramDistribution, levinSearchProblemDatabase, logger);
 
 
             // overwrite for testing
@@ -246,10 +248,14 @@ namespace MetaNixExperimentalPrivate {
 
 
                 // read hints for indirect call candidates
-                Pattern<Decoration> hintIndirectCallCandidatesPattern = configurationPattern.referenced[3];
+                Pattern<Decoration> hintIndirectCallCandidatesPattern = configurationPattern.referenced[2];
                 foreach( var iHintPattern in hintIndirectCallCandidatesPattern.referenced ) {
                     string iHint = Conversion.convertPatternToString(iHintPattern);
-                    // TODO< add hint to levinSearchProblem >
+
+                    // NOTE< we currently add the hint to the hints >
+                    // TODO< split between topic hints (for example array Manipuation, list manipulation, etc) and 
+                    //       problems which it should use for solving (for example for calling of functions or modification of existing functions)
+                    levinSearchProblem.humanReadableHints.Add(iHint);
                 }
 
 

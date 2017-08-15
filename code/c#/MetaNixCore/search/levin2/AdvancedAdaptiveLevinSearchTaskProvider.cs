@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using MetaNix.scheduler;
 using MetaNix.framework.logging;
+using MetaNix.control.levinProgramSearch;
 
 namespace MetaNix.search.levin2 {
     // tries to supply the scheduler with new levin search tasks if it completed relevant tasks
@@ -12,11 +13,13 @@ namespace MetaNix.search.levin2 {
         public AdvancedAdaptiveLevinSearchTaskProvider(
             Scheduler scheduler,
             SparseArrayProgramDistribution sparseArrayProgramDistribution,
+            AdvancedAdaptiveLevinSearchProgramDatabase database,
             ILogger log
         ) {
 
             this.scheduler = scheduler;
             this.sparseArrayProgramDistribution = sparseArrayProgramDistribution;
+            this.database = database;
             this.log = log;
         }
 
@@ -63,15 +66,11 @@ namespace MetaNix.search.levin2 {
             levinSearchObservable.register(new AdvancedAdaptiveLevinSearchLogObserver(log));
             levinSearchObservable.register(this); // register ourself to know when the task failed or succeeded
 
-            LevinSearchTask levinSearchTask = new LevinSearchTask(levinSearchObservable, problem.humanReadableTaskname);
+            LevinSearchTask levinSearchTask = new LevinSearchTask(levinSearchObservable, database, problem);
             scheduler.addTaskSync(levinSearchTask);
 
-            levinSearchTask.levinSearchContext = new LevinSearchContext();
-            levinSearchTask.levinSearchContext.localInterpreterState.maxNumberOfRetiredInstructions = problem.maxNumberOfRetiredInstructions;
-            //levinSearchTask.levinSearchContext.interpreterArguments.interpreterState = problem.localInitialInterpreterState;
+            levinSearchTask.levinSearchContext = new LevinSearchContext(problem);
             fillUsedInstructionSet(levinSearchTask.levinSearchContext);
-            levinSearchTask.levinSearchContext.trainingSamples = problem.trainingSamples;
-            levinSearchTask.levinSearchContext.parentProgram = problem.parentProgram;
             levinSearchTask.levinSearchContext.initiateSearch(sparseArrayProgramDistribution, problem.enumerationMaxProgramLength);
         }
 
@@ -128,6 +127,7 @@ namespace MetaNix.search.levin2 {
 
         Scheduler scheduler;
         SparseArrayProgramDistribution sparseArrayProgramDistribution;
+        private AdvancedAdaptiveLevinSearchProgramDatabase database;
         ILogger log;
     }
 

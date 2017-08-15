@@ -7,6 +7,7 @@ using MetaNix.scheduler;
 using MetaNix.framework.logging;
 using MetaNix.framework.datastructures;
 using MetaNix.datastructures;
+using MetaNix.control.levinProgramSearch;
 
 namespace MetaNix.search.levin2 {
     
@@ -657,6 +658,10 @@ namespace MetaNix.search.levin2 {
     // how long the tried program is
     // up to which length is searched, etc
     public class LevinSearchContext {
+        public LevinSearchContext(AdvancedAdaptiveLevinSearchProblem problem) {
+            this.problem = problem;
+        }
+
         public void searchIteration(out bool searchCompleted) {
             searchCompleted = false;
             searchIterations++;
@@ -673,14 +678,14 @@ namespace MetaNix.search.levin2 {
             localInterpreterState.program[privateNumberOfInstructions - 1] = InstructionInterpreter.INSTRUCTION_RET; // overwrite last instruction with ret so it terminates always
 
             // append parent program if there is one
-            if( parentProgram != null ) {
+            if( problem.parentProgram != null ) {
                 // commented because the copy is pseudocode   parentProgram.CopyTo(localInterpreterState.program, privateNumberOfInstructions);
             }
 
 
             bool trainingSamplesTestedSuccessful = true;
 
-            foreach (TrainingSample currentTrainingSample in trainingSamples) {
+            foreach (TrainingSample currentTrainingSample in problem.trainingSamples) {
                 localInterpreterState.registers = new int[3];
 
                 // reset interpreter state
@@ -842,9 +847,8 @@ namespace MetaNix.search.levin2 {
         ProgramSampler programSampler;
         SparseArrayProgramDistribution programDistribution;
         public long remainingIterationsForCurrentProgramLength;
-
-        public IList<TrainingSample> trainingSamples = new List<TrainingSample>();
-        public uint[] parentProgram; // can be null
+        
+        private AdvancedAdaptiveLevinSearchProblem problem;
 
         internal void biasSearchTowardProgram() {
             programDistribution.addProgram(instructionIndices);
@@ -853,9 +857,10 @@ namespace MetaNix.search.levin2 {
 
     public class LevinSearchTask : MetaNix.scheduler.ITask {
         // /param doneObserable will be notified when the search is done or failed
-        public LevinSearchTask(Observable obserable, string taskname) {
+        public LevinSearchTask(Observable obserable, AdvancedAdaptiveLevinSearchProgramDatabase database, AdvancedAdaptiveLevinSearchProblem problem) {
             this.observable = obserable;
-            this.taskname = taskname;
+            this.database = database;
+            this.problem = problem;
         }
 
         public void processTask(Scheduler scheduler, double softTimelimitInSeconds, out EnumTaskStates taskState) {
@@ -873,8 +878,6 @@ namespace MetaNix.search.levin2 {
                     return;
                 }
             }
-
-            taskState = EnumTaskStates.RUNNING;
         }
 
         void timingIteration(out bool searchCompleted) {
@@ -901,20 +904,37 @@ namespace MetaNix.search.levin2 {
                 levinSearchContext.searchIteration(out searchCompleted);
                 if (searchCompleted) {
                     biasSearchTowardProgram();
+                    storeSolution();
                     observable.notify("success", this, taskname);
                     return;
                 }
             }
         }
 
-        private void biasSearchTowardProgram() {
+        void biasSearchTowardProgram() {
             levinSearchContext.biasSearchTowardProgram();
+        }
+
+        void storeSolution() {
+            var databaseEntryForThisSolution = new AdvancedAdaptiveLevinSearchProgramDatabaseEntry();
+
+            databaseEntryForThisSolution.problem = null;
+            databaseEntryForThisSolution.id = database.createNewEntryId();
+            databaseEntryForThisSolution.humanReadableName = problem.humanReadableTaskname;
+            databaseEntryForThisSolution.problem = problem;
+            
+            databaseEntryForThisSolution.program = new uint[(int)levinSearchContext.localInterpreterState.program.length];
+            for( int i = 0; i < levinSearchContext.localInterpreterState.program.length; i++ ) {
+                databaseEntryForThisSolution.program[i] = levinSearchContext.localInterpreterState.program[i];
+            }
+
+            database.entries.Add(databaseEntryForThisSolution);
         }
 
         public LevinSearchContext levinSearchContext;
 
-
-
+        AdvancedAdaptiveLevinSearchProgramDatabase database; // use to store found solution
+        public AdvancedAdaptiveLevinSearchProblem problem;
         public uint iterationGranularity = 50000; // how many iterations are done after we check for the soft timelimit
         Stopwatch executiontimeSchedulingStopwatch = new Stopwatch();
 

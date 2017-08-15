@@ -13,12 +13,14 @@ namespace MetaNix.control.levinProgramSearch {
         public SearchTask(
             Scheduler scheduler,
             SparseArrayProgramDistribution sparseArrayProgramDistribution,
+            AdvancedAdaptiveLevinSearchProgramDatabase database,
             AdvancedAdaptiveLevinSearchProblem problem,
             Observable completitionObservable,
             ILogger log
         ) {
             this.scheduler = scheduler;
             this.sparseArrayProgramDistribution = sparseArrayProgramDistribution;
+            this.database = database;
             this.problem = problem;
             this.log = log;
 
@@ -28,7 +30,7 @@ namespace MetaNix.control.levinProgramSearch {
         }
 
         public override Task clone() {
-            return new SearchTask(scheduler, sparseArrayProgramDistribution, problem, completitionObservable, log);
+            return new SearchTask(scheduler, sparseArrayProgramDistribution, database, problem, completitionObservable, log);
         }
 
         public override void reset() {
@@ -84,14 +86,11 @@ namespace MetaNix.control.levinProgramSearch {
             levinSearchObservable.register(new AdvancedAdaptiveLevinSearchLogObserver(log));
             levinSearchObservable.register(new LevinSearchObserver(this));
 
-            levinSearchTask = new LevinSearchTask(levinSearchObservable, problem.humanReadableTaskname);
+            levinSearchTask = new LevinSearchTask(levinSearchObservable, database, problem);
             scheduler.addTaskSync(levinSearchTask);
 
-            levinSearchTask.levinSearchContext = new LevinSearchContext();
+            levinSearchTask.levinSearchContext = new LevinSearchContext(problem);
             levinSearchTask.levinSearchContext.localInterpreterState.maxNumberOfRetiredInstructions = problem.maxNumberOfRetiredInstructions;
-            //levinSearchTask.levinSearchContext.localInterpreterState = problem.localInitialInterpreterState;
-            levinSearchTask.levinSearchContext.trainingSamples = problem.trainingSamples;
-            levinSearchTask.levinSearchContext.parentProgram = problem.parentProgram;
             fillUsedInstructionSet(levinSearchTask.levinSearchContext);
             levinSearchTask.levinSearchContext.initiateSearch(sparseArrayProgramDistribution, problem.enumerationMaxProgramLength);
         }
@@ -147,7 +146,7 @@ namespace MetaNix.control.levinProgramSearch {
         private ILogger log;
         Scheduler scheduler;
         SparseArrayProgramDistribution sparseArrayProgramDistribution;
-
+        private AdvancedAdaptiveLevinSearchProgramDatabase database;
         LevinSearchTask levinSearchTask; // the task for the scheduler which does the levin search
                                          // we need to have a handle to it to be able to finish it if/when the other searches have completed
 
