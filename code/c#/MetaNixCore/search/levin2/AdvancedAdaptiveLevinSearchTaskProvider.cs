@@ -138,6 +138,9 @@ namespace MetaNix.search.levin2 {
             levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, +4);
             levinSearchContext.instructionIndexToInstruction[instructionIndex++] = InstructionInterpreter.convInstructionAndRelativeToInstruction(4, +5);
 
+            // call indirect
+            levinSearchContext.instructionIndexToInstruction[instructionIndex++] = 42;
+
             int breakpointHere1 = 1;
         }
 
