@@ -13,6 +13,7 @@ namespace MetaNix.framework.languages.functional2 {
         BRACEOPEN, // {
         BRACECLOSE, // }
         SEMICOLON, // ;
+        INSTRUCTION, // instr
     }
 
     public class Lexer : lang.Lexer {
@@ -51,8 +52,12 @@ namespace MetaNix.framework.languages.functional2 {
                 token.type = Token.EnumType.STRING;
 	    		token.contentString = matchedString;
             }
-            
-            
+            else if (ruleIndex == 9) {
+                token.type = Token.EnumType.OPERATION;
+                token.contentOperation = (int)EnumToken.INSTRUCTION;
+            }
+
+
             return token;
         }
 
@@ -66,8 +71,8 @@ namespace MetaNix.framework.languages.functional2 {
                 new Rule(@"^({)"),
                 new Rule(@"^(})"),
                 new Rule(@"^(;)"),
-                new Rule("^\"([0-9\\._;:,\\w\\s\\-\\./#]*)\""), // string
-                
+                new Rule("^\"([0-9\\._;:,\\w\\s\\-/#]*)\""), // string
+                new Rule("^instr"), // instruction
             };
         }
     }
@@ -118,18 +123,20 @@ namespace MetaNix.framework.languages.functional2 {
             /* + 21 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.ARC      , 13                             , callbackNothing, 13, null));
             
             //    inner identifier
-            /* + 22 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.TOKEN    , (uint)Token.EnumType.IDENTIFIER , callbackAddSymbol, 13, 17));
-            /* + 23 */this.arcs.Add(errorArc);
+            /* + 22 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.TOKEN    , (uint)Token.EnumType.IDENTIFIER , callbackAddSymbol, 13, 23));
+
+            //    string
+            /* + 23 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.TOKEN, (uint)Token.EnumType.STRING, callbackAddString, 13, 17));
             /* + 24 */this.arcs.Add(errorArc);
 
             //    inner instruction
             //          name parameter(variable or pattern or name or number) ;
-            
-            /* + 25 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.TOKEN    , (uint)Token.EnumType.STRING, callbackEnterInstructionAndInstructionName, 26, 22));
-            /* + 26 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.OPERATION, (uint)EnumToken.SEMICOLON      , callbackExitInstruction, 13, 27));
-            /* + 27 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.TOKEN    , (uint)Token.EnumType.STRING, callbackAddString, 26, 28));
-            /* + 28 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.TOKEN    , (uint)Token.EnumType.STRING, callbackInstructionParameterString, 26, 30));
-            /* + 29 */this.arcs.Add(errorArc);
+
+            /* + 25 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.OPERATION, (uint)EnumToken.INSTRUCTION, callbackNothing, 26, 22));
+            /* + 26 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.TOKEN    , (uint)Token.EnumType.STRING, callbackEnterInstructionAndInstructionName, 27, null));
+            /* + 27 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.OPERATION, (uint)EnumToken.SEMICOLON      , callbackExitInstruction, 13, 28));
+            /* + 28 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.TOKEN    , (uint)Token.EnumType.STRING, callbackAddString, 27, 29));
+            /* + 29 */this.arcs.Add(new Arc(Functional2LexerAndParser.Arc.EnumType.TOKEN    , (uint)Token.EnumType.STRING, callbackInstructionParameterString, 27, 30));
 
             Debug.Assert(this.arcs.Count == 30);
 

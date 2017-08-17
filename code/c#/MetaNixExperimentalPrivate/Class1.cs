@@ -208,15 +208,21 @@ namespace MetaNixExperimentalPrivate {
 
             // overwrite for testing
             problemsFilenames = new string[] {
+                @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_verticalAddition.txt",
+                @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\level1\Induction_array_integer_exists.txt",
+
+                /*
+
+
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_linkedlist_next.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_linkedlist_append.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_appendBeginningAndEnding.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_removeEqual.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_subReg0.txt",
-                @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_verticalAddition.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_multiplication.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\induction_array_binaryNegation.txt",
                 @"C:\Users\r0b3\github\AGI-X0\code\c#\MetaNixCore\functionalSrc\problems\Induction_array_negation.txt",
+                */
             };
 
             foreach ( string iterationPath in problemsFilenames ) {
@@ -238,7 +244,12 @@ namespace MetaNixExperimentalPrivate {
 
 
                 AdvancedAdaptiveLevinSearchProblem levinSearchProblem = new AdvancedAdaptiveLevinSearchProblem();
-                levinSearchProblem.humanReadableTaskname = iterationPath;
+
+                var iterationPathParts = new List<string>(iterationPath.Split(new char[] { '\\' }));
+
+                string taskname = iterationPathParts[iterationPathParts.Count - 1].Substring(0, iterationPathParts[iterationPathParts.Count - 1].Length - 4);
+
+                levinSearchProblem.humanReadableTaskname = taskname;
 
 
                 //levinSearchProblem.enumerationMaxProgramLength = 5;
@@ -252,10 +263,7 @@ namespace MetaNixExperimentalPrivate {
                 foreach( var iHintPattern in hintIndirectCallCandidatesPattern.referenced ) {
                     string iHint = Conversion.convertPatternToString(iHintPattern);
 
-                    // NOTE< we currently add the hint to the hints >
-                    // TODO< split between topic hints (for example array Manipuation, list manipulation, etc) and 
-                    //       problems which it should use for solving (for example for calling of functions or modification of existing functions)
-                    levinSearchProblem.humanReadableHints.Add(iHint);
+                    levinSearchProblem.humanReadableIndirectlyCallableProgramNames.Add(iHint);
                 }
 
 

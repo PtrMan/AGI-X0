@@ -8,6 +8,7 @@ using MetaNix.framework.logging;
 
 namespace MetaNix.control.levinProgramSearch {
     // starts an search and monitors the search for an program with levin search
+    /* commented because it overlaps with LevinSearchTask defined in Levin2
     public class SearchTask : Task {
         // /param completitionObservable used to register ourself to get notified if an search got completed by another task
         public SearchTask(
@@ -190,6 +191,7 @@ namespace MetaNix.control.levinProgramSearch {
     
 
     // is notified by the progress of the levin search and notifies our SearchTask
+    
     class LevinSearchObserver : IObserver {
         public LevinSearchObserver(SearchTask searchTask) {
             this.searchTask = searchTask;
@@ -211,4 +213,5 @@ namespace MetaNix.control.levinProgramSearch {
 
         SearchTask searchTask;
     }
+     */
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using MetaNix.scheduler;
 using MetaNix.framework.logging;
 using MetaNix.control.levinProgramSearch;
+using System.Diagnostics;
 
 namespace MetaNix.search.levin2 {
     // tries to supply the scheduler with new levin search tasks if it completed relevant tasks
@@ -62,19 +63,37 @@ namespace MetaNix.search.levin2 {
         }
 
         void submitTask(AdvancedAdaptiveLevinSearchProblem problem) {
+            
             Observable levinSearchObservable = new Observable();
             levinSearchObservable.register(new AdvancedAdaptiveLevinSearchLogObserver(log));
             levinSearchObservable.register(this); // register ourself to know when the task failed or succeeded
 
             LevinSearchTask levinSearchTask = new LevinSearchTask(levinSearchObservable, database, problem);
+            
+
+            if (problem.humanReadableIndirectlyCallableProgramNames.Count > 0) {
+                // query the problem for the hint
+                Debug.Assert(problem.humanReadableIndirectlyCallableProgramNames.Count == 1, "Implemented for just one subproblem");
+                var q = database.getQuery().whereHumanReadableProgramName(problem.humanReadableIndirectlyCallableProgramNames[0]);
+
+                foreach (var iq in q.enumerable) {
+                    Debug.Assert(iq.program != null, "Problem must have been already solved to be added as an indrectly callable program!");
+
+                    levinSearchTask.problem.indirectCallablePrograms.Add(iq);
+                }
+            }
+
+
             scheduler.addTaskSync(levinSearchTask);
 
             levinSearchTask.levinSearchContext = new LevinSearchContext(problem);
+            levinSearchTask.levinSearchContext.localInterpreterState.maxNumberOfRetiredInstructions = problem.maxNumberOfRetiredInstructions;
             fillUsedInstructionSet(levinSearchTask.levinSearchContext);
             levinSearchTask.levinSearchContext.initiateSearch(sparseArrayProgramDistribution, problem.enumerationMaxProgramLength);
         }
 
 
+        
         void fillUsedInstructionSet(LevinSearchContext levinSearchContext) {
             levinSearchContext.instructionIndexToInstruction.Clear();
 
@@ -143,6 +162,7 @@ namespace MetaNix.search.levin2 {
             copied.maxNumberOfRetiredInstructions = maxNumberOfRetiredInstructions;
             copied.parentProgram = parentProgram;
             copied.humanReadableHints = humanReadableHints;
+            copied.humanReadableIndirectlyCallableProgramNames = humanReadableIndirectlyCallableProgramNames;
             copied.humanReadableTaskname = humanReadableTaskname;
             return copied;
         }
@@ -171,7 +191,13 @@ namespace MetaNix.search.levin2 {
         // program which can be called by the current program
         public uint[] parentProgram; // can be null
 
+        // solved problems with programs which are indirecly callable
+        public IList<AdvancedAdaptiveLevinSearchProgramDatabaseEntry> indirectCallablePrograms = new List<AdvancedAdaptiveLevinSearchProgramDatabaseEntry>();
+
         public IList<string> humanReadableHints = new List<string>(); // are search hints which are/were used for searching related programs
                                                                       // programs with the same hints do approximatly solve the same problem
+
+        // name of problems which can be called indirectly
+        public IList<string> humanReadableIndirectlyCallableProgramNames = new List<string>();
     }
 }

@@ -5,23 +5,8 @@
 	{ -- settings
 		6 -- enumerate program length, enough
 		50 -- max number of retired instructions
-		{"induction_array_verticalAddition"} -- hint indirect call candidates
+		{"Induction_array_verticalAddition"} -- hint indirect call candidates
 	}
-
-	-- commented because empty case can't be handled because it is to complex
-	--{
-	--	{}
-	--	{5 null}
-	--	0
-	--
-	--	{}
-	--	{0 null}
-	--	null
-	--
-	--	null
-	--}
-
-
 
 	{
 		{1}

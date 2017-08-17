@@ -199,7 +199,7 @@ namespace MetaNix.search.levin2 {
             new InstructionMnemonic("arrayIdx", new string[]{"arr0","-1"}),
             new InstructionMnemonic("arrayIdx", new string[]{"arr0", "+1"}),
             new InstructionMnemonic("arrayRemove"),
-            new InstructionMnemonic("arrayCompare", new string[]{" eg0"}),
+            new InstructionMnemonic("arrayCompare", new string[]{"reg0"}),
             new InstructionMnemonic("arrayCompare", new string[]{"reg1"}),
 
             new InstructionMnemonic("arrayInsert", new string[]{"reg0"}),
@@ -576,6 +576,12 @@ namespace MetaNix.search.levin2 {
             }
             //*/
 
+            if (localState.program.length >= 3) {
+                if (localState.program[0] == 35 && localState.program[1] == 32 && localState.program[2] == InstructionInterpreter.convInstructionAndRelativeToInstruction(1, -3)) {
+                    int debugHere = 5;
+                }
+            }
+
             for (int instructionsRetired = 0; instructionsRetired < localState.maxNumberOfRetiredInstructions; instructionsRetired++) {
                 bool instructionPointerValid = localState.instructionPointer >= 0 && localState.instructionPointer < localState.program.length;
                 if (!instructionPointerValid) {
@@ -923,8 +929,8 @@ namespace MetaNix.search.levin2 {
             databaseEntryForThisSolution.humanReadableName = problem.humanReadableTaskname;
             databaseEntryForThisSolution.problem = problem;
             
-            databaseEntryForThisSolution.program = new uint[(int)levinSearchContext.localInterpreterState.program.length];
-            for( int i = 0; i < levinSearchContext.localInterpreterState.program.length; i++ ) {
+            databaseEntryForThisSolution.program = new uint[levinSearchContext.numberOfInstructions];
+            for( int i = 0; i < levinSearchContext.numberOfInstructions; i++ ) {
                 databaseEntryForThisSolution.program[i] = levinSearchContext.localInterpreterState.program[i];
             }
 

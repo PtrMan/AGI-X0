@@ -43,6 +43,14 @@ namespace MetaNix.control.levinProgramSearch {
             return this;
         }
 
+        public AdvancedAdaptiveLevinSearchProgramDatabaseQuery whereHumanReadableProgramName(string programName) {
+            lock (sync) {
+                privateEnumerable = privateEnumerable.Where(v => v.problem.humanReadableTaskname == programName);
+            }
+            return this;
+        }
+
+
         public IEnumerable<AdvancedAdaptiveLevinSearchProgramDatabaseEntry> enumerable {
             get {
                 return privateEnumerable;
