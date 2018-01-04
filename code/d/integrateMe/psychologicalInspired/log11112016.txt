@@ -1,0 +1,882 @@
+replayed: 9
+traces in PhonologicalShortTermStore #=6
+replayed: 2
+traces in PhonologicalShortTermStore #=6
+replayed: 5
+traces in PhonologicalShortTermStore #=6
+traces in PhonologicalShortTermStore #=6
+replayed: 1
+traces in PhonologicalShortTermStore #=6
+replayed: 2
+traces in PhonologicalShortTermStore #=6
+traces in PhonologicalShortTermStore #=6
+replayed: 5
+traces in PhonologicalShortTermStore #=6
+traces in PhonologicalShortTermStore #=6
+replayed: 1
+traces in PhonologicalShortTermStore #=6
+replayed: 2
+traces in PhonologicalShortTermStore #=6
+traces in PhonologicalShortTermStore #=6
+replayed: 1
+traces in PhonologicalShortTermStore #=6
+replayed: 3
+traces in PhonologicalShortTermStore #=6
+replayed: 9
+traces in PhonologicalShortTermStore #=6
+replayed: 2
+traces in PhonologicalShortTermStore #=5
+replayed: 5
+traces in PhonologicalShortTermStore #=5
+traces in PhonologicalShortTermStore #=5
+replayed: 1
+traces in PhonologicalShortTermStore #=5
+replayed: 2
+traces in PhonologicalShortTermStore #=5
+replayed: 3
+traces in PhonologicalShortTermStore #=5
+traces in PhonologicalShortTermStore #=5
+replayed: 1
+traces in PhonologicalShortTermStore #=5
+replayed: 2
+traces in PhonologicalShortTermStore #=5
+traces in PhonologicalShortTermStore #=5
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 3
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 1
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+traces in PhonologicalShortTermStore #=4
+replayed: 9
+traces in PhonologicalShortTermStore #=4
+replayed: 2
+traces in PhonologicalShortTermStore #=4
+replayed: 5
+traces in PhonologicalShortTermStore #=4
