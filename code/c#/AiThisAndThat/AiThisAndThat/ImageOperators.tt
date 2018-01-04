@@ -1,0 +1,76 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+
+using System;
+
+<#
+	IList<Tuple<string, string>> twoParameterOperationsWithOperations = new List<Tuple<string, string>>(){
+		new Tuple<string, string>("OpAdd", "aValue + bValue"),
+		new Tuple<string, string>("OpSub", "aValue - bValue"),
+		new Tuple<string, string>("OpMul", "aValue * bValue"),
+		new Tuple<string, string>("OpDiv", "aValue / bValue"),
+
+		new Tuple<string, string>("OpMax", "Math.Max(aValue, bValue)"),
+		new Tuple<string, string>("OpMin", "Math.Min(aValue, bValue)"),
+	};
+
+	IList<Tuple<string, string>> oneParameterOperationsWithOperations = new List<Tuple<string, string>>(){
+		new Tuple<string, string>("OpSqrt", "(float)Math.Sqrt(aValue)"),
+	};
+
+#>
+public interface IOp2 {
+	void run2(Map2d<float> a, Map2d<float> b, Map2d<float> result);
+}
+
+public interface IOp1 {
+	void run2(Map2d<float> a, Map2d<float> result);
+}
+
+<#
+foreach( var iTwoParameterOperation in twoParameterOperationsWithOperations ) {
+
+
+#>public class <#=iTwoParameterOperation.Item1#> : IOp2 {
+	public void run2(Map2d<float> a, Map2d<float> b, Map2d<float> result) {
+		for( uint y = 0; y < result.getSize().y; y++ )
+			for( uint x = 0; x < result.getSize().x; x++ ) {
+				Vector2d<uint> pos = new Vector2d<uint>(x, y);
+				float
+					aValue = a.read(pos),
+					bValue = b.read(pos),
+					temp = <#=iTwoParameterOperation.Item2#>;
+				result.write(pos, temp);
+			}
+	}
+}
+
+<#
+}
+#>
+
+
+<#
+foreach( var iOneParameterOperation in oneParameterOperationsWithOperations ) {
+
+
+#>public class <#=iOneParameterOperation.Item1#> : IOp1 {
+	public void run2(Map2d<float> a, Map2d<float> result) {
+		for( uint y = 0; y < result.getSize().y; y++ )
+			for( uint x = 0; x < result.getSize().x; x++ ) {
+				Vector2d<uint> pos = new Vector2d<uint>(x, y);
+				float
+					aValue = a.read(pos),
+					temp = <#=iOneParameterOperation.Item2#>;
+				result.write(pos, temp);
+			}
+	}
+}
+
+<#
+}
+#>

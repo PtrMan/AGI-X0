@@ -8,7 +8,8 @@ using System.Linq;
 using execution.functional;
 using treeTransducer;
 using execution.translateFunctionalToLowlevel;
-using AiThisAndThat.prototyping;
+using AiThisAndThat.interactiveTests;
+//using AiThisAndThat.prototyping;
 
 
 
@@ -219,7 +220,7 @@ class CompressionTableEntry {
 }*/
 
 
-struct Vector2d<Type> {
+public struct Vector2d<Type> {
     public Vector2d(Type x, Type y) {
         this.x = x;
         this.y = y;
@@ -228,7 +229,7 @@ struct Vector2d<Type> {
     public Type x, y;
 }
 
-class Array2d<Type> {
+public class Array2d<Type> {
     public Array2d(Vector2d<uint> size) {
         array = new Type[size.x, size.y];
         cachedSize = size;
@@ -250,7 +251,7 @@ class Array2d<Type> {
     protected Vector2d<uint> cachedSize;
 }
 
-class Map2d<Type> {
+public class Map2d<Type> {
     public Map2d(Vector2d<uint> size) {
         array2d = new Array2d<Type>(size);
     }
@@ -688,6 +689,9 @@ class Program {
         int debugHere = 1;
     }
 
+    static void Main(string[] args) {
+        TestCompressedNNSearch.test();
+    }
     
     /*static void Main(string[] args) {
         // TestInverseGraphicsCompressor.testImageCompressor();
