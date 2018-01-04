@@ -73,6 +73,7 @@
     <Compile Include="framework\lang\Parser.cs" />
     <Compile Include="framework\lang\Token.cs" />
     <Compile Include="framework\logging\LoggingCLASSESINTERFACES.cs" />
+    <Compile Include="framework\misc\BinaryConversion.cs" />
     <Compile Include="framework\misc\IDeepCopyable.cs" />
     <Compile Include="framework\misc\PathHelper.cs" />
     <Compile Include="framework\misc\RecoverableINTERFACES.cs" />
@@ -183,10 +184,12 @@
     <Compile Include="schmidhuber\slimRnn\UniversalSlimRnnSearch.cs" />
     <Compile Include="search\levin2\AdvancedAdaptiveLevinSearchLogObserver.cs" />
     <Compile Include="search\levin2\AdvancedAdaptiveLevinSearchTaskProvider.cs" />
+    <Compile Include="search\levin2\compressor\CompressorCLASSES.cs" />
     <Compile Include="search\levin2\Levin2.cs" />
     <Compile Include="search\levin2\OperationReflection.cs" />
     <Compile Include="search\levin2\ProgramDistribution.cs" />
     <Compile Include="search\levin2\VmOperations.cs" />
+    <Compile Include="search\levin\Levin.cs" />
     <Compile Include="symbolic\Stringmanipulation.cs" />
     <Compile Include="TranslateFunctionalParseTree.cs" />
     <Compile Include="Variant.cs" />
@@ -243,5 +246,6 @@
     <Content Include="functionalSrc\test1.txt" />
     <Content Include="functionalSrc\test2.txt" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

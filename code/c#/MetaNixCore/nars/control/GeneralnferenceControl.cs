@@ -60,7 +60,6 @@ namespace MetaNix.nars.control {
         protected static void fireTaskLink(DerivationContext ctx, uint termLinks) {
             ClassicalTask task = ctx.currentTaskLink.targetTask;
             ctx.currentTerm = ctx.currentConcept.term;
-            ctx.currentTaskLink = ctx.currentTaskLink; // TODO PATRICK!!!!!!!!
             ctx.currentBeliefLink = null;
             ctx.currentTask = task; // one of the two places where this variable is set
 

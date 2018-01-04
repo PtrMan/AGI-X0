@@ -72,13 +72,27 @@
     <Compile Include="execution\lowLevel\LowLevelCodegenTest.cs" />
     <Compile Include="execution\lowLevel\VliwInstruction.cs" />
     <Compile Include="execution\translateFunctionalToLowlevel\FunctionalProgramTransducerFacade.cs" />
+    <Compile Include="GeneralizedNeuralNetworks.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>GeneralizedNeuralNetworks.tt</DependentUpon>
+    </Compile>
+    <Compile Include="GeneralNnPrototype.cs" />
     <Compile Include="GeneticAlgorithm.cs" />
     <Compile Include="Genome.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="helper\TreeElement.cs" />
+    <Compile Include="ImageOperators.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ImageOperators.tt</DependentUpon>
+    </Compile>
+    <Compile Include="interactiveTests\TestCompressedNNSearch.cs" />
     <Compile Include="lowlevel\generation\AssemblyOperand.cs" />
     <Compile Include="lowlevel\generation\OpcodeGenerator.cs" />
     <Compile Include="lowlevel\Native.cs" />
+    <Compile Include="MathMisc.cs" />
+    <Compile Include="math\FFT.cs" />
     <Compile Include="misc\Convolution2d.cs" />
     <Compile Include="helper\Bitvector.cs" />
     <Compile Include="helper\CompactIntegerVector.cs" />
@@ -87,15 +101,15 @@
     <Compile Include="IAttributedAdjacency.cs" />
     <Compile Include="induction\BitvectorInduction.cs" />
     <Compile Include="misc\Gaussian.cs" />
+    <Compile Include="misc\Misc.cs" />
     <Compile Include="neural\ConvolutionalTriggerNetwork.cs" />
-    <Compile Include="PatternSymbolContext.cs" />
+    <Compile Include="neural\TrainingTuple.cs" />
     <Compile Include="ProgramLaptop.cs" />
-    <Compile Include="prototyping\UtilityFunction.cs" />
-    <Compile Include="prototyping\UtilityFunctionPROTO.cs" />
     <Compile Include="reinforcementLearning\successStoryAlgorithm\Checkpoint.cs" />
     <Compile Include="reinforcementLearning\successStoryAlgorithm\ICheckpointAction.cs" />
     <Compile Include="reinforcementLearning\successStoryAlgorithm\SuccessStoryAlgorithm.cs" />
     <Compile Include="reinforcementLearning\successStoryAlgorithm\TimeAndReward.cs" />
+    <Compile Include="search\CompressedNNSearchLA.cs" />
     <Compile Include="search\levin\LevinProblem.cs" />
     <Compile Include="search\levin\LevinProgram.cs" />
     <Compile Include="search\levin\LevinSearch.cs" />
@@ -121,12 +135,26 @@
     <Folder Include="lang\" />
     <Folder Include="neural\NewFolder1\" />
     <Folder Include="patternMatching\" />
+    <Folder Include="prototyping\" />
     <Folder Include="representation\x86\" />
     <Folder Include="super\optimization\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="memos\functional ideas.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="GeneralizedNeuralNetworks.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>GeneralizedNeuralNetworks.cs</LastGenOutput>
+    </Content>
+    <Content Include="ImageOperators.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ImageOperators.cs</LastGenOutput>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

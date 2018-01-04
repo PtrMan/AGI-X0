@@ -12,6 +12,7 @@ using MetaNix.nars.entity;
 using MetaNix.nars.inference;
 using MetaNix.scheduler;
 using MetaNix.search.levin2;
+using MetaNix.search.levin2.compressor;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -53,9 +54,28 @@ namespace MetaNixExperimentalPrivate {
         void start() {
             EntryType entry = null;
 
+            // TEST HACK
+            testLevinProgramCompressor();
+
             entry = testALS; //testUtilityAndSearch1;
 
             entry();
+        }
+
+        static void testLevinProgramCompressor() {
+            IList<uint[]> programs = new List<uint[]>()
+            {
+                new uint[]{0, 1},
+                new uint[]{0, 1},
+            };
+
+            int maxEnumerationLength = 1;
+
+            Levin2Compressor compressor = new Levin2Compressor(programs, maxEnumerationLength);
+
+            bool isCompleted;
+            compressor.iteration(out isCompleted);
+
         }
 
         static void testNars() {

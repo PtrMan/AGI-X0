@@ -25,7 +25,7 @@ namespace AiThisAndThat {
 
         
         
-
+            /*
         static void Main(string[] args) {
             double o1 = PropabilisticHelper.oddsToPropability(1.0);
             double o2 = PropabilisticHelper.oddsToPropability(2.0);
@@ -35,6 +35,6 @@ namespace AiThisAndThat {
 
             
             int debugHere5 = 1;
-        }
+        }*/
     }
 }

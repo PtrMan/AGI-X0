@@ -231,7 +231,7 @@ namespace MetaNix.nars.derivation {
 
                 bool fullfilled = antiSatisfaction < Parameters.SATISFACTION_TRESHOLD;
 
-                ClassicalSentence projectedGoal = goal.projection(ctx.memory.time, ctx.memory.time); // BUG TODO< ask patrick for correct code >
+                ClassicalSentence projectedGoal = goal.projection(ctx.memory.time, ctx.memory.time); // NOTE< this projection is fine >
 
                 /* commented because we stil have to implement operations
                 if (projectedGoal != null && task.isAboveThreshold && !fullfilled && projectedGoal.truth.expectation > nal.memory.param.decisionThreshold.get()) {

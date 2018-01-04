@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26823.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AiThisAndThat", "AiThisAndThat\AiThisAndThat.csproj", "{33A7A057-5750-4939-8456-C8DCEEFEF630}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test0", "..\..\..\..\..\Documents\vs120\Test0\Test0\Test0.csproj", "{13B1E836-E7F2-4390-A7A1-4BB35A08E0AF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,8 +23,19 @@ Global
 		{33A7A057-5750-4939-8456-C8DCEEFEF630}.Release|Any CPU.Build.0 = Release|Any CPU
 		{33A7A057-5750-4939-8456-C8DCEEFEF630}.Release|x64.ActiveCfg = Release|x64
 		{33A7A057-5750-4939-8456-C8DCEEFEF630}.Release|x64.Build.0 = Release|x64
+		{13B1E836-E7F2-4390-A7A1-4BB35A08E0AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13B1E836-E7F2-4390-A7A1-4BB35A08E0AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13B1E836-E7F2-4390-A7A1-4BB35A08E0AF}.Debug|x64.ActiveCfg = Debug|x64
+		{13B1E836-E7F2-4390-A7A1-4BB35A08E0AF}.Debug|x64.Build.0 = Debug|x64
+		{13B1E836-E7F2-4390-A7A1-4BB35A08E0AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13B1E836-E7F2-4390-A7A1-4BB35A08E0AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13B1E836-E7F2-4390-A7A1-4BB35A08E0AF}.Release|x64.ActiveCfg = Release|x64
+		{13B1E836-E7F2-4390-A7A1-4BB35A08E0AF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {85456A7F-485D-42FC-AC63-9152384348E5}
 	EndGlobalSection
 EndGlobal
