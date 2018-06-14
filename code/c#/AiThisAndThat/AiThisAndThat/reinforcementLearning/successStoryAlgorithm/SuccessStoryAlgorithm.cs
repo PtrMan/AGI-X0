@@ -35,7 +35,7 @@ namespace reinforcementLearning.successStoryAlgorithm {
             } 
 
             int index = checkpoints.Count - 1;
-            bool isCriterionValidForThisPair = isCriterionValidForPair(checkpoints[index], checkpoints[index+1], currentTimeAndReward);
+            bool isCriterionValidForThisPair = isCriterionValidForPair(checkpoints[index-1], checkpoints[index], currentTimeAndReward);
             return isCriterionValidForThisPair;
         }
 
