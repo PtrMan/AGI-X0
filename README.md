@@ -1,5 +1,5 @@
 # AGI-X0
-Named for a lack of a name
+Named for a lack of a name. Is not an AGI because a lot of things are missing.
 
 Not that Utterly broken anymore.
 
