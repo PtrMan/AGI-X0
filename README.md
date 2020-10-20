@@ -3,7 +3,7 @@ Named for a lack of a name. Is not an AGI because a lot of things are missing.
 
 Not that Utterly broken anymore.
 
-The so called Development cycle cisists out of a cycle of 3 months hibernation followed by some activity spike (depressing indeed).
+The so called Development cycle crisis out of a cycle of 3 months hibernation followed by some activity spike (depressing indeed).
 
 
 # Implemented
